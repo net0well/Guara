@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Guara.Storage.Memory</PackageId>
+    <Description>Storage in-memory do Guará — desenvolvimento, testes e demos. Não durável; semântica idêntica aos providers persistentes (mesmo conformance kit).</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Guara.Storage\Guara.Storage.csproj" />
+  </ItemGroup>
+
+</Project>

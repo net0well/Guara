@@ -25,8 +25,10 @@ Desenvolvimento, testes e demos precisam de um storage **sem dependência extern
 
 ## Domain Model
 
-- Estruturas concorrentes (`ConcurrentDictionary`, filas) protegendo `JobRecord` por fila.
-- `Capabilities`: `SupportsTransactions=true` (process-local), `SupportsDistributedLock=false`, `SupportsServerSideFilter=true`, `SupportsServerSideTimers=false`.
+- Dicionário de `JobRecord` imutáveis (atualização via `with`) sob exclusão mútua — atomicidade simples e correta.
+- `Capabilities`: `SupportsTransactions=false`, `SupportsDistributedLock=false`, `SupportsServerSideFilter=true`, `SupportsServerSideTimers=false`.
+
+> **Implementação (2026-07-16):** `SupportsTransactions` ficou **false** (o esboço original dizia true/process-local): uma transação in-memory de verdade exigiria snapshot/rollback; um no-op seria desonesto ("capabilities honestas", AC-4). As operações são individualmente atômicas; `BeginTransactionAsync` lança `NotSupportedException`. Relógio injetável via `TimeProvider` (lease/TTL determinísticos nos testes).
 
 ## API Contract
 

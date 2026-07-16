@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Guara.Storage</PackageId>
+    <Description>Contratos de storage do Guará (IStorage, IJobStorage, IQueueStorage, ILockProvider, ITransaction). Define, nunca implementa — providers em Guara.Storage.*.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Guara.Abstractions\Guara.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

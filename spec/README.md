@@ -66,5 +66,6 @@ Trabalhamos de baixo para cima na pirâmide de dependências: contratos primeiro
 | 033 | Empacotamento, Build & Versionamento | solution-wide (CPM, SourceLink, símbolos, API-compat) | — | In Review |
 | 034 | CI/CD & Release (NuGet publish) | pipeline | — | In Review |
 | 035 | Governança, Licenciamento & Docs | repositório | — | In Review |
+| 036 | Atributos de Job (`[GuaraFila]`, `[GuaraRetentativas]`, `[GuaraDesabilitarConcorrencia]`, `[GuaraTempoLimite]`, `[GuaraPularSeAnteriorEmExecucao]`) | `Guara.Abstractions` + pipeline/generator (feature) | OSS | ✅ Approved (2026-07-16) |
 
 > A ordem pode ser ajustada; capacidades transversais da API pública (fire-and-forget, delayed, recurring, retry) são especificadas dentro das specs dos componentes que as realizam (principalmente 001, 005, 008, 009). As specs 030–035 cruzam vários pacotes por serem **features/infra transversais**.

@@ -56,10 +56,10 @@ public interface IJobStorage
 {
     ValueTask<JobId> CreateAsync(JobRecord record, CancellationToken ct);
     ValueTask<JobRecord?> AcquireNextDueAsync(string queue, TimeSpan lease, DateTimeOffset now, CancellationToken ct);
-    ValueTask RenewLeaseAsync(JobId id, TimeSpan lease, CancellationToken ct);
+    ValueTask<bool> RenewLeaseAsync(JobId id, TimeSpan lease, CancellationToken ct); // false = posse perdida
     ValueTask UpdateStateAsync(JobId id, JobState state, string? resultOrError, CancellationToken ct);
     ValueTask<JobRecord?> GetAsync(JobId id, CancellationToken ct);
-    // consultas de leitura para o Dashboard (paginadas) — ver Spec 022
+    ValueTask<IReadOnlyList<JobRecord>> ListAsync(JobQuery query, CancellationToken ct); // paginada, teto MaxPageSize=100
 }
 
 public interface ILockProvider
@@ -69,6 +69,13 @@ public interface ILockProvider
 ```
 
 - Tudo `ValueTask` + `CancellationToken` último. Contratos vivem aqui; **nenhuma** implementação.
+
+> **Implementação (2026-07-16):**
+> - `RenewLeaseAsync` retorna **`ValueTask<bool>`** (`false` = posse perdida) — o Worker precisa do sinal para abortar e evitar dupla execução (spec 007, AC-7).
+> - `IQueueStorage` ficou como **introspecção** (`GetQueuesAsync`/`GetLengthAsync`): enfileirar = `CreateAsync` com estado `Enqueued`; desenfileirar = `AcquireNextDueAsync` — sem duplicar operações. Extensível depois (extend-only).
+> - `ILockHandle` (`IAsyncDisposable` + `RenewAsync` → bool) com posse por token: só o dono renova/libera.
+> - `JobQuery` com `MaxPageSize = 100` (AC-7).
+> - **Conformance kit** implementado como classe abstrata `StorageConformanceTests` (18 testes: aquisição atômica concorrente, lease/visibility, renovação, idempotência, paginação, locks TTL) — hoje em `tests/Guara.Storage.Memory.Tests/Conformance/`; será extraído para pacote compartilhado quando o segundo provider (specs 012+) chegar.
 
 ## Authorization
 

@@ -102,7 +102,7 @@ Detalhe em [docs/](docs/ARCHITECTURE.md). Violações são anti-padrões ([docs/
 - **Só contratos:** componentes conhecem `IStorage`, `IScheduler`, etc. — nunca a classe concreta de outro componente.
 - **Comunicação por evento/contrato** — nunca chamada direta entre componentes.
 - **Um `AddGuara...()`/`Use...()` por pacote**, no namespace `Microsoft.Extensions.DependencyInjection`.
-- **API do usuário em português** (ADR-0010): métodos do `IGuaraClient`/`IBatchClient` — `EnfileirarAsync`, `AgendarAsync`, `AdicionarOuAtualizarRecorrenteAsync`, `ExcluirAsync`, `ContinuarComAsync`. Tipos, DI, options, rotas, CLI e contratos internos permanecem em inglês.
+- **API do usuário em português** (ADR-0010): métodos do `IGuaraClient`/`IBatchClient` — `EnfileirarAsync`, `AgendarAsync`, `AdicionarOuAtualizarRecorrenteAsync`, `ExcluirAsync`, `ContinuarComAsync` — e **atributos de job** (spec 036) — `[GuaraFila]`, `[GuaraRetentativas]`, `[GuaraDesabilitarConcorrencia]`, `[GuaraTempoLimite]`, `[GuaraPularSeAnteriorEmExecucao]`. Tipos, DI, options, rotas, CLI e contratos internos permanecem em inglês.
 - **Zero reflection em runtime** (Source Generators); `ValueTask` no hot path; `CancellationToken` propagado; **AOT/Trimming-safe**.
 - Sem factory global estática, sem singleton estático, sem `.Result`/`.Wait()`/`Thread.Sleep`.
 
