@@ -28,6 +28,8 @@
   <PropertyGroup Condition="!$(MSBuildProjectName.EndsWith('.Tests'))">
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsPackable>true</IsPackable>
+    <!-- Analisadores de trimming/AOT (ADR-0008): o núcleo deve ser AOT-safe. -->
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
   <!-- Projetos de teste. -->
