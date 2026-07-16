@@ -1,0 +1,84 @@
+# Spec 013: `Guara.Storage.PostgreSql` — Storage PostgreSQL
+
+**Status:** Approved (2026-07-16)
+**Date:** 2026-07-16
+**Componente:** `Guara.Storage.PostgreSql`
+**Implementa:** [Spec 004 (`Guara.Storage`)](004-guara-storage.md)
+**Docs de referência:** [ADR-0003](../docs/adr/0003-abstracao-de-storage-por-provider.md) · [performance](../docs/performance.md)
+
+## Problem
+
+PostgreSQL é o backend favorito de boa parte da comunidade open-source. Ele oferece primitivas ideais para um job scheduler: `SELECT ... FOR UPDATE SKIP LOCKED` (dequeue sem contenção), advisory locks (lock distribuído) e `LISTEN/NOTIFY` (push sem broker).
+
+## Scope
+
+### In
+
+- Implementação de `IStorage` sobre PostgreSQL; `UsePostgreSqlStorage(connectionString)`.
+- Dequeue atômico via `FOR UPDATE SKIP LOCKED`.
+- Lock distribuído via `pg_advisory_lock`.
+- **Push** via `LISTEN/NOTIFY` (habilita estratégia push do Dispatcher).
+- Esquema + migrations idempotentes; índices de hot path.
+
+### Out
+
+- Lógica de negócio; apenas persistência.
+
+## Domain Model
+
+- Tabelas: `jobs`, `queues`, `locks`, `servers` (nomes conforme convenção do provider; mapeadas ao contrato).
+- Índice parcial para elegibilidade `(queue, state, scheduled_for, lease_until)`.
+- `Capabilities`: transações `true`, lock distribuído `true` (advisory), push `true` (LISTEN/NOTIFY), server-side filter `true`.
+
+## API Contract
+
+```csharp
+namespace Microsoft.Extensions.DependencyInjection;
+public static class PostgreSqlStorageExtensions
+{
+    public static IGuaraBuilder UsePostgreSqlStorage(this IGuaraBuilder builder, string connectionString,
+        Action<PostgreSqlStorageOptions>? configure = null);
+}
+```
+
+## Authorization
+
+Credenciais via connection string/segredos; comandos parametrizados (anti-injeção).
+
+## Edge Cases & Failure Modes
+
+- **Concorrência multi-nó** → `SKIP LOCKED` faz cada nó pegar linhas distintas; sem contenção nem dupla execução.
+- **Lease expira** → reelegibilidade por `lease_until < now`.
+- **NOTIFY perdido** (conexão caiu) → fallback para polling; nenhuma perda de job (a fonte da verdade é a tabela).
+- **Advisory lock preso** (crash) → advisory locks de sessão liberam ao cair a conexão.
+- **Migração concorrente** → idempotente + advisory lock.
+
+## Non-Functional Requirements
+
+- Dequeue sem contenção (`SKIP LOCKED`); leituras paginadas; sem N+1.
+- Push reduz latência sem busy-poll.
+- Parametrizado; pooling via Npgsql; AOT no hot path (EF só migrations) — DD-1.
+
+## Integrations
+
+PostgreSQL via `Npgsql`; `ISerializer` para payloads.
+
+## Acceptance Criteria
+
+- **AC-1 — Conformance kit.** Passa 100%.
+- **AC-2 — SKIP LOCKED.** *Dado* K nós, *então* cada job é processado uma única vez, sem bloqueio mútuo.
+- **AC-3 — Lease/visibility.** *Dado* lease expirado, *então* reelegível.
+- **AC-4 — Push.** *Dado* um job novo, *então* `LISTEN/NOTIFY` acorda o Dispatcher (quando push habilitado).
+- **AC-5 — Fallback.** *Dado* NOTIFY indisponível, *então* polling assume sem perder jobs.
+- **AC-6 — Advisory lock.** *Dado* `TryAcquireAsync`, *então* exclusivo entre nós; libera em crash.
+- **AC-7 — Migrations idempotentes.** Aplicar 2x/paralelo → esquema consistente.
+
+## Deferred Decisions
+
+- **DD-1 — EF Core vs Npgsql raw.** *Fallback:* migrations com EF Core; hot path com SQL/Npgsql otimizado. *Revisão:* benchmarks.
+- **DD-2 — Versão mínima.** *Fallback:* PostgreSQL 13+. *Revisão:* nenhuma.
+- **DD-3 — Schema.** *Fallback:* schema `guara`; configurável. *Revisão:* feedback.
+
+## Open Questions
+
+_(vazio)_

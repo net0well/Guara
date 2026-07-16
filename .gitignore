@@ -1,0 +1,35 @@
+## .NET
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+*.user
+*.suo
+.vs/
+.idea/
+
+## Build / test
+[Tt]est[Rr]esults/
+*.trx
+*.coverage
+*.nupkg
+*.snupkg
+BenchmarkDotNet.Artifacts/
+
+## Node (Guara.Dashboard.React)
+node_modules/
+dist/
+
+## Rider / VS Code
+.vscode/
+*.DotSettings.user
+
+## Segredos — nunca versionar (ADR-0009 / spec 035)
+.env
+**/.env
+!.env.example
+!**/.env.example
+appsettings.Production.json
+appsettings.*.local.json
+**/secrets.json

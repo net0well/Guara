@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Guara.Abstractions/Guara.Abstractions.csproj" />
+    <Project Path="src/Guara.Core/Guara.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Guara.Core.Tests/Guara.Core.Tests.csproj" />
+  </Folder>
+</Solution>

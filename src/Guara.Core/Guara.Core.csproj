@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Guara.Core</PackageId>
+    <Description>Núcleo do Guará: JobContext, máquina de estados e pipeline de middlewares.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Guara.Abstractions\Guara.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,132 @@
+# Guará — Infraestrutura mínima (Docker) para deploy via Portainer.
+#
+# Filosofia: "o storage é a fila" (modelo Hangfire). O Guará NÃO precisa de broker.
+# Stack ativo = só o necessário para rodar com logs estruturados:
+#   - postgres  → storage/fila de jobs (fonte da verdade) + lock distribuído (advisory) + push (LISTEN/NOTIFY)
+#   - seq       → logs estruturados (Serilog → Seq)
+#   - nginx     → proxy reverso do dashboard/API/SSE na porta 80
+#
+# Serviços OPCIONAIS (Redis, Jaeger, Mailpit) NÃO entram por padrão — veja README.md
+# para os snippets prontos e habilite quando ligar o recurso correspondente.
+# RabbitMQ foi removido: não é necessário (coordenação entre nós usa push do storage).
+#
+# IMPORTANTE:
+# - Suba SOMENTE a infra. A app (guara-api) é publicada depois, na MESMA rede `guara-network`.
+# - Stack novo/independente (`guara-*`). Derrube a stack antiga no Portainer antes.
+# - Segredos vêm de variáveis de ambiente: arquivo `Infra/.env` local (gitignored) ou env da
+#   stack no Portainer. Os defaults abaixo (${VAR:-...}) são só para DESENVOLVIMENTO.
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: guara-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-guara}
+      POSTGRES_USER: ${POSTGRES_USER:-guara}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-guara_dev}
+    ports:
+      - "5435:5432"
+    volumes:
+      - guara_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-guara} -d ${POSTGRES_DB:-guara}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - guara-network
+
+  seq:
+    image: datalust/seq:latest
+    container_name: guara-seq
+    restart: unless-stopped
+    environment:
+      - ACCEPT_EULA=Y
+      - SEQ_FIRSTRUN_ADMINPASSWORD=${SEQ_ADMIN_PASSWORD:-guara_dev}
+    ports:
+      - "5342:80"     # UI + ingestão de logs estruturados
+    volumes:
+      - guara_seq_data:/data
+    networks:
+      - guara-network
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: guara-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    configs:
+      - source: guara_nginx_conf
+        target: /etc/nginx/conf.d/default.conf
+    depends_on:
+      - seq
+    networks:
+      - guara-network
+
+# Nginx inline (facilita o editor web do Portainer).
+# Fonte de verdade: Infra/nginx/guara.conf (manter em sincronia).
+# Se seu Portainer não aceitar "configs.content", troque por bind mount:
+#   volumes: [ "/caminho/na/vps/guara.conf:/etc/nginx/conf.d/default.conf:ro" ]
+configs:
+  guara_nginx_conf:
+    content: |
+      server {
+          listen 80;
+          server_name _;
+
+          resolver 127.0.0.11 valid=30s;
+          client_max_body_size 100m;
+
+          # Dashboard + API do Guará (container futuro "guara-api:8080") — 502 até publicar
+          location /guara/ {
+              set $$guara_api http://guara-api:8080;
+              proxy_pass $$guara_api;
+              proxy_set_header Host $$host;
+              proxy_set_header X-Real-IP $$remote_addr;
+              proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $$scheme;
+          }
+
+          # Stream SSE (tempo real do painel) — buffering DESLIGADO, timeout longo
+          location /guara/api/v1/stream {
+              set $$guara_api http://guara-api:8080;
+              proxy_pass $$guara_api;
+              proxy_set_header Host $$host;
+              proxy_set_header X-Real-IP $$remote_addr;
+              proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $$scheme;
+              proxy_http_version 1.1;
+              proxy_set_header Connection '';
+              proxy_buffering off;
+              proxy_cache off;
+              proxy_read_timeout 3600s;
+              chunked_transfer_encoding off;
+          }
+
+          # Documentação da API (Scalar / OpenAPI)
+          location /scalar {
+              set $$guara_api http://guara-api:8080;
+              proxy_pass $$guara_api;
+              proxy_set_header Host $$host;
+              proxy_set_header X-Forwarded-Proto $$scheme;
+          }
+
+          # Seq (logs estruturados)
+          location /seq/ {
+              set $$seq http://seq:80;
+              rewrite ^/seq/(.*)$$ /$$1 break;
+              proxy_pass $$seq;
+              proxy_set_header Host $$host;
+              proxy_set_header X-Forwarded-Proto $$scheme;
+          }
+      }
+
+networks:
+  guara-network:
+    driver: bridge
+
+volumes:
+  guara_postgres_data:
+  guara_seq_data:

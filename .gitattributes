@@ -1,0 +1,11 @@
+# Normaliza quebras de linha: repositório em LF, consistente entre Windows/Linux/Mac.
+* text=auto eol=lf
+
+# Binários
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.snk binary
+*.pfx binary
