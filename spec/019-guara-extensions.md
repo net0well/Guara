@@ -14,7 +14,7 @@ Alguns utilitários transversais (helpers de tempo, guardas, extensões ergonôm
 
 ### In
 
-- Extensões ergonômicas sobre `IGuaraClient` (ex.: `Enqueue(Expression<Action>)` tipado, sobrecargas de conveniência).
+- Extensões ergonômicas sobre `IGuaraClient` (ex.: `Enfileirar(Expression<Action>)` tipado, sobrecargas de conveniência) — nomes em português ([ADR-0010](../docs/adr/0010-api-do-usuario-em-portugues.md)).
 - Guardas/validações internas reutilizáveis (`Guard.NotNull`, etc.) — **internal**, não API pública.
 - Helpers de tempo/relógio compatíveis com `TimeProvider`.
 
@@ -35,8 +35,8 @@ namespace Guara; // extensões da API pública
 
 public static class GuaraClientExtensions
 {
-    public static ValueTask<JobId> EnqueueAsync(this IGuaraClient client, Expression<Func<Task>> methodCall, CancellationToken ct = default);
-    public static ValueTask<JobId> ScheduleAsync(this IGuaraClient client, Expression<Func<Task>> methodCall, TimeSpan delay, CancellationToken ct = default);
+    public static ValueTask<JobId> EnfileirarAsync(this IGuaraClient client, Expression<Func<Task>> methodCall, CancellationToken ct = default);
+    public static ValueTask<JobId> AgendarAsync(this IGuaraClient client, Expression<Func<Task>> methodCall, TimeSpan delay, CancellationToken ct = default);
 }
 ```
 
@@ -63,7 +63,7 @@ Depende só de `Guara.Abstractions`; coopera com `Guara.SourceGenerators` (Spec 
 
 ## Acceptance Criteria
 
-- **AC-1 — Enqueue tipado.** *Dado* `client.EnqueueAsync(() => svc.FazerAlgo())`, *então* um `JobDescriptor` correto é criado e enfileirado.
+- **AC-1 — Enfileirar tipado.** *Dado* `client.EnfileirarAsync(() => svc.FazerAlgo())`, *então* um `JobDescriptor` correto é criado e enfileirado.
 - **AC-2 — Sem reflection.** *Dado* `PublishAot=true`, *então* a tradução de expressão funciona (via source gen), sem warnings.
 - **AC-3 — Expressão inválida.** *Dado* uma expressão não suportada, *então* há erro claro (compilação ou runtime).
 - **AC-4 — Escopo enxuto.** *Dado* o pacote, *então* cada helper é usado por ≥2 componentes (sem "utilitário órfão").

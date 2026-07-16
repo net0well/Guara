@@ -3,12 +3,12 @@
 **Status:** Approved (2026-07-16)
 **Date:** 2026-07-16
 **Componente:** `Guara.Dashboard`
-**Depende de:** [Spec 022 (`Guara.Dashboard.Api`)](022-guara-dashboard-api.md), [Spec 024 (`Guara.Dashboard.React`)](024-guara-dashboard-react.md)
+**Depende de:** [Spec 022 (`Guara.Dashboard.Api`)](022-guara-dashboard-api.md), [Spec 024 (`Guara.Dashboard.Angular`)](024-guara-dashboard-angular.md)
 **Docs de referência:** [components](../docs/components.md) · [naming-conventions](../docs/naming-conventions.md)
 
 ## Problem
 
-`Guara.Dashboard.Api` entrega JSON e `Guara.Dashboard.React` é a SPA. Alguém precisa **compor** os dois numa experiência plug-and-play: uma única chamada `AddGuaraDashboard()` que registra a API, serve os assets estáticos da SPA e monta a rota (`/guara`). Este pacote é a **cola**, sem lógica de dados própria.
+`Guara.Dashboard.Api` entrega JSON e `Guara.Dashboard.Angular` é a SPA. Alguém precisa **compor** os dois numa experiência plug-and-play: uma única chamada `AddGuaraDashboard()` que registra a API, serve os assets estáticos da SPA e monta a rota (`/guara`). Este pacote é a **cola**, sem lógica de dados própria.
 
 ## Scope
 

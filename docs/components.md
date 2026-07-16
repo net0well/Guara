@@ -27,7 +27,7 @@ Cada linha da tabela é um projeto em `src/`. **Um projeto = uma responsabilidad
 | `Guara.Authentication` | Autenticação | `Abstractions` | autorização concreta |
 | `Guara.Dashboard` | Composição do dashboard | `Dashboard.Api`, `Abstractions` | storage concreto |
 | `Guara.Dashboard.Api` | Fornece APIs para o Dashboard | `Abstractions` | **renderizar HTML** |
-| `Guara.Dashboard.React` | SPA React | a API HTTP | qualquer detalhe interno |
+| `Guara.Dashboard.Angular` | SPA Angular | a API HTTP | qualquer detalhe interno |
 | `Guara.Configuration` | Binding e validação de opções | `Abstractions` | providers |
 | `Guara.Extensions` | Extensões utilitárias transversais | `Abstractions` | — |
 | `Guara.Cluster` | Leader election, heartbeat, node discovery, failover, locks distribuídos | `Abstractions` | storage concreto |

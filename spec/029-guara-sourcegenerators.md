@@ -67,7 +67,7 @@ Gera o dispatch usado pelo `Guara.Executor` (Spec 008), o registry consumido por
 
 - **AC-1 — Dispatch sem reflection.** *Dado* um método `[GuaraJob]`, *então* o gerador emite um `IJobInvoker` que o invoca sem reflection.
 - **AC-2 — AOT.** *Dado* `PublishAot=true`, *então* jobs enfileiram e executam sem warnings de trim/AOT.
-- **AC-3 — Expression compilada.** *Dado* `client.EnqueueAsync(() => svc.Fazer(x))`, *então* o gerador produz o `JobDescriptor` correspondente em compilação.
+- **AC-3 — Expression compilada.** *Dado* `client.EnfileirarAsync(() => svc.Fazer(x))`, *então* o gerador produz o `JobDescriptor` correspondente em compilação.
 - **AC-4 — Expression inválida.** *Dado* uma expressão não suportada, *então* erro de compilação (não runtime).
 - **AC-5 — Serializer context.** *Dado* tipos de argumentos, *então* o `JsonSerializerContext` gerado cobre todos (coopera com Spec 003).
 - **AC-6 — Determinismo.** *Dada* a mesma entrada, *então* a saída gerada é idêntica (build reproduzível).

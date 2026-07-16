@@ -15,7 +15,7 @@ Decidir **quando** um job roda — imediato (fire-and-forget), com atraso (delay
 ### In
 
 - Corpo de `IScheduler`: cálculo de `NextRun` a partir de `ScheduleDescriptor` (imediato/delay/cron/recurring).
-- **`IGuaraClient`** — API pública: `Enqueue` (fire-and-forget), `Schedule` (delayed), `AddOrUpdateRecurring`, `Delete`. *(Adição extend-only ao catálogo da Spec 001.)*
+- **`IGuaraClient`** — API pública **em português** ([ADR-0010](../docs/adr/0010-api-do-usuario-em-portugues.md)): `Enfileirar` (fire-and-forget), `Agendar` (delayed), `AdicionarOuAtualizarRecorrente`, `Excluir`. *(Adição extend-only ao catálogo da Spec 001.)*
 - Parser de cron **próprio** atrás de `ICronParser` (sem dependência de terceiros — [ADR-0009](../docs/adr/0009-politica-de-dependencias.md)), com suporte a timezone/DST.
 - Registro de **recurring jobs** e recomputo de `NextRun` ao `JobCompleted`.
 
@@ -41,12 +41,12 @@ public interface IScheduler
     DateTimeOffset? GetNextOccurrence(ScheduleDescriptor schedule, DateTimeOffset after);
 }
 
-public interface IGuaraClient
+public interface IGuaraClient // métodos em português — ADR-0010
 {
-    ValueTask<JobId> EnqueueAsync(JobDescriptor job, CancellationToken ct);
-    ValueTask<JobId> ScheduleAsync(JobDescriptor job, TimeSpan delay, CancellationToken ct);
-    ValueTask AddOrUpdateRecurringAsync(string id, JobDescriptor job, string cron, TimeZoneInfo tz, CancellationToken ct);
-    ValueTask DeleteAsync(JobId id, CancellationToken ct);
+    ValueTask<JobId> EnfileirarAsync(JobDescriptor job, CancellationToken ct);
+    ValueTask<JobId> AgendarAsync(JobDescriptor job, TimeSpan delay, CancellationToken ct);
+    ValueTask AdicionarOuAtualizarRecorrenteAsync(string id, JobDescriptor job, string cron, TimeZoneInfo tz, CancellationToken ct);
+    ValueTask ExcluirAsync(JobId id, CancellationToken ct);
 }
 
 public interface ICronParser { DateTimeOffset? GetNext(string expression, TimeZoneInfo tz, DateTimeOffset after); }
@@ -80,7 +80,7 @@ Emite/consome eventos (Spec 001); usa `IJobStorage` (Spec 004) via contrato para
 - **AC-2 — Delay.** *Dado* `Schedule(job, 30s)` em T, *então* `NextRun == T+30s` e emite `JobScheduled`.
 - **AC-3 — Cron.** *Dado* cron `0 3 * * *` e `after=02:00`, *então* `NextRun == 03:00` do mesmo dia (no tz configurado).
 - **AC-4 — Recurring recomputa.** *Dado* um recurring concluído, *quando* `JobCompleted`, *então* o próximo `NextRun` é calculado e emitido.
-- **AC-5 — Cron inválido.** *Dado* uma expressão inválida em `AddOrUpdateRecurring`, *então* falha na chamada com mensagem clara.
+- **AC-5 — Cron inválido.** *Dado* uma expressão inválida em `AdicionarOuAtualizarRecorrenteAsync`, *então* falha na chamada com mensagem clara.
 - **AC-6 — DST.** *Dado* um horário inexistente por DST, *então* a próxima ocorrência é resolvida deterministicamente (documentada).
 - **AC-7 — Líder único.** *Dado* cluster com N nós, *então* apenas um recomputa/agenda cada recurring.
 - **AC-8 — Sem terceiros no cron.** *Dado* o build de `Guara.Scheduler`, *então* ele **não** referencia nenhuma biblioteca de cron de terceiros (parser é próprio, atrás de `ICronParser`).

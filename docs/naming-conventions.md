@@ -2,6 +2,18 @@
 
 O Guará prefere **convenção a documentação extensa**. Seguir estas regras torna o código previsível o suficiente para dispensar explicação.
 
+## Idioma: API do usuário em português ([ADR-0010](adr/0010-api-do-usuario-em-portugues.md))
+
+Os **métodos que o usuário chama** para operar jobs são em **português**; todo o resto segue o ecossistema .NET em inglês.
+
+| Superfície | Idioma | Exemplos |
+|---|---|---|
+| Métodos do `IGuaraClient` / `IBatchClient` (Pro) | **Português** | `EnfileirarAsync`, `AgendarAsync`, `AdicionarOuAtualizarRecorrenteAsync`, `ExcluirAsync`, `ContinuarComAsync` |
+| Sufixo assíncrono | Inglês (convenção .NET) | `...Async` sempre |
+| Extensões de DI ([ADR-0006](adr/0006-uma-extensao-addguara-por-pacote.md)) | Inglês | `AddGuara()`, `UsePostgreSqlStorage()`, `MapGuaraDashboard()` |
+| Tipos, contratos, eventos, options, atributos | Inglês | `IGuaraClient`, `JobId`, `JobCompleted`, `WorkerOptions`, `[GuaraJob]` |
+| Rotas HTTP, permissões, CLI, config | Inglês | `/api/v1/jobs`, `guara:view`, `guara jobs retry` |
+
 ## Tipos
 
 | Elemento | Convenção | Exemplo |

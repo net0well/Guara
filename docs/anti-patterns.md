@@ -26,7 +26,7 @@ O que IAs e desenvolvedores novos costumam fazer errado no Guará. Vários deste
 
 12. **Implementação pública quando poderia ser `internal`** — a classe do provider/motor deve ser `internal sealed`; o mundo externo depende do contrato em `Abstractions`.
 
-13. **`Dashboard.Api` renderizando HTML** — a API só entrega dados; a UI é `Guara.Dashboard.React`, que consome apenas a API.
+13. **`Dashboard.Api` renderizando HTML** — a API só entrega dados; a UI é `Guara.Dashboard.Angular`, que consome apenas a API.
 
 14. **Alocar em loop quente sem Object Pool** — buffers/contexto de curta duração em caminho quente devem sair de um pool. Ver [performance.md](performance.md).
 
