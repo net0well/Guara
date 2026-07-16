@@ -28,9 +28,13 @@ Métodos de `IGuaraClient` (e do `IBatchClient` no tier Pro):
 
 - **Sufixo `Async`** — convenção .NET para métodos assíncronos; mantido mesmo nos métodos em português.
 - **Extensões de DI** — `AddGuara()`, `AddGuaraServer()`, `UsePostgreSqlStorage()`, `MapGuaraDashboard()` ([ADR-0006](0006-uma-extensao-addguara-por-pacote.md): integração idiomática com `Microsoft.Extensions.DependencyInjection`).
-- **Nomes de tipos e contratos** — `IGuaraClient`, `JobId`, `JobState`, `IJobMiddleware`, eventos (`JobCreated`, `JobCompleted`), options (`WorkerOptions.MaxConcurrency`), atributos (`[GuaraJob(MaxAttempts = 0)]`).
+- **Nomes de tipos e contratos** — `IGuaraClient`, `JobId`, `JobState`, `IJobMiddleware`, eventos (`JobCreated`, `JobCompleted`), options (`WorkerOptions.MaxConcurrency`).
 - **Rotas HTTP, strings de permissão (`guara:view`), comandos da CLI, chaves de configuração** — superfícies técnicas/scriptáveis, interoperáveis com tooling.
 - **Contratos internos entre componentes** — não são superfície do usuário.
+
+## Adendo (2026-07-16) — Atributos de job em português
+
+Os **atributos aplicados a jobs** também são superfície do usuário e seguem o português, prefixados `Guara` ([Spec 036](../../spec/036-atributos-de-job.md)): `[GuaraFila]`, `[GuaraRetentativas]`, `[GuaraDesabilitarConcorrencia]`, `[GuaraTempoLimite]`, `[GuaraPularSeAnteriorEmExecucao]`. O marcador de descoberta `[GuaraJob]` permanece (marca + termo "job" já usado na documentação PT). A política anterior de retentativa via propriedade `MaxAttempts` no `[GuaraJob]` foi substituída por `[GuaraRetentativas(n)]`.
 
 ## Consequências
 

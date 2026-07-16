@@ -9,6 +9,7 @@ Os **métodos que o usuário chama** para operar jobs são em **português**; to
 | Superfície | Idioma | Exemplos |
 |---|---|---|
 | Métodos do `IGuaraClient` / `IBatchClient` (Pro) | **Português** | `EnfileirarAsync`, `AgendarAsync`, `AdicionarOuAtualizarRecorrenteAsync`, `ExcluirAsync`, `ContinuarComAsync` |
+| Atributos de job ([Spec 036](../spec/036-atributos-de-job.md)) | **Português**, prefixo `Guara` | `[GuaraFila]`, `[GuaraRetentativas]`, `[GuaraDesabilitarConcorrencia]`, `[GuaraTempoLimite]`, `[GuaraPularSeAnteriorEmExecucao]` |
 | Sufixo assíncrono | Inglês (convenção .NET) | `...Async` sempre |
 | Extensões de DI ([ADR-0006](adr/0006-uma-extensao-addguara-por-pacote.md)) | Inglês | `AddGuara()`, `UsePostgreSqlStorage()`, `MapGuaraDashboard()` |
 | Tipos, contratos, eventos, options, atributos | Inglês | `IGuaraClient`, `JobId`, `JobCompleted`, `WorkerOptions`, `[GuaraJob]` |

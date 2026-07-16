@@ -28,7 +28,7 @@ Recebe um job pronto, **executa o pipeline** (montado pelo Core), **invoca o mé
 - **`IExecutor.ExecuteAsync(JobRecord, CancellationToken)`** — orquestra a execução de um job.
 - Estados: `Enqueued/Scheduled → Processing → Succeeded | Failed | Retrying` (máquina do Core).
 - **Retry**: `RetryMiddleware` (Core) decide reentrada; Executor persiste `Attempt` e `Retrying`/`Failed`.
-- **Idempotência**: jobs com efeito colateral irreversível declaram `MaxAttempts=0` (regra dos docs de exemplo/jobs).
+- **Idempotência**: jobs com efeito colateral irreversível declaram `[GuaraRetentativas(0)]` ([Spec 036](036-atributos-de-job.md)).
 
 ## API Contract
 

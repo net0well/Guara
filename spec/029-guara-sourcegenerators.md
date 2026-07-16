@@ -39,6 +39,8 @@ Não há API .NET pública convencional; o "contrato" é o **código gerado** e 
 [assembly: GuaraJobs]      // habilita a geração no assembly
 ```
 
+O generator também lê os **atributos de comportamento** ([Spec 036](036-atributos-de-job.md) — `[GuaraFila]`, `[GuaraRetentativas]`, `[GuaraDesabilitarConcorrencia]`, `[GuaraTempoLimite]`, `[GuaraPularSeAnteriorEmExecucao]`) **em compilação** e os materializa como metadados no registry gerado — zero reflection em runtime; placeholders de chave (`{0}`) validados com erro de compilação.
+
 Tipos gerados implementam contratos da Spec 001/008 (`IJobInvoker`) e cooperam com Spec 003 (serializer context).
 
 ## Authorization
