@@ -64,7 +64,9 @@ Validation → Authorization → Serialization → Middleware(custom)
 
 ### Event bus em processo
 
-`InProcessEventPublisher : IEventPublisher` publica em um `Channel<IGuaraEvent>`; consumidores registrados (`IEventHandler<TEvent>`) recebem via fan-out. Entrega **best-effort, em processo** (garantias fortes → Cluster/Distributed, DD-2).
+`InProcessEventPublisher : IEventPublisher` faz **fan-out em processo** para os `IEventHandler<TEvent>` registrados. Entrega **best-effort** (a falha de um handler não afeta os demais); garantias fortes → Cluster/Distributed (DD-2).
+
+> **Implementação (2026-07-16):** o padrão do `Core` é fan-out **síncrono**, resolvendo os handlers pelo tipo estático `TEvent` (genérico fechado — **sem reflection**, AOT-safe). A variante com **buffer via `Channel<T>`** (desacopla publicação de entrega) é fornecida pelo `Guara.Server`, que roda o laço de fundo — um `Channel<IGuaraEvent>` não-genérico perderia o tipo estático e exigiria reflection no dispatch.
 
 ## API Contract
 
