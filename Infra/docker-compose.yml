@@ -1,14 +1,15 @@
 # Guará — Infraestrutura mínima (Docker) para deploy via Portainer.
 #
-# Filosofia: "o storage é a fila" (modelo Hangfire). O Guará NÃO precisa de broker.
-# Stack ativo = só o necessário para rodar com logs estruturados:
+# Filosofia: "o storage é a fila" (modelo Hangfire). O Guará NÃO precisa de broker
+# e é agnóstico a ferramentas de terceiros (ADR-0009).
+# Stack ativo = só o necessário:
 #   - postgres  → storage/fila de jobs (fonte da verdade) + lock distribuído (advisory) + push (LISTEN/NOTIFY)
-#   - seq       → logs estruturados (Serilog → Seq)
 #   - nginx     → proxy reverso do dashboard/API/SSE na porta 80
 #
-# Serviços OPCIONAIS (Redis, Jaeger, Mailpit) NÃO entram por padrão — veja README.md
-# para os snippets prontos e habilite quando ligar o recurso correspondente.
-# RabbitMQ foi removido: não é necessário (coordenação entre nós usa push do storage).
+# Logs: a aplicação emite logs ESTRUTURADOS em JSON no stdout (Microsoft.Extensions.Logging,
+# sem Serilog/Seq) — visíveis no Portainer/docker logs e consumíveis por qualquer coletor.
+# Serviços OPCIONAIS (Seq, Redis, Jaeger, Mailpit) NÃO entram por padrão — veja README.md
+# para os snippets prontos e habilite quando quiser o recurso correspondente.
 #
 # IMPORTANTE:
 # - Suba SOMENTE a infra. A app (guara-api) é publicada depois, na MESMA rede `guara-network`.
@@ -37,20 +38,6 @@ services:
     networks:
       - guara-network
 
-  seq:
-    image: datalust/seq:latest
-    container_name: guara-seq
-    restart: unless-stopped
-    environment:
-      - ACCEPT_EULA=Y
-      - SEQ_FIRSTRUN_ADMINPASSWORD=${SEQ_ADMIN_PASSWORD:-guara_dev}
-    ports:
-      - "5342:80"     # UI + ingestão de logs estruturados
-    volumes:
-      - guara_seq_data:/data
-    networks:
-      - guara-network
-
   nginx:
     image: nginx:1.27-alpine
     container_name: guara-nginx
@@ -60,8 +47,6 @@ services:
     configs:
       - source: guara_nginx_conf
         target: /etc/nginx/conf.d/default.conf
-    depends_on:
-      - seq
     networks:
       - guara-network
 
@@ -112,15 +97,6 @@ configs:
               proxy_set_header Host $$host;
               proxy_set_header X-Forwarded-Proto $$scheme;
           }
-
-          # Seq (logs estruturados)
-          location /seq/ {
-              set $$seq http://seq:80;
-              rewrite ^/seq/(.*)$$ /$$1 break;
-              proxy_pass $$seq;
-              proxy_set_header Host $$host;
-              proxy_set_header X-Forwarded-Proto $$scheme;
-          }
       }
 
 networks:
@@ -129,4 +105,3 @@ networks:
 
 volumes:
   guara_postgres_data:
-  guara_seq_data:

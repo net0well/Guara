@@ -15,7 +15,7 @@ O Guará é publicado no NuGet e usado por muitas aplicações. Cada dependênci
 
 3. **Cron próprio.** O agendamento cron usa um parser **próprio** atrás de `ICronParser` (Spec 005) — **sem Cronos**. Cron é um problema bem delimitado; manter próprio garante AOT e controle total (inclusive DST/timezone).
 
-4. **Terceiros permitidos só em pacotes opt-in/à parte.** OpenTelemetry SDK isolado em `Guara.OpenTelemetry` (opt-in). Serilog aparece **apenas** no `Guara.Host` de exemplo, não no framework. Ferramentas dev/build (xUnit, Testcontainers, Verify, MinVer) **não shipam**.
+4. **Terceiros permitidos só em pacotes opt-in/à parte.** OpenTelemetry SDK isolado em `Guara.OpenTelemetry` (opt-in). Logging do exemplo (`Guara.Host`) usa o **JSON console formatter nativo** do .NET — sinks de terceiros (ex.: Serilog/Seq) são escolha do usuário no host dele, nunca referência nossa. Ferramentas dev/build (xUnit, Testcontainers, Verify, MinVer) **não shipam**.
 
 5. **Evolução controlada.** Adicionar **qualquer** terceiro ao runtime exige um **novo ADR**. Verificado em revisão/CI (e passível de regra no `Guara.Analyzers`, Spec 028).
 

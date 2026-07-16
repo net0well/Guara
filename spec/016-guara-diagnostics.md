@@ -15,7 +15,7 @@ Operar um scheduler em produção exige **observabilidade**: saber quantos jobs 
 ### In
 
 - **`LoggingMiddleware`** (slot Logging) usando `Microsoft.Extensions.Logging` com **logging estruturado**: propriedades nomeadas (`JobId`, `Queue`, `JobType`, `Attempt`, `DurationMs`, `State`) via message templates + `ILogger.BeginScope` — nunca interpolação de string.
-- O framework **não força sink**: loga via `ILogger`; o host escolhe (Serilog→Seq, OpenTelemetry Logs, Console). O `Guara.Host` de exemplo usa **Serilog → Seq**.
+- O framework **não força sink**: loga via `ILogger`; o host escolhe o destino. O `Guara.Host` de exemplo usa o **JSON console formatter nativo** (`Microsoft.Extensions.Logging.Console`) — logs estruturados no stdout, sem terceiros ([ADR-0009](../docs/adr/0009-politica-de-dependencias.md)). Sinks de terceiros (Serilog→Seq, OpenTelemetry Logs, etc.) são opções do usuário, fora do framework.
 - **`MetricsMiddleware`** (slot Metrics) usando `System.Diagnostics.Metrics` (contadores/histogramas).
 - **Tracing** via `System.Diagnostics.ActivitySource` (spans por job).
 - **HealthChecks** (`Microsoft.Extensions.Diagnostics.HealthChecks`): storage acessível, servidor vivo, filas dentro de limites.
@@ -64,7 +64,7 @@ N/A. Logs **não** devem vazar payloads sensíveis (regra: logar `JobId`/tipo, n
 
 - Overhead mínimo no hot path; sem alocação por job além do necessário.
 - Reutiliza BCL (M.E.Logging, System.Diagnostics) — AOT-safe.
-- **Logging estruturado** com propriedades e escopos (sink-agnóstico); templates sem interpolação para preservar as propriedades no sink (Seq/OTel).
+- **Logging estruturado** com propriedades e escopos (sink-agnóstico); templates sem interpolação para preservar as propriedades em qualquer sink (JSON console, Seq, OTel, ELK...).
 - Thread-safe; instrumentos de métrica são singletons.
 
 ## Integrations
@@ -80,7 +80,7 @@ Integra-se a qualquer backend via os padrões do .NET; `Guara.OpenTelemetry` (Sp
 - **AC-5 — Sem vazar payload.** *Dado* logging default, *então* argumentos do job não aparecem nos logs.
 - **AC-6 — Não quebra job.** *Dado* falha ao emitir métrica/log, *então* o job continua normalmente.
 - **AC-7 — Baixa cardinalidade.** *Dado* as métricas, *então* nenhuma usa `job.id` como tag.
-- **AC-8 — Logs estruturados.** *Dado* um job processado, *então* os logs contêm `JobId`/`Queue`/`JobType`/`Attempt`/`State` como **propriedades estruturadas** (não texto interpolado), consumíveis por Seq/OTel.
+- **AC-8 — Logs estruturados.** *Dado* um job processado, *então* os logs contêm `JobId`/`Queue`/`JobType`/`Attempt`/`State` como **propriedades estruturadas** (não texto interpolado), consumíveis por qualquer sink (JSON console nativo, Seq, OTel...).
 
 ## Deferred Decisions
 

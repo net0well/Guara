@@ -47,7 +47,7 @@ As skills do `dotnet-claude-kit` são plugins instalados e se invocam pela ferra
 | Resiliência / retry / circuit breaker | `dotnet-claude-kit:resilience` |
 | HttpClient tipado (integrações) | `dotnet-claude-kit:httpclient-factory` |
 | Autenticação / Autorização (`Guara.Authentication/.Authorization`) | `dotnet-claude-kit:authentication` |
-| Logging / observabilidade (`Guara.Diagnostics`) | `dotnet-claude-kit:logging`, `dotnet-claude-kit:serilog`, `dotnet-claude-kit:opentelemetry` |
+| Logging / observabilidade (`Guara.Diagnostics`) | `dotnet-claude-kit:logging`, `dotnet-claude-kit:opentelemetry` — logging estruturado **nativo** (`ILogger` + JSON console); **sem Serilog/sinks de terceiros** no framework (ADR-0009) |
 | Orquestração local / dev (`Guara.OpenTelemetry`, samples) | `dotnet-claude-kit:aspire` |
 | Docker / publicação em container | `dotnet-claude-kit:docker`, `dotnet-claude-kit:container-publish` |
 | CI/CD | `dotnet-claude-kit:ci-cd` |
