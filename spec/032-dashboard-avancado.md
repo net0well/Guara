@@ -2,9 +2,9 @@
 
 **Status:** Approved (2026-07-16)
 **Date:** 2026-07-16
-**Escopo:** feature — estende [Spec 022 (`Dashboard.Api`)](022-guara-dashboard-api.md) e [Spec 024 (`Dashboard.React`)](024-guara-dashboard-react.md)
+**Escopo:** feature — estende [Spec 022 (`Dashboard.Api`)](022-guara-dashboard-api.md) e [Spec 024 (`Dashboard.Angular`)](024-guara-dashboard-angular.md)
 **Licença:** OSS (core)
-**Depende de:** [Spec 022](022-guara-dashboard-api.md), [Spec 024](024-guara-dashboard-react.md), [Spec 004](004-guara-storage.md)
+**Depende de:** [Spec 022](022-guara-dashboard-api.md), [Spec 024](024-guara-dashboard-angular.md), [Spec 004](004-guara-storage.md)
 
 ## Problem
 
@@ -54,7 +54,7 @@ Toda ação mapeada à permissão correspondente (Spec 021); ações em massa va
 
 ## Non-Functional Requirements
 
-- Front: virtualização de listas, code-splitting, gráficos leves/acessíveis (skills `react-best-practices`, `web-design-guidelines`, `dataviz`).
+- Front: virtualização de listas, lazy loading por rota, gráficos leves/acessíveis (skills `angular-developer` e `dataviz`).
 - API: consultas indexadas, sem N+1, paginação obrigatória; agregações server-side.
 - Tempo real via SSE (Spec 022) para atualizar gráficos/contadores sem refresh.
 

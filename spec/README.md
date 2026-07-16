@@ -49,7 +49,7 @@ Trabalhamos de baixo para cima na pirâmide de dependências: contratos primeiro
 | 021 | Autorização | `Guara.Authorization` | ✅ Approved (2026-07-16) |
 | 022 | APIs do dashboard | `Guara.Dashboard.Api` | ✅ Approved (2026-07-16) |
 | 023 | Composição do dashboard | `Guara.Dashboard` | ✅ Approved (2026-07-16) |
-| 024 | SPA do dashboard | `Guara.Dashboard.React` | ✅ Approved (2026-07-16) |
+| 024 | SPA do dashboard | `Guara.Dashboard.Angular` | ✅ Approved (2026-07-16, revisada: React → Angular) |
 | 025 | Cluster (leader election/failover) | `Guara.Cluster` | ✅ Approved (2026-07-16) |
 | 026 | Coordenação distribuída | `Guara.Distributed` | ✅ Approved (2026-07-16) |
 | 027 | CLI | `Guara.Cli` | ✅ Approved (2026-07-16) |

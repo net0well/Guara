@@ -17,7 +17,7 @@ artifacts/
 *.snupkg
 BenchmarkDotNet.Artifacts/
 
-## Node (Guara.Dashboard.React)
+## Node (Guara.Dashboard.Angular)
 node_modules/
 dist/
 

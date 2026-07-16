@@ -4,7 +4,7 @@ Guia para agentes de IA (Claude Code) trabalhando neste repositório. **Leia ant
 
 ## O que é o Guará
 
-Framework de agendamento e execução de tarefas (job scheduler, tipo Hangfire) **orientado a componentes**, inspirado em ASP.NET Core, EF Core, Hangfire e MediatR. Backend em **.NET 10**; dashboard SPA em **React**.
+Framework de agendamento e execução de tarefas (job scheduler, tipo Hangfire) **orientado a componentes**, inspirado em ASP.NET Core, EF Core, Hangfire e MediatR. Backend em **.NET 10**; dashboard SPA em **Angular**.
 
 A arquitetura é **lei** e está documentada em [`docs/`](docs/ARCHITECTURE.md). Antes de escrever código, o agente **deve** conhecer:
 
@@ -65,22 +65,17 @@ Agentes especialistas do kit (via ferramenta Agent) para trabalho profundo: `dot
 
 Análise de código com Roslyn: use as ferramentas MCP `cwm-roslyn-navigator` (`find_symbol`, `find_references`, `detect_antipatterns`, `detect_circular_dependencies`, `get_dependency_graph`, etc.) para **verificar as regras de dependência** de [docs/dependency-rules.md](docs/dependency-rules.md).
 
-### Frontend (React — `Guara.Dashboard.React`) → **agent-skills** (obrigatório)
+### Frontend (Angular — `Guara.Dashboard.Angular`) → **skills Angular** (obrigatório)
 
-As skills de React **não** são plugins instalados: ficam em disco em
-`C:\Users\Welligton Neto\Desktop\Estudos\Guara\agent-skills\skills\`.
-Para usá-las, **leia o `SKILL.md` correspondente** desse caminho antes de escrever código React e declare o uso.
+As skills oficiais do Angular Team estão **instaladas** em `~/.claude/skills/` (via `npx skills add angular/skills`) e se invocam pela **ferramenta Skill**. **Sempre** carregue a skill pertinente antes de tocar em código Angular e declare o uso.
 
-| Tarefa no Dashboard React | Skill (ler o SKILL.md) |
+| Tarefa no Dashboard Angular | Skill obrigatória |
 |---|---|
-| Escrever/otimizar componentes React e data fetching | `agent-skills/skills/react-best-practices/SKILL.md` (`vercel-react-best-practices`) |
-| Refatorar props booleanas, compound components, APIs reutilizáveis | `agent-skills/skills/composition-patterns/SKILL.md` (`vercel-composition-patterns`) |
-| Animações / transições de rota / shared element | `agent-skills/skills/react-view-transitions/SKILL.md` (`vercel-react-view-transitions`) |
-| App mobile / React Native (se aplicável) | `agent-skills/skills/react-native-skills/SKILL.md` |
-| Revisar UI / acessibilidade / UX | `agent-skills/skills/web-design-guidelines/SKILL.md` |
-| Revisar textos/documentação da UI | `agent-skills/skills/writing-guidelines/SKILL.md` |
+| Criar o app Angular do zero (Angular CLI, estrutura moderna) | `angular-new-app` |
+| Componentes, services, reatividade (signals, linkedSignal, resource), forms, DI, routing, a11y (ARIA), animações, styling, testes, CLI | `angular-developer` |
+| Gráficos/visualização de dados no dashboard | `dataviz` (paleta/acessibilidade) + `angular-developer` |
 
-> Se as skills forem instaladas em `~/.claude/skills/`, passe a invocá-las pela ferramenta Skill em vez de ler o arquivo. Até lá, **ler o `SKILL.md` do caminho acima é obrigatório**.
+Diretrizes fixas do dashboard (spec 024): standalone components, **signals** como modelo reativo, `OnPush`/zoneless, lazy loading por rota, SSE via `EventSource`, WCAG/ARIA, i18n pt-BR/en, build por Angular CLI gerando assets estáticos embutidos.
 
 ---
 
@@ -115,7 +110,7 @@ Detalhe em [docs/](docs/ARCHITECTURE.md). Violações são anti-padrões ([docs/
 ## Ordem de trabalho recomendada
 
 1. Ler o(s) doc(s) relevante(s) em `docs/`.
-2. **Declarar e carregar a skill** (dotnet-claude-kit para backend, agent-skills para React).
+2. **Declarar e carregar a skill** (dotnet-claude-kit para backend, skills Angular para o front).
 3. Implementar seguindo os padrões ([docs/patterns.md](docs/patterns.md)).
 4. Rodar o [checklist](docs/checklist.md) + `dotnet-claude-kit:verify`.
 5. Revisar com `dotnet-claude-kit:code-review` antes do commit.

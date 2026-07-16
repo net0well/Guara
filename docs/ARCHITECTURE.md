@@ -107,7 +107,7 @@ Guara.sln
 │   │
 │   ├── Guara.Dashboard             # composição do dashboard
 │   ├── Guara.Dashboard.Api         # APIs do dashboard (nunca renderiza HTML)
-│   ├── Guara.Dashboard.React       # SPA React (só consome API)
+│   ├── Guara.Dashboard.Angular     # SPA Angular (só consome API)
 │   │
 │   ├── Guara.Configuration         # binding de opções
 │   ├── Guara.Extensions            # extensões utilitárias
