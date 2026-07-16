@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Guara.Serialization</PackageId>
+    <Description>Serialização do Guará: System.Text.Json com source generators (zero reflection, AOT-safe), allowlist de tipos e tolerância a versão.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Guara.Abstractions\Guara.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

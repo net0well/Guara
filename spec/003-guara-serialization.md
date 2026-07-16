@@ -37,7 +37,7 @@ Como o projeto será open-source com muitos usuários e deploys em rolling upgra
 ## API Contract
 
 ```csharp
-namespace Guara.Serialization;
+namespace Guara.Abstractions; // contrato vive em Abstractions (catálogo da Spec 001)
 
 public interface ISerializer
 {
@@ -45,13 +45,21 @@ public interface ISerializer
     T? Deserialize<T>(ReadOnlySpan<byte> data);
 
     // formato "aberto" para args cujo tipo estático não é conhecido no call site
-    ReadOnlyMemory<byte> SerializeArgs(object?[] args, ReadOnlySpan<Type> argTypes);
+    ReadOnlyMemory<byte> SerializeArgs(ReadOnlySpan<object?> args);
     object?[] DeserializeArgs(ReadOnlySpan<byte> data);
 }
 
-// Implementação default
-public sealed class SystemTextJsonSerializer : ISerializer { /* usa JsonSerializerContext gerado */ }
+// Implementação default (Guara.Serialization)
+public sealed class SystemTextJsonSerializer(SerializerTypeRegistry registry, JsonSerializerOptions? options = null) : ISerializer;
 ```
+
+> **Implementação (2026-07-16):** `SerializeArgs` usa o **tipo de runtime** de cada argumento
+> (correto para polimorfismo) em vez do parâmetro `argTypes` originalmente esboçado — assinatura
+> simplificada para `ReadOnlySpan<object?>`. Envelope versionado
+> `{"v":1,"args":[{"t":"<discriminador>","d":<json>}]}`; `t:null` representa argumento nulo.
+> A allowlist é o `SerializerTypeRegistry` (mapa bidirecional discriminador ⇄ tipo;
+> `CreateDefault()` pré-registra primitivos comuns) — registro manual até o
+> `Guara.SourceGenerators` (spec 029) preenchê-lo em compilação.
 
 - Retorna `ReadOnlyMemory<byte>`/`Span<byte>` (baixa alocação, [performance](../docs/performance.md)).
 - Referencia **apenas** `Guara.Abstractions` + `System.Text.Json`.
