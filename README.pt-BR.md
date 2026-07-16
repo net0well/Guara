@@ -75,7 +75,9 @@ app.MapGuaraDashboard();     // serve a SPA + API em /guara
 app.Run();
 ```
 
-Enfileire jobs de qualquer lugar através do `IGuaraClient`:
+Enfileire jobs de qualquer lugar através do `IGuaraClient`.
+
+> **API em português.** O Guará é um projeto brasileiro e os métodos de operação de jobs são em português, por decisão de identidade ([ADR-0010](docs/adr/0010-api-do-usuario-em-portugues.md)). O restante (tipos, extensões de DI, options, rotas) segue as convenções do ecossistema .NET em inglês.
 
 ```csharp
 public sealed class ReportService(IGuaraClient jobs)
@@ -83,10 +85,10 @@ public sealed class ReportService(IGuaraClient jobs)
     public async Task SolicitarAsync(int clienteId, CancellationToken ct)
     {
         // Fire-and-forget
-        await jobs.EnqueueAsync(() => GerarRelatorioAsync(clienteId), ct);
+        await jobs.EnfileirarAsync(() => GerarRelatorioAsync(clienteId), ct);
 
         // Com atraso: roda uma vez, daqui a 24 horas
-        await jobs.ScheduleAsync(() => EnviarLembreteAsync(clienteId), TimeSpan.FromHours(24), ct);
+        await jobs.AgendarAsync(() => EnviarLembreteAsync(clienteId), TimeSpan.FromHours(24), ct);
     }
 
     public Task GerarRelatorioAsync(int clienteId) { /* ... */ }
@@ -97,7 +99,7 @@ public sealed class ReportService(IGuaraClient jobs)
 Jobs recorrentes usam expressões cron:
 
 ```csharp
-await jobs.AddOrUpdateRecurringAsync(
+await jobs.AdicionarOuAtualizarRecorrenteAsync(
     id: "limpeza-noturna",
     () => LimparRegistrosExpiradosAsync(),
     cron: "0 3 * * *",             // todo dia às 03:00
@@ -108,10 +110,10 @@ await jobs.AddOrUpdateRecurringAsync(
 Encadeie trabalho com continuations:
 
 ```csharp
-var exportacao = await jobs.EnqueueAsync(() => ExportarPedidosAsync(mes), ct);
+var exportacao = await jobs.EnfileirarAsync(() => ExportarPedidosAsync(mes), ct);
 
 // Roda automaticamente quando a exportação concluir com sucesso
-await jobs.ContinueWithAsync(exportacao, () => NotificarExportacaoConcluidaAsync(mes), ct);
+await jobs.ContinuarComAsync(exportacao, () => NotificarExportacaoConcluidaAsync(mes), ct);
 ```
 
 Retentativas são automáticas (3 tentativas com back-off exponencial por padrão). Jobs com efeitos colaterais irreversíveis podem desligar:

@@ -33,7 +33,8 @@ Cada ADR usa o template mínimo:
 | [0007](0007-pipeline-de-middlewares.md) | Pipeline de middlewares para execução | Aceito |
 | [0008](0008-native-aot-e-trimming.md) | Compatibilidade com Native AOT e Trimming | Aceito |
 | [0009](0009-politica-de-dependencias.md) | Política de dependências (núcleo sem terceiros; drivers isolados; cron próprio) | Aceito |
+| [0010](0010-api-do-usuario-em-portugues.md) | API voltada ao usuário em português (métodos do `IGuaraClient`) | Aceito |
 
 ## Próximo número
 
-O próximo ADR é **0010**. Numeração sequencial, sem lacunas.
+O próximo ADR é **0011**. Numeração sequencial, sem lacunas.

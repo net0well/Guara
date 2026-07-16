@@ -35,11 +35,11 @@ Cenários avançados agrupam muitos jobs e reagem à **conclusão do grupo como 
 ```csharp
 namespace Guara.Pro.Batches;
 
-public interface IBatchClient
+public interface IBatchClient // métodos em português — ADR-0010
 {
-    ValueTask<BatchId> CreateAsync(Action<IBatchBuilder> build, CancellationToken ct = default);
-    ValueTask ContinueBatchWithAsync(BatchId batchId, JobDescriptor continuation, CancellationToken ct = default);
-    ValueTask<BatchStatus> GetStatusAsync(BatchId batchId, CancellationToken ct = default);
+    ValueTask<BatchId> CriarAsync(Action<IBatchBuilder> build, CancellationToken ct = default);
+    ValueTask ContinuarBatchComAsync(BatchId batchId, JobDescriptor continuation, CancellationToken ct = default);
+    ValueTask<BatchStatus> ObterStatusAsync(BatchId batchId, CancellationToken ct = default);
 }
 ```
 

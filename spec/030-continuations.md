@@ -14,7 +14,7 @@ Fluxos reais encadeiam trabalho: "gere o relatório **e depois** envie o e-mail"
 
 ### In
 
-- `IGuaraClient.ContinueWith(parentId, jobB, options)` — registra B como continuação de A.
+- `IGuaraClient.ContinuarCom(paiId, jobB, options)` — registra B como continuação de A ([ADR-0010](../docs/adr/0010-api-do-usuario-em-portugues.md)).
 - Gatilho por estado do pai: `OnSucceeded` (default) ou `OnAnyFinishedState` (sucesso **ou** falha).
 - Persistência do vínculo pai→filhos no storage; disparo idempotente ao pai finalizar.
 - Cadeias e fan-out (vários filhos de um pai); profundidade arbitrária.
@@ -33,9 +33,9 @@ Fluxos reais encadeiam trabalho: "gere o relatório **e depois** envie o e-mail"
 ## API Contract
 
 ```csharp
-public interface IGuaraClient // adição extend-only
+public interface IGuaraClient // adição extend-only; método em português (ADR-0010)
 {
-    ValueTask<JobId> ContinueWithAsync(JobId parentId, JobDescriptor child,
+    ValueTask<JobId> ContinuarComAsync(JobId paiId, JobDescriptor filho,
         ContinuationOptions? options = null, CancellationToken ct = default);
 }
 

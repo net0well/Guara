@@ -75,7 +75,17 @@ app.MapGuaraDashboard();     // serves the SPA + API at /guara
 app.Run();
 ```
 
-Enqueue jobs from anywhere through `IGuaraClient`:
+Enqueue jobs from anywhere through `IGuaraClient`.
+
+> **A note on naming.** Guará is a Brazilian project, and its job-facing API is intentionally written in Portuguese — it is part of the project's identity. Everything else (types, DI extensions, options, routes) follows the standard .NET conventions in English. The table below is all you need:
+
+| Method | Meaning |
+|---|---|
+| `EnfileirarAsync` | Enqueue (fire-and-forget) |
+| `AgendarAsync` | Schedule (run once after a delay) |
+| `AdicionarOuAtualizarRecorrenteAsync` | Add or update a recurring job |
+| `ContinuarComAsync` | Continue with (continuation) |
+| `ExcluirAsync` | Delete |
 
 ```csharp
 public sealed class ReportService(IGuaraClient jobs)
@@ -83,10 +93,10 @@ public sealed class ReportService(IGuaraClient jobs)
     public async Task RequestAsync(int customerId, CancellationToken ct)
     {
         // Fire-and-forget
-        await jobs.EnqueueAsync(() => GenerateReportAsync(customerId), ct);
+        await jobs.EnfileirarAsync(() => GenerateReportAsync(customerId), ct);
 
         // Delayed: run once, 24 hours from now
-        await jobs.ScheduleAsync(() => SendReminderAsync(customerId), TimeSpan.FromHours(24), ct);
+        await jobs.AgendarAsync(() => SendReminderAsync(customerId), TimeSpan.FromHours(24), ct);
     }
 
     public Task GenerateReportAsync(int customerId) { /* ... */ }
@@ -97,7 +107,7 @@ public sealed class ReportService(IGuaraClient jobs)
 Recurring jobs use plain cron expressions:
 
 ```csharp
-await jobs.AddOrUpdateRecurringAsync(
+await jobs.AdicionarOuAtualizarRecorrenteAsync(
     id: "nightly-cleanup",
     () => CleanupExpiredRecordsAsync(),
     cron: "0 3 * * *",             // every day at 03:00
@@ -108,10 +118,10 @@ await jobs.AddOrUpdateRecurringAsync(
 Chain work with continuations:
 
 ```csharp
-var export = await jobs.EnqueueAsync(() => ExportOrdersAsync(month), ct);
+var export = await jobs.EnfileirarAsync(() => ExportOrdersAsync(month), ct);
 
 // Runs automatically when the export succeeds
-await jobs.ContinueWithAsync(export, () => NotifyExportFinishedAsync(month), ct);
+await jobs.ContinuarComAsync(export, () => NotifyExportFinishedAsync(month), ct);
 ```
 
 Retries are automatic (3 attempts with exponential back-off by default). Jobs with irreversible side effects can opt out:

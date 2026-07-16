@@ -202,6 +202,7 @@ Decisões arquiteturais são registradas e versionadas em [adr/](adr/README.md).
 | [0007](adr/0007-pipeline-de-middlewares.md) | Pipeline de middlewares para execução de Jobs |
 | [0008](adr/0008-native-aot-e-trimming.md) | Compatibilidade com Native AOT e Trimming |
 | [0009](adr/0009-politica-de-dependencias.md) | Política de dependências (núcleo sem terceiros; drivers isolados; cron próprio) |
+| [0010](adr/0010-api-do-usuario-em-portugues.md) | API voltada ao usuário em português (métodos do `IGuaraClient`) |
 
 ---
 
