@@ -93,6 +93,20 @@ internal sealed class MemoryJobStorage(TimeProvider time) : IJobStorage
         }
     }
 
+    public ValueTask<bool> DeleteAsync(JobId id, CancellationToken ct)
+    {
+        lock (_sync)
+        {
+            if (!_jobs.TryGetValue(id, out var job) || job.State == JobState.Processing)
+            {
+                return ValueTask.FromResult(false); // inexistente ou em execução
+            }
+
+            _jobs.Remove(id);
+            return ValueTask.FromResult(true);
+        }
+    }
+
     public ValueTask<IReadOnlyList<JobRecord>> ListAsync(JobQuery query, CancellationToken ct)
     {
         var page = Math.Max(1, query.Page);

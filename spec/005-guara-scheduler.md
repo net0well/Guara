@@ -43,10 +43,10 @@ public interface IScheduler
 
 public interface IGuaraClient // métodos em português — ADR-0010
 {
-    ValueTask<JobId> EnfileirarAsync(JobDescriptor job, CancellationToken ct);
-    ValueTask<JobId> AgendarAsync(JobDescriptor job, TimeSpan delay, CancellationToken ct);
-    ValueTask AdicionarOuAtualizarRecorrenteAsync(string id, JobDescriptor job, string cron, TimeZoneInfo tz, CancellationToken ct);
-    ValueTask ExcluirAsync(JobId id, CancellationToken ct);
+    ValueTask<JobId> EnfileirarAsync(JobDescriptor job, CancellationToken ct = default);
+    ValueTask<JobId> AgendarAsync(JobDescriptor job, TimeSpan atraso, CancellationToken ct = default);
+    ValueTask<bool> ExcluirAsync(JobId id, CancellationToken ct = default); // false = inexistente ou em execução
+    // Recorrentes/calendários (builder fluente) entram como adição extend-only — Spec 038
 }
 
 public interface ICronParser { DateTimeOffset? GetNext(string expression, TimeZoneInfo tz, DateTimeOffset after); }
@@ -90,6 +90,8 @@ Emite/consome eventos (Spec 001); persiste jobs via `IJobStorage` e **recorrente
 - **DD-1 — Parser de cron (resolvido).** *Decisão:* **implementação própria** atrás de `ICronParser`, **sem Cronos** ([ADR-0009](../docs/adr/0009-politica-de-dependencias.md)) — mantém runtime livre de terceiros e AOT garantido; exige testes fortes de DST/timezone. Cronos permanece só como *fallback plugável* teórico, não referenciado.
 - **DD-2 — Política de misfire.** *Fallback:* ao voltar online, executar **uma** ocorrência perdida e seguir para a próxima (não backfill de todas). *Revisão:* pós-MVP.
 - **DD-3 — Timezone default.** *Fallback:* UTC quando não especificado. *Revisão:* nenhuma.
+
+> **Implementação (2026-07-17):** cron parser próprio entregue (`CronExpression` com bitmasks; DST: horário inexistente dispara logo após a transição, ambíguo usa a primeira ocorrência; regra OU clássica quando dom+dow restritos; campo "restrito" = texto ≠ `*`; horizonte de 5 anos → `null`). `IScheduler`/`IGuaraClient` no `Guara.Abstractions`; `GuaraScheduler`/`GuaraClient`/`GuaraCronParser` (com cache) no pacote; `AddGuaraScheduler()` registra tudo. `ExcluirAsync` retorna **`bool`** (false = inexistente/em execução — exigiu `DeleteAsync` no `IJobStorage`, spec 004). Recorrentes (builder da spec 038 + `IRecurringStorage` + laço de promoção) ficam para o próximo incremento.
 
 ## Open Questions
 
