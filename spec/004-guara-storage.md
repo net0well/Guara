@@ -76,6 +76,7 @@ public interface IJobStorage
     ValueTask<bool> RenewLeaseAsync(JobId id, TimeSpan lease, CancellationToken ct); // false = posse perdida
     ValueTask UpdateStateAsync(JobId id, JobState state, string? resultOrError, CancellationToken ct);
     ValueTask<JobRecord?> GetAsync(JobId id, CancellationToken ct);
+    ValueTask<bool> DeleteAsync(JobId id, CancellationToken ct); // false = inexistente ou Processing (não exclui job rodando)
     ValueTask<IReadOnlyList<JobRecord>> ListAsync(JobQuery query, CancellationToken ct); // paginada, teto MaxPageSize=100
 }
 

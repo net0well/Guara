@@ -5,10 +5,12 @@
     <Project Path="src/Guara.Serialization/Guara.Serialization.csproj" />
     <Project Path="src/Guara.Storage/Guara.Storage.csproj" />
     <Project Path="src/Guara.Storage.Memory/Guara.Storage.Memory.csproj" />
+    <Project Path="src/Guara.Scheduler/Guara.Scheduler.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Guara.Core.Tests/Guara.Core.Tests.csproj" />
     <Project Path="tests/Guara.Serialization.Tests/Guara.Serialization.Tests.csproj" />
     <Project Path="tests/Guara.Storage.Memory.Tests/Guara.Storage.Memory.Tests.csproj" />
+    <Project Path="tests/Guara.Scheduler.Tests/Guara.Scheduler.Tests.csproj" />
   </Folder>
 </Solution>

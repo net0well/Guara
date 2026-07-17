@@ -57,6 +57,15 @@ public interface IJobStorage
     ValueTask<JobRecord?> GetAsync(JobId id, CancellationToken ct);
 
     /// <summary>
+    /// Exclui um job que <b>não</b> está em execução. Jobs <c>Processing</c> não são
+    /// excluíveis (evita perder um trabalho em andamento) — cancele/aguarde antes.
+    /// </summary>
+    /// <param name="id">Id do job.</param>
+    /// <param name="ct">Token de cancelamento.</param>
+    /// <returns><c>true</c> se excluído; <c>false</c> se não existe ou está <c>Processing</c>.</returns>
+    ValueTask<bool> DeleteAsync(JobId id, CancellationToken ct);
+
+    /// <summary>
     /// Lista jobs para o dashboard. Sempre paginada; providers aplicam o teto
     /// <see cref="JobQuery.MaxPageSize"/> (spec 004, AC-7).
     /// </summary>

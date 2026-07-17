@@ -196,6 +196,30 @@ public abstract class StorageConformanceTests
         Assert.Equal("boom", job.Error);
     }
 
+    // --- Exclusão ---
+
+    [Fact]
+    public async Task Delete_ExistingNotProcessing_RemovesAndReturnsTrue()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Jobs.CreateAsync(NewJob("j1"), CancellationToken.None);
+
+        Assert.True(await storage.Jobs.DeleteAsync(new JobId("j1"), CancellationToken.None));
+        Assert.Null(await storage.Jobs.GetAsync(new JobId("j1"), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Delete_UnknownOrProcessing_ReturnsFalse()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Jobs.CreateAsync(NewJob("j1"), CancellationToken.None);
+        await storage.Jobs.AcquireNextDueAsync("default", TimeSpan.FromMinutes(5), T0, CancellationToken.None);
+
+        Assert.False(await storage.Jobs.DeleteAsync(new JobId("nao-existe"), CancellationToken.None));
+        Assert.False(await storage.Jobs.DeleteAsync(new JobId("j1"), CancellationToken.None)); // Processing
+        Assert.NotNull(await storage.Jobs.GetAsync(new JobId("j1"), CancellationToken.None));
+    }
+
     // --- Listagem paginada (AC-7) ---
 
     [Fact]
