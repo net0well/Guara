@@ -53,7 +53,7 @@ public sealed class DashboardOptions
 
 ## Authorization
 
-`RequireAuthorization=true` por padrão (Spec 020/021). Servir a SPA não expõe dados — os dados só vêm da API autorizada.
+`RequireAuthorization=true` por padrão (Spec 020/021). Servir a SPA não expõe dados — os dados só vêm da API autorizada. A composição expõe o encadeamento **`AddGuaraDashboard(dash => dash.UseGuaraAuthentication(...))`** com as regras de acesso fluentes e a **página de login embutida** (logo do Guará) — [Spec 037](037-dashboard-autenticacao.md).
 
 ## Edge Cases & Failure Modes
 

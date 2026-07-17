@@ -26,7 +26,7 @@ PostgreSQL é o backend favorito de boa parte da comunidade open-source. Ele ofe
 
 ## Domain Model
 
-- Tabelas (schema `guara`): `jobs`, `queues`, `locks`, `servers`, `recurring` (recorrentes), `continuations` (vínculos pai→filho) e `state_history` (timeline de estados — opcional, `EnableStateHistory`). Visão consolidada do esquema: [Spec 004](004-guara-storage.md).
+- Tabelas (schema `guara`): `jobs`, `queues`, `locks`, `servers`, `recurring` (recorrentes), `calendars` (calendários — spec 038), `continuations` (vínculos pai→filho) e `state_history` (timeline de estados — opcional, `EnableStateHistory`). Visão consolidada do esquema: [Spec 004](004-guara-storage.md).
 - Índice parcial para elegibilidade `(queue, state, scheduled_for, lease_until)`.
 - `Capabilities`: transações `true`, lock distribuído `true` (advisory), push `true` (LISTEN/NOTIFY), server-side filter `true`.
 

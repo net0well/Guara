@@ -25,7 +25,7 @@ Muitos adotantes têm SQL Server. Precisamos de um provider durável, com **dequ
 
 ## Domain Model
 
-- Tabelas (PascalCase, schema `guara`): `Jobs`, `Queues`, `Locks`, `Servers` (heartbeat), `Recurring` (recorrentes), `Continuations` (vínculos pai→filho) e `StateHistory` (timeline de estados — opcional, `EnableStateHistory`). Visão consolidada do esquema: [Spec 004](004-guara-storage.md).
+- Tabelas (PascalCase, schema `guara`): `Jobs`, `Queues`, `Locks`, `Servers` (heartbeat), `Recurring` (recorrentes), `Calendars` (calendários — spec 038), `Continuations` (vínculos pai→filho) e `StateHistory` (timeline de estados — opcional, `EnableStateHistory`). Visão consolidada do esquema: [Spec 004](004-guara-storage.md).
 - Índices: `(Queue, State, ScheduledFor, LeaseUntil)` para elegibilidade; PK em `Id`.
 - `Capabilities`: transações `true`, lock distribuído `true` (app locks), server-side filter `true`.
 - Acesso: leituras/escritas de hot path via SQL otimizado (Dapper/`SqlCommand`); esquema/migrations via EF Core (DD-1).

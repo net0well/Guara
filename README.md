@@ -20,6 +20,30 @@
 
 > **Status do projeto.** O Guará está em desenvolvimento ativo e ainda não foi publicado no NuGet. A API mostrada abaixo reflete as especificações aprovadas (ver [`spec/`](spec/)) e pode mudar até a primeira versão estável. Dê star e acompanhe o repositório para seguir o progresso.
 
+## Instalação (pacotes NuGet)
+
+Instale só o que usar — o núcleo roda sozinho e todo o resto é opcional (nomes finais; publicação pendente):
+
+```bash
+dotnet add package Guara                        # núcleo: cliente, servidor, hosting
+dotnet add package Guara.Storage.PostgreSql     # provider de storage (escolha um)
+dotnet add package Guara.Dashboard              # opcional: painel web em tempo real
+```
+
+| Pacote | Para quê |
+|---|---|
+| `Guara` | Núcleo: `AddGuara()`, `IGuaraClient`, servidor (workers/scheduler), pipeline |
+| `Guara.Storage.PostgreSql` | Storage PostgreSQL — recomendado para produção |
+| `Guara.Storage.SqlServer` | Storage SQL Server |
+| `Guara.Storage.Redis` | Storage Redis (alta vazão) |
+| `Guara.Storage.Mongo` | Storage MongoDB |
+| `Guara.Storage.Memory` | Storage em memória — dev, testes e demos |
+| `Guara.Dashboard` | Painel web opcional (API + SPA Angular embutida, tempo real) |
+| `Guara.OpenTelemetry` | Exporters OpenTelemetry opcionais |
+| `Guara.Cli` | Ferramenta de linha de comando (`dotnet tool`): migrations, jobs, diagnóstico |
+| `Guara.Abstractions` / `Guara.Storage` | Contratos — para autores de providers e extensões |
+| `Guara.Pro.Batches` | Comercial: grupos de jobs com callback de conclusão |
+
 ## O que é o Guará
 
 O Guará é um **job scheduler open source para .NET**, no mesmo espaço de problema do Hangfire: jobs fire-and-forget, execução com atraso, jobs recorrentes por cron, retentativas automáticas, processamento distribuído entre nós e um dashboard em tempo real para observar e operar tudo.
@@ -41,11 +65,14 @@ O nome vem do **lobo-guará**, animal veloz e resiliente nativo do Brasil. Made 
 |---|---|
 | Fire-and-forget | Enfileire um job e retorne imediatamente |
 | Jobs com atraso | Execute uma vez após um intervalo |
-| Jobs recorrentes | Expressões cron com suporte a fuso horário e horário de verão |
+| Jobs recorrentes | Expressões cron ou intervalos, com **builder fluente** estilo Quartz (`ComId`, `IniciaEm`, `ComCalendario`...) |
+| Calendários | Datas e janelas excluídas (feriados, fins de semana) reutilizáveis entre recorrentes |
+| Fuso horário nativo | Ids IANA (`America/Sao_Paulo`) e Windows aceitos nos dois sistemas — sem pacotes de terceiros |
 | Continuations | Encadeie jobs: B roda automaticamente quando A termina |
 | Retentativas automáticas | Back-off exponencial, configurável por job, com opt-out para trabalho não idempotente |
 | Atributos declarativos | `[GuaraFila]`, `[GuaraRetentativas]`, `[GuaraDesabilitarConcorrencia]`, `[GuaraTempoLimite]`... — comportamento declarado no próprio job |
 | Dashboard em tempo real | SPA Angular alimentada por Server-Sent Events — mudanças de estado aparecem em cerca de um segundo. **Opcional**: pacote separado |
+| Autenticação do dashboard | Regras fluentes (logados, papéis, claims, IPs internos, combináveis), regra customizada com `HttpContext`, login fixo e **página de login própria** com a identidade do Guará |
 | Processamento distribuído | Múltiplos nós, eleição de líder, failover, locks distribuídos — coordenados pelo próprio storage |
 | Storage plugável | PostgreSQL, SQL Server, Redis, MongoDB, In-Memory — troque com uma linha |
 | Observabilidade | Logs estruturados, métricas (`System.Diagnostics.Metrics`), traces (`ActivitySource`), health checks, exporters OpenTelemetry opcionais |
@@ -53,17 +80,7 @@ O nome vem do **lobo-guará**, animal veloz e resiliente nativo do Brasil. Made 
 
 ## Começando (API planejada)
 
-Instale os pacotes (nomes finais, publicação pendente). O núcleo funciona sozinho — o dashboard é **opcional**:
-
-```bash
-dotnet add package Guara
-dotnet add package Guara.Storage.PostgreSql
-
-# opcional — só se quiser o painel web
-dotnet add package Guara.Dashboard
-```
-
-Configure tudo com uma API fluente, no estilo do ASP.NET Core:
+Com os pacotes instalados (ver [Instalação](#instalação-pacotes-nuget)), configure tudo com uma API fluente, no estilo do ASP.NET Core:
 
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
@@ -116,23 +133,41 @@ public sealed class RelatorioService(IGuaraClient jobs)
 }
 ```
 
-### Jobs recorrentes (cron)
+### Jobs recorrentes (builder fluente, estilo Quartz)
+
+Recorrentes são configurados com um **builder fluente** ([spec 038](spec/038-agendamento-fluente.md)) — identidade, agenda, vigência, descrição e calendário num só lugar:
 
 ```csharp
-// Todo dia às 03:00 UTC
-await jobs.AdicionarOuAtualizarRecorrenteAsync(
-    id: "limpeza-noturna",
-    () => LimparRegistrosExpiradosAsync(),
-    cron: "0 3 * * *",
-    TimeZoneInfo.Utc,
+await jobs.AdicionarOuAtualizarRecorrenteAsync(job => job
+    .ComId("limpeza-noturna")
+    .Executa(() => LimparRegistrosExpiradosAsync())
+    .ComCron("0 3 * * *")                                          // todo dia às 03:00
+    .NoFusoHorario("America/Sao_Paulo")                            // aceita id IANA ou Windows
+    .IniciaEm(GuaraDatas.SegundoExato(DateTimeOffset.UtcNow.AddSeconds(7)))
+    .ComDescricao("Remove registros expirados da base")
+    .ComCalendario("feriados"),                                    // pula datas excluídas
     ct);
 
-// Toda segunda às 08:00 no horário de Brasília (DST tratado pelo parser próprio)
-await jobs.AdicionarOuAtualizarRecorrenteAsync(
-    id: "resumo-semanal",
-    () => EnviarResumoSemanalAsync(),
-    cron: "0 8 * * MON",
-    TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo"),
+// Agenda por intervalo (sem cron), com janela diária
+await jobs.AdicionarOuAtualizarRecorrenteAsync(job => job
+    .ComId("sincronizacao-precos")
+    .Executa(() => SincronizarPrecosAsync())
+    .ACada(TimeSpan.FromSeconds(10))
+    .EntreHorarios(new TimeOnly(8, 0), new TimeOnly(18, 0)),
+    ct);
+```
+
+`GuaraDatas` é o construtor de datas de disparo (equivalente ao `DateBuilder` do Quartz): `SegundoExato`, `HojeAs(3, 0)`, `AmanhaAs(8, 0)`, `ProximoDiaUtil()`... A conversão de fuso Windows↔Linux (IANA↔Windows) é **nativa e automática** — sem pacotes de terceiros.
+
+### Calendários (feriados e janelas excluídas)
+
+Calendários são persistidos e reutilizáveis por vários recorrentes; alterar um calendário **recalcula automaticamente** o próximo disparo de quem o usa:
+
+```csharp
+await jobs.AdicionarOuAtualizarCalendarioAsync("feriados", cal => cal
+    .ExcluirData(new DateOnly(2026, 12, 25))
+    .ExcluirData(new DateOnly(2027, 1, 1))
+    .ExcluirDiasDaSemana(DayOfWeek.Sunday),
     ct);
 ```
 
@@ -229,7 +264,51 @@ builder.Services.AddGuara().UsePostgreSqlStorage(connectionString); // produçã
 
 ## Dashboard (opcional)
 
-O dashboard **não é obrigatório**: o núcleo do Guará roda sozinho e o painel é um pacote separado (`Guara.Dashboard`) — instale apenas se quiser a interface web. É uma SPA Angular servida como assets estáticos embutidos — sem deploy separado, sem Node.js em runtime. Consome apenas a API HTTP versionada (`/guara/api/v1`) e atualiza em tempo real por Server-Sent Events. A autenticação integra com os esquemas do ASP.NET Core do host (cookie, JWT, OIDC), e cada ação é protegida por permissões granulares (`guara:view`, `guara:trigger`, `guara:retry`, `guara:delete`, `guara:view-payload`). Acesso anônimo é negado por padrão.
+O dashboard **não é obrigatório**: o núcleo do Guará roda sozinho e o painel é um pacote separado (`Guara.Dashboard`) — instale apenas se quiser a interface web. É uma SPA Angular servida como assets estáticos embutidos — sem deploy separado, sem Node.js em runtime. Consome apenas a API HTTP versionada (`/guara/api/v1`) e atualiza em tempo real por Server-Sent Events. **Acesso anônimo é negado por padrão.**
+
+### Autenticação do painel
+
+Proteger o painel não exige implementar filtro nenhum na mão ([spec 037](spec/037-dashboard-autenticacao.md)) — as regras comuns são fluentes e **combináveis** (todas precisam passar; use `QualquerUma(...)` para "ou"):
+
+```csharp
+builder.Services
+    .AddGuara()
+    .AddGuaraDashboard(dash => dash
+        .UseGuaraAuthentication(auth => auth
+            .PermitirApenasLogados()                 // exige usuário autenticado
+            .ExigirPapel("Admin")                    // apenas administradores
+            .ExigirClaim("departamento", "ti")       // verifica uma claim
+            .PermitirApenasIpsInternos()));          // só rede interna/loopback
+```
+
+Para cenários simples (rede interna, homologação), há **login e senha fixos** — com página de login própria, com a logo do Guará, tema claro/escuro e proteção contra força bruta:
+
+```csharp
+.UseGuaraAuthentication(auth => auth
+    .ComLoginFixo(
+        usuario: "guara_admin",
+        senha: builder.Configuration["Guara:Dashboard:Senha"]!)   // via env/secret, nunca literal
+    .PermitirApenasIpsInternos());
+```
+
+E quando as regras embutidas não bastam, implemente `IDashboardAccessRule` — o equivalente (mais limpo) do `IDashboardAuthorizationFilter` do Hangfire, com acesso completo ao `HttpContext`:
+
+```csharp
+public sealed class SomenteHorarioComercial : IDashboardAccessRule
+{
+    public ValueTask<bool> AutorizarAsync(DashboardContext contexto, CancellationToken ct)
+    {
+        var http = contexto.HttpContext;             // = GetHttpContext() do Hangfire
+        var hora = TimeProvider.System.GetLocalNow().Hour;
+        return ValueTask.FromResult(
+            contexto.User.Identity?.IsAuthenticated == true && hora is >= 8 and < 18);
+    }
+}
+
+// registro: .UseGuaraAuthentication(auth => auth.ComRegra<SomenteHorarioComercial>())
+```
+
+Dentro do painel, cada ação ainda é protegida por permissões granulares (`guara:view`, `guara:trigger`, `guara:retry`, `guara:delete`, `guara:view-payload`) integradas às policies do ASP.NET Core (cookie, JWT, OIDC).
 
 ## Configuração
 
@@ -260,7 +339,7 @@ Toda a configuração segue o padrão Options do .NET, sob a seção `Guara` (va
 | Marco | Status |
 |---|---|
 | Documentação de arquitetura e ADRs | Concluído |
-| Especificação completa (36 specs, uma por componente/feature) | Concluído |
+| Especificação completa (38 specs, uma por componente/feature) | Concluído |
 | Fundação: `Guara.Abstractions` + `Guara.Core` (pipeline, máquina de estados, eventos) | Concluído |
 | Serialização (`Guara.Serialization` — source-gen, allowlist) | Concluído |
 | Contratos de storage + provider In-Memory + kit de conformidade | Concluído |

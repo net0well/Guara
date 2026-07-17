@@ -27,7 +27,7 @@ Redis oferece latência muito baixa e lock distribuído nativo, atraente para fi
 
 ## Domain Model
 
-- Chaves: `guara:{queue}:ready` (lista/stream), `guara:{queue}:processing` (com lease), `guara:scheduled` (zset), `guara:job:{id}` (hash), `guara:lock:{key}`, `guara:recurring` (zset por próximo disparo + hash de definição), `guara:continuations:{parentId}` (set de filhos) e `guara:job:{id}:history` (lista aparada — timeline opcional, `EnableStateHistory`). Visão consolidada: [Spec 004](004-guara-storage.md). *AutoMigrate não se aplica (schemaless).*
+- Chaves: `guara:{queue}:ready` (lista/stream), `guara:{queue}:processing` (com lease), `guara:scheduled` (zset), `guara:job:{id}` (hash), `guara:lock:{key}`, `guara:recurring` (zset por próximo disparo + hash de definição), `guara:calendars` (hash — spec 038), `guara:continuations:{parentId}` (set de filhos) e `guara:job:{id}:history` (lista aparada — timeline opcional, `EnableStateHistory`). Visão consolidada: [Spec 004](004-guara-storage.md). *AutoMigrate não se aplica (schemaless).*
 - `Capabilities`: transações `false` (usa Lua atômico), lock distribuído `true`, server-side filter `false` (limitado), server-side timers `false`.
 
 ## API Contract

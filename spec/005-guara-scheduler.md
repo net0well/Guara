@@ -15,7 +15,7 @@ Decidir **quando** um job roda — imediato (fire-and-forget), com atraso (delay
 ### In
 
 - Corpo de `IScheduler`: cálculo de `NextRun` a partir de `ScheduleDescriptor` (imediato/delay/cron/recurring).
-- **`IGuaraClient`** — API pública **em português** ([ADR-0010](../docs/adr/0010-api-do-usuario-em-portugues.md)): `Enfileirar` (fire-and-forget), `Agendar` (delayed), `AdicionarOuAtualizarRecorrente`, `Excluir`. *(Adição extend-only ao catálogo da Spec 001.)*
+- **`IGuaraClient`** — API pública **em português** ([ADR-0010](../docs/adr/0010-api-do-usuario-em-portugues.md)): `Enfileirar` (fire-and-forget), `Agendar` (delayed), `AdicionarOuAtualizarRecorrente`, `Excluir`. *(Adição extend-only ao catálogo da Spec 001.)* A forma **primária** do recorrente é o **builder fluente** estilo Quartz (`job => job.ComId(...).ComCron(...).IniciaEm(...)`) com calendários e `GuaraDatas` — ver [Spec 038](038-agendamento-fluente.md); a sobrecarga posicional simples permanece por conveniência.
 - Parser de cron **próprio** atrás de `ICronParser` (sem dependência de terceiros — [ADR-0009](../docs/adr/0009-politica-de-dependencias.md)), com suporte a timezone/DST.
 - Registro de **recurring jobs** e recomputo de `NextRun` ao `JobCompleted`.
 

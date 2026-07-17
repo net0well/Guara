@@ -48,7 +48,8 @@ Estruturas que os providers materializam (nomes na convenção de cada backend, 
 | `Queues` | Metadados/introspecção de filas | `IQueueStorage` |
 | `Locks` | Locks distribuídos com TTL | `ILockProvider` |
 | `Servers` | Nós/heartbeat ([Spec 010](010-guara-server.md)) | contrato definido com a Spec 010 |
-| `Recurring` | Recorrentes: id, cron, timezone, último/próximo disparo, descriptor | `IRecurringStorage` — **adição extend-only**, definida com a [Spec 005](005-guara-scheduler.md) |
+| `Recurring` | Recorrentes: id, agenda (cron/intervalo), timezone, vigência (início/fim), descrição, calendário, último/próximo disparo, descriptor | `IRecurringStorage` — **adição extend-only**, definida com a [Spec 005](005-guara-scheduler.md)/[038](038-agendamento-fluente.md) |
+| `Calendars` | Calendários reutilizáveis (datas/dias/janelas excluídas — [Spec 038](038-agendamento-fluente.md)) | `IRecurringStorage` |
 | `Continuations` | Vínculo pai→filho + gatilho ([Spec 030](030-continuations.md)) | `IContinuationStorage` — **adição extend-only**, definida com a Spec 030 |
 | `StateHistory` | Linha do tempo de transições de estado (timeline do dashboard, [Spec 022](022-guara-dashboard-api.md)) — **opcional** | Habilitada por `EnableStateHistory` (default `true`), com retenção própria |
 
