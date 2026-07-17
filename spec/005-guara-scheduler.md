@@ -72,7 +72,7 @@ public interface ICronParser { DateTimeOffset? GetNext(string expression, TimeZo
 
 ## Integrations
 
-Emite/consome eventos (Spec 001); usa `IJobStorage` (Spec 004) via contrato para persistir o agendamento; `ICronParser` é **implementação própria** (sem terceiros — [ADR-0009](../docs/adr/0009-politica-de-dependencias.md)).
+Emite/consome eventos (Spec 001); persiste jobs via `IJobStorage` e **recorrentes na estrutura dedicada `Recurring`** via `IRecurringStorage` (contrato definido junto desta spec como adição extend-only à família da Spec 004); `ICronParser` é **implementação própria** (sem terceiros — [ADR-0009](../docs/adr/0009-politica-de-dependencias.md)).
 
 ## Acceptance Criteria
 

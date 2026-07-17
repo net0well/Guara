@@ -38,6 +38,22 @@ Como será open-source com muitos providers (inclusive de terceiros), este pacot
 - **`ITransaction`** — unidade de trabalho opcional; providers sem transação declaram `Capabilities` sem a flag e usam operações atômicas equivalentes.
 - **`StorageCapabilities`** — `SupportsTransactions`, `SupportsDistributedLock`, `SupportsServerSideTimers`, `SupportsServerSideFilter`.
 
+### Esquema persistido (visão consolidada — 2026-07-16)
+
+Estruturas que os providers materializam (nomes na convenção de cada backend, sob schema/prefixo `guara` isolado das tabelas da aplicação):
+
+| Estrutura | Conteúdo | Contrato |
+|---|---|---|
+| `Jobs` | `JobRecord`: descriptor serializado, estado atual, tentativa, fila, `ScheduledFor`, `LeaseUntil`, resultado/erro | `IJobStorage` |
+| `Queues` | Metadados/introspecção de filas | `IQueueStorage` |
+| `Locks` | Locks distribuídos com TTL | `ILockProvider` |
+| `Servers` | Nós/heartbeat ([Spec 010](010-guara-server.md)) | contrato definido com a Spec 010 |
+| `Recurring` | Recorrentes: id, cron, timezone, último/próximo disparo, descriptor | `IRecurringStorage` — **adição extend-only**, definida com a [Spec 005](005-guara-scheduler.md) |
+| `Continuations` | Vínculo pai→filho + gatilho ([Spec 030](030-continuations.md)) | `IContinuationStorage` — **adição extend-only**, definida com a Spec 030 |
+| `StateHistory` | Linha do tempo de transições de estado (timeline do dashboard, [Spec 022](022-guara-dashboard-api.md)) — **opcional** | Habilitada por `EnableStateHistory` (default `true`), com retenção própria |
+
+> Sem tabelas genéricas `Hash`/`Set`/`List`/`Counter` (modelo Hangfire): o Guará usa estruturas **tipadas e legíveis**, consultáveis por SQL comum. As opções de instalação são as mesmas do Hangfire: **mesmo banco da aplicação** (isolado pelo schema `guara`, sem tocar no DbContext do usuário), **banco separado** (outra connection string) ou **memória** (`UseMemoryStorage()`).
+
 ## API Contract
 
 ```csharp

@@ -26,6 +26,7 @@ Desenvolvimento, testes e demos precisam de um storage **sem dependência extern
 ## Domain Model
 
 - Dicionário de `JobRecord` imutáveis (atualização via `with`) sob exclusão mútua — atomicidade simples e correta.
+- Estruturas equivalentes às demais do esquema ([Spec 004](004-guara-storage.md)) — recorrentes, continuations e timeline opcional — como dicionários em memória, adicionadas junto com os respectivos contratos (`IRecurringStorage`/`IContinuationStorage`). AutoMigrate não se aplica.
 - `Capabilities`: `SupportsTransactions=false`, `SupportsDistributedLock=false`, `SupportsServerSideFilter=true`, `SupportsServerSideTimers=false`.
 
 > **Implementação (2026-07-16):** `SupportsTransactions` ficou **false** (o esboço original dizia true/process-local): uma transação in-memory de verdade exigiria snapshot/rollback; um no-op seria desonesto ("capabilities honestas", AC-4). As operações são individualmente atômicas; `BeginTransactionAsync` lança `NotSupportedException`. Relógio injetável via `TimeProvider` (lease/TTL determinísticos nos testes).

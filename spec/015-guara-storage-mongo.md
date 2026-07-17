@@ -26,7 +26,7 @@ MongoDB é comum em stacks orientadas a documentos. Ele oferece `findAndModify` 
 
 ## Domain Model
 
-- Coleções: `jobs`, `queues`, `locks`, `servers`.
+- Coleções: `jobs`, `queues`, `locks`, `servers`, `recurring` (recorrentes), `continuations` (vínculos pai→filho) e `state_history` (timeline — opcional, `EnableStateHistory`, com TTL próprio). Visão consolidada: [Spec 004](004-guara-storage.md). `MongoStorageOptions.AutoMigrate` (default `true`) = criação **idempotente** de coleções/índices no startup; em produção, `false` + CLI `guara migrate`.
 - Índices: elegibilidade `(queue, state, scheduledFor, leaseUntil)`; TTL em `completedAt` para purga.
 - `Capabilities`: transações `true` (replica set) / `false` (standalone), lock distribuído `true` (coleção+TTL), push `true` (change streams), server-side filter `true`.
 
