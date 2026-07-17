@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Testes rodam na TFM atual; não precisam multi-target. -->
+    <TargetFrameworks>net10.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Guara.Dispatcher\Guara.Dispatcher.csproj" />
+    <ProjectReference Include="..\..\src\Guara.Worker\Guara.Worker.csproj" />
+    <ProjectReference Include="..\..\src\Guara.Executor\Guara.Executor.csproj" />
+    <ProjectReference Include="..\..\src\Guara.Scheduler\Guara.Scheduler.csproj" />
+    <ProjectReference Include="..\..\src\Guara.Storage.Memory\Guara.Storage.Memory.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+</Project>

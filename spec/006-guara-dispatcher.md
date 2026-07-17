@@ -88,6 +88,8 @@ Usa `IJobStorage` (Spec 004) e emite `WorkerRequested` consumido pelo `Worker` (
 - **DD-2 — Prioridade entre filas.** *Fallback:* ordem de configuração (lista ordenada); sem pesos. *Revisão:* pós-MVP se houver demanda.
 - **DD-3 — FetchBatchSize default.** *Fallback:* 10. *Revisão:* durante benchmarks.
 
+> **Implementação (2026-07-17):** `GuaraDispatcher` entregue com polling + aquisição atômica em drain por fila (prioridade = ordem da lista). **Backpressure sem `MaxInFlight` explícito**: o `WorkerRequested` é publicado no event bus síncrono e o handler do Worker grava num canal **limitado** — publicar aguarda vaga, então o dispatcher nunca busca além da capacidade (`MaxInFlight`/`FetchBatchSize` removidos das options; podem voltar extend-only). Falha de storage → back-off exponencial até `MaxBackoff` (1 min) com log estruturado. Push por provider (`SupportsServerSideTimers`) fica para os providers persistentes.
+
 ## Open Questions
 
 _(vazio)_

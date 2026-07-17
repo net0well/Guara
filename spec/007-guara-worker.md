@@ -89,6 +89,8 @@ Consome `WorkerRequested` (Dispatcher), emite `ExecutorStarted` (Executor), reno
 - **DD-2 — Timeout de execução por job.** *Fallback:* sem timeout global; opcional por job (o Executor aplica). *Revisão:* Spec 008.
 - **DD-3 — Drain timeout default.** *Fallback:* 30s. *Revisão:* Spec 010 (`Guara.Server`).
 
+> **Implementação (2026-07-17):** `GuaraWorker` entregue: é `IEventHandler<WorkerRequested>` gravando num `Channel<JobId>` limitado (`MaxConcurrency*2`, `FullMode.Wait` → backpressure ao Dispatcher); N slots concorrentes; **renovação de lease** em loop paralelo por job — renovação negada cancela a execução local via CTS linkado (AC-7); publica `ExecutorStarted`; drain em 2 fases (para de aceitar → aguarda até `ShutdownDrainTimeout` → cancela excedentes; itens na fila interna não iniciados são descartados e recuperados por expiração de lease). `PerQueueConcurrency` fica extend-only para depois. Logging estruturado via `ILogger` (M.E.Logging.Abstractions — plataforma, ADR-0009).
+
 ## Open Questions
 
 _(vazio)_

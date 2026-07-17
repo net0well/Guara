@@ -92,6 +92,8 @@ Roda o pipeline do Core (Spec 002); invoca via dispatch gerado (Spec 029); persi
 - **DD-3 — Timeout por job.** *Fallback:* opcional por job (atributo/opção), sem default global. *Revisão:* pós-MVP.
 - **DD-4 — Armazenamento de resultado.** *Fallback:* resultado serializado (Spec 003) e persistido no `JobRecord`; truncado acima de um limite configurável. *Revisão:* Spec 004/010.
 
+> **Implementação (2026-07-17):** `GuaraExecutor` entregue. **`IExecutor` vive em `Guara.Abstractions`** com assinatura `ExecuteAsync(JobId, ct)` (não `JobRecord` — evitaria que o contrato dependesse de tipos do Storage; o executor busca o registro). `IJobInvoker` também em Abstractions; até o source generator (spec 029), o invoker é o `RegistryJobInvoker` sobre `JobHandlerRegistry` (registro manual — infraestrutura temporária). Pipeline: `RetryMiddleware` (slot Retry, retentativa **in-process** com back-off; global via `RetryOptions` — o per-job `[GuaraRetentativas]` chega com os atributos/spec 036) + middlewares custom + invocação. Sucesso/falha persistidos com **`CancellationToken.None`** (AC-7); cancelamento deixa o estado intocado — lease expira e o job reprocessa (AC-6). `Attempt` persistido no storage fica para o incremento dos atributos.
+
 ## Open Questions
 
 _(vazio)_
