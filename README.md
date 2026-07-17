@@ -66,7 +66,7 @@ O nome vem do **lobo-guará**, animal veloz e resiliente nativo do Brasil. Made 
 | Fire-and-forget | Enfileire um job e retorne imediatamente |
 | Jobs com atraso | Execute uma vez após um intervalo |
 | Jobs recorrentes | Expressões cron ou intervalos, com **builder fluente** estilo Quartz (`ComId`, `IniciaEm`, `ComCalendario`...) |
-| Calendários | Datas e janelas excluídas (feriados, fins de semana) reutilizáveis entre recorrentes |
+| Calendários | Datas e janelas excluídas (feriados, fins de semana) reutilizáveis entre recorrentes — gerenciáveis por código ou pelo dashboard |
 | Fuso horário nativo | Ids IANA (`America/Sao_Paulo`) e Windows aceitos nos dois sistemas — sem pacotes de terceiros |
 | Continuations | Encadeie jobs: B roda automaticamente quando A termina |
 | Retentativas automáticas | Back-off exponencial, configurável por job, com opt-out para trabalho não idempotente |
@@ -170,6 +170,8 @@ await jobs.AdicionarOuAtualizarCalendarioAsync("feriados", cal => cal
     .ExcluirDiasDaSemana(DayOfWeek.Sunday),
     ct);
 ```
+
+Os calendários também podem ser criados e mantidos **pela interface do dashboard** — uma visão mensal leve para adicionar feriados e excluir datas — com o mesmo efeito: os recorrentes que os usam recalculam automaticamente, venha a mudança do código ou do painel.
 
 ### Continuations e exclusão
 

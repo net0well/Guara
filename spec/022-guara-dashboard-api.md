@@ -21,7 +21,7 @@ O dashboard precisa de dados: filas, jobs (por estado), detalhes, servidores/nó
 - **OpenAPI** documentado; versionamento (`/api/v1`).
 - Paginação e limites obrigatórios em toda listagem.
 - **Tempo real** via Server-Sent Events: `GET /api/v1/stream` transmite mudanças (estado de job, contadores, nós) ao dashboard.
-- Endpoints avançados (busca/filtros, séries p/ gráficos, ações em massa, gestão de recorrentes) → [Spec 032](032-dashboard-avancado.md).
+- Endpoints avançados (busca/filtros, séries p/ gráficos, ações em massa, gestão de recorrentes e **de calendários**) → [Spec 032](032-dashboard-avancado.md).
 
 ### Out
 

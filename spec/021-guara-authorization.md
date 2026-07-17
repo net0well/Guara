@@ -25,7 +25,7 @@ Autenticar não basta: é preciso decidir **o que** cada identidade pode fazer �
 
 ## Domain Model
 
-- **Ações do Dashboard**: `guara:view`, `guara:trigger`, `guara:retry`, `guara:delete`, `guara:view-payload`.
+- **Ações do Dashboard**: `guara:view`, `guara:trigger`, `guara:retry`, `guara:delete`, `guara:view-payload`, `guara:calendars` (gerir calendários — [Spec 032](032-dashboard-avancado.md)).
 - **`GuaraAuthorizationOptions`** — mapeia ações → policies/roles/claims.
 - `IJobContext.User` (DD-5 da Spec 001) disponível ao `AuthorizationMiddleware`.
 

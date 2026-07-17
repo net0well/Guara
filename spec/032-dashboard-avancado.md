@@ -17,6 +17,7 @@ Um dashboard "completo como o do Hangfire" precisa de mais que listas: **busca e
 - **Busca/filtros**: por tipo de job, fila, estado, intervalo de tempo, texto (id/nome), tags.
 - **Gráficos ao vivo**: throughput, taxa de sucesso/falha, latência (p50/p95), tamanho de fila — alimentados pelo stream SSE (Spec 022) + métricas (Spec 016).
 - **Gestão de recorrentes**: listar, pausar/retomar, disparar agora, editar cron.
+- **Gestão de calendários** ([Spec 038](038-agendamento-fluente.md)) — criar, editar e excluir calendários **pelo painel**: adicionar feriados, excluir datas/intervalos/dias da semana, com uma interface **leve e agradável** (visão mensal clicável + lista de exclusões). Mostra quais recorrentes usam cada calendário e uma prévia das próximas ocorrências afetadas. Usa o **mesmo caminho de persistência** do `AdicionarOuAtualizarCalendarioAsync` (estrutura `Calendars` via `IRecurringStorage`) — portanto os recorrentes **recalculam automaticamente** (updateTriggers), independentemente de a mudança vir do código ou do painel.
 - **Ações em massa**: selecionar N jobs → re-enfileirar/excluir, com confirmação.
 - **Visão de servidores/nós** e de **continuations/batches** (status agregado).
 
@@ -38,6 +39,10 @@ Um dashboard "completo como o do Hangfire" precisa de mais que listas: **busca e
 | GET | `/api/v1/jobs/search?q=&type=&queue=&state=&from=&to=&page=&pageSize=` | busca/filtros | `guara:view` |
 | GET | `/api/v1/stats/series?metric=&window=` | série temporal p/ gráficos | `guara:view` |
 | GET/POST | `/api/v1/recurring` · `/recurring/{id}/pause|resume|trigger` | gestão de recorrentes | `guara:trigger` |
+| GET | `/api/v1/calendars` | lista calendários | `guara:view` |
+| GET | `/api/v1/calendars/{nome}` | detalhe: exclusões + recorrentes que o usam + prévia de ocorrências | `guara:view` |
+| PUT | `/api/v1/calendars/{nome}` | cria/atualiza (upsert — espelho do `AdicionarOuAtualizarCalendarioAsync`) | `guara:calendars` |
+| DELETE | `/api/v1/calendars/{nome}` | exclui; **bloqueado se em uso** → 409 com a lista de recorrentes | `guara:calendars` |
 | POST | `/api/v1/jobs/bulk/retry` · `/bulk/delete` | ações em massa | `guara:retry`/`guara:delete` |
 
 ## Authorization
@@ -51,6 +56,8 @@ Toda ação mapeada à permissão correspondente (Spec 021); ações em massa va
 - **Gráficos sem dados** → estados vazios claros.
 - **Séries de alta cardinalidade** → agregação server-side com janelas fixas (sem explodir memória).
 - **Concorrência** → editar recorrente enquanto dispara é seguro (idempotente).
+- **Calendário editado ao mesmo tempo por código e painel** → upsert, última escrita vence (mesma semântica do `AdicionarOuAtualizarCalendarioAsync`); o recálculo de ocorrências roda após qualquer escrita.
+- **Excluir calendário em uso pelo painel** → 409 listando os recorrentes (mesma regra da Spec 038 — sem órfãos).
 
 ## Non-Functional Requirements
 
@@ -70,6 +77,9 @@ Estende Dashboard.Api (Spec 022) e SPA (Spec 024); consome métricas (Spec 016) 
 - **AC-4 — Ações em massa.** *Dado* 50 jobs selecionados, *quando* re-enfileiro, *então* todos os autorizados são re-enfileirados e o resultado por item é reportado.
 - **AC-5 — Permissão em massa.** *Dado* usuário sem `guara:delete`, *então* a ação de exclusão em massa é negada.
 - **AC-6 — Degradação.** *Dado* provider com busca limitada, *então* a UI oferece os filtros suportados e informa os indisponíveis (sem erro 500).
+- **AC-7 — Calendário pelo painel é respeitado.** *Dado* um feriado adicionado a um calendário pela UI, *então* os recorrentes que o usam têm o `NextRun` recalculado e **pulam a data** — mesmo efeito do `AdicionarOuAtualizarCalendarioAsync` por código.
+- **AC-8 — Exclusão protegida.** *Dado* um calendário em uso, *quando* excluído pela UI, *então* a API responde 409 com a lista de recorrentes e nada é removido.
+- **AC-9 — Permissão de calendários.** *Dado* usuário sem `guara:calendars`, *então* criar/editar/excluir calendários é negado (403); visualizar exige apenas `guara:view`.
 
 ## Deferred Decisions
 
