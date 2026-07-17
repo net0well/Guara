@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Guara.Executor</PackageId>
+    <Description>Executor do Guará: roda o pipeline de middlewares, invoca o método do job (sem reflection) e persiste o estado final.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Guara.Abstractions\Guara.Abstractions.csproj" />
+    <ProjectReference Include="..\Guara.Core\Guara.Core.csproj" />
+    <ProjectReference Include="..\Guara.Storage\Guara.Storage.csproj" />
+  </ItemGroup>
+
+</Project>
