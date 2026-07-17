@@ -27,7 +27,7 @@ Fluxos reais encadeiam trabalho: "gere o relatório **e depois** envie o e-mail"
 ## Domain Model
 
 - **`ContinuationDescriptor`** — `ParentId`, `ChildJobDescriptor`, `Trigger` (`OnSucceeded`/`OnAnyFinishedState`).
-- Vínculo persistido; quando o pai transiciona para estado final, o `Scheduler` promove os filhos elegíveis a `Enqueued`/`Scheduled` e emite `JobScheduled`.
+- Vínculo persistido na estrutura dedicada **`Continuations`** via `IContinuationStorage` (adição extend-only à família da [Spec 004](004-guara-storage.md)); quando o pai transiciona para estado final, o `Scheduler` promove os filhos elegíveis a `Enqueued`/`Scheduled` e emite `JobScheduled`.
 - Filho fica em estado `AwaitingContinuation` (novo sub-estado lógico sobre `Scheduled`) até o gatilho.
 
 ## API Contract

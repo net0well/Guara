@@ -15,7 +15,7 @@ Decidir **quando** um job roda — imediato (fire-and-forget), com atraso (delay
 ### In
 
 - Corpo de `IScheduler`: cálculo de `NextRun` a partir de `ScheduleDescriptor` (imediato/delay/cron/recurring).
-- **`IGuaraClient`** — API pública **em português** ([ADR-0010](../docs/adr/0010-api-do-usuario-em-portugues.md)): `Enfileirar` (fire-and-forget), `Agendar` (delayed), `AdicionarOuAtualizarRecorrente`, `Excluir`. *(Adição extend-only ao catálogo da Spec 001.)*
+- **`IGuaraClient`** — API pública **em português** ([ADR-0010](../docs/adr/0010-api-do-usuario-em-portugues.md)): `Enfileirar` (fire-and-forget), `Agendar` (delayed), `AdicionarOuAtualizarRecorrente`, `Excluir`. *(Adição extend-only ao catálogo da Spec 001.)* A forma **primária** do recorrente é o **builder fluente** estilo Quartz (`job => job.ComId(...).ComCron(...).IniciaEm(...)`) com calendários e `GuaraDatas` — ver [Spec 038](038-agendamento-fluente.md); a sobrecarga posicional simples permanece por conveniência.
 - Parser de cron **próprio** atrás de `ICronParser` (sem dependência de terceiros — [ADR-0009](../docs/adr/0009-politica-de-dependencias.md)), com suporte a timezone/DST.
 - Registro de **recurring jobs** e recomputo de `NextRun` ao `JobCompleted`.
 
@@ -72,7 +72,7 @@ public interface ICronParser { DateTimeOffset? GetNext(string expression, TimeZo
 
 ## Integrations
 
-Emite/consome eventos (Spec 001); usa `IJobStorage` (Spec 004) via contrato para persistir o agendamento; `ICronParser` é **implementação própria** (sem terceiros — [ADR-0009](../docs/adr/0009-politica-de-dependencias.md)).
+Emite/consome eventos (Spec 001); persiste jobs via `IJobStorage` e **recorrentes na estrutura dedicada `Recurring`** via `IRecurringStorage` (contrato definido junto desta spec como adição extend-only à família da Spec 004); `ICronParser` é **implementação própria** (sem terceiros — [ADR-0009](../docs/adr/0009-politica-de-dependencias.md)).
 
 ## Acceptance Criteria
 

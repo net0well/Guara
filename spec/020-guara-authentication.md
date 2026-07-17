@@ -66,7 +66,7 @@ Este pacote **autentica** (quem é); **autorizar** (o que pode) é da Spec 021. 
 
 ## Integrations
 
-ASP.NET Core Authentication; consumido por `Guara.Dashboard.Api` (Spec 022).
+ASP.NET Core Authentication; consumido por `Guara.Dashboard.Api` (Spec 022). As **regras de acesso fluentes e a página de login** do dashboard (que consomem a identidade estabelecida aqui) estão na [Spec 037](037-dashboard-autenticacao.md).
 
 ## Acceptance Criteria
 

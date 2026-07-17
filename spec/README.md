@@ -67,5 +67,7 @@ Trabalhamos de baixo para cima na pirâmide de dependências: contratos primeiro
 | 034 | CI/CD & Release (NuGet publish) | pipeline | — | In Review |
 | 035 | Governança, Licenciamento & Docs | repositório | — | In Review |
 | 036 | Atributos de Job (`[GuaraFila]`, `[GuaraRetentativas]`, `[GuaraDesabilitarConcorrencia]`, `[GuaraTempoLimite]`, `[GuaraPularSeAnteriorEmExecucao]`) | `Guara.Abstractions` + pipeline/generator (feature) | OSS | ✅ Approved (2026-07-16) |
+| 037 | Dashboard — autenticação: regras fluentes (`UseGuaraAuthentication`), `IDashboardAccessRule`/`DashboardContext`, login fixo, página de login com a logo | `Guara.Dashboard.*` (feature) | OSS | ✅ Approved (2026-07-16) |
+| 038 | Agendamento fluente — builder estilo Quartz, `GuaraDatas`, calendários, fuso IANA/Windows nativo | `Guara.Scheduler`/`Guara.Extensions` (feature) | OSS | ✅ Approved (2026-07-16) |
 
 > A ordem pode ser ajustada; capacidades transversais da API pública (fire-and-forget, delayed, recurring, retry) são especificadas dentro das specs dos componentes que as realizam (principalmente 001, 005, 008, 009). As specs 030–035 cruzam vários pacotes por serem **features/infra transversais**.

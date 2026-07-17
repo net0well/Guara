@@ -25,7 +25,7 @@ Muitos adotantes têm SQL Server. Precisamos de um provider durável, com **dequ
 
 ## Domain Model
 
-- Tabelas (PascalCase, [entities conventions](../docs/../docs/patterns.md)): `Jobs`, `Queues`, `Locks`, `Servers` (heartbeat).
+- Tabelas (PascalCase, schema `guara`): `Jobs`, `Queues`, `Locks`, `Servers` (heartbeat), `Recurring` (recorrentes), `Calendars` (calendários — spec 038), `Continuations` (vínculos pai→filho) e `StateHistory` (timeline de estados — opcional, `EnableStateHistory`). Visão consolidada do esquema: [Spec 004](004-guara-storage.md).
 - Índices: `(Queue, State, ScheduledFor, LeaseUntil)` para elegibilidade; PK em `Id`.
 - `Capabilities`: transações `true`, lock distribuído `true` (app locks), server-side filter `true`.
 - Acesso: leituras/escritas de hot path via SQL otimizado (Dapper/`SqlCommand`); esquema/migrations via EF Core (DD-1).
@@ -77,7 +77,8 @@ SQL Server (via `Microsoft.Data.SqlClient`); `ISerializer` para payloads.
 
 - **DD-1 — EF Core vs Dapper.** *Fallback:* migrations/esquema com EF Core (skill `dotnet-claude-kit:ef-core`); hot path (dequeue/update) com SQL otimizado. *Revisão:* durante benchmarks.
 - **DD-2 — Versão mínima do SQL Server.** *Fallback:* SQL Server 2019+ / Azure SQL. *Revisão:* nenhuma.
-- **DD-3 — Schema/prefixo de tabelas.** *Fallback:* schema `guara`, tabelas PascalCase; configurável. *Revisão:* feedback.
+- **DD-3 — Schema/prefixo de tabelas.** *Fallback:* schema `guara`, tabelas PascalCase; configurável via `SqlServerStorageOptions.Schema`. *Revisão:* feedback.
+- **DD-4 — AutoMigrate (resolvido 2026-07-16).** *Decisão:* `SqlServerStorageOptions.AutoMigrate` (default **`true`**, estilo `PrepareSchemaIfNecessary` do Hangfire) aplica as migrations idempotentes no startup, coordenadas por `sp_getapplock`; em produção recomenda-se `false` + CLI `guara migrate` (spec 027) no pipeline.
 
 ## Open Questions
 

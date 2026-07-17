@@ -65,7 +65,7 @@ public sealed class GuaraAuthorizationOptions
 
 ## Integrations
 
-ASP.NET Core Authorization; compõe com Spec 020 (auth) e o pipeline do Core (Spec 002); protege o `Guara.Dashboard.Api` (Spec 022).
+ASP.NET Core Authorization; compõe com Spec 020 (auth) e o pipeline do Core (Spec 002); protege o `Guara.Dashboard.Api` (Spec 022). As **regras de entrada** do dashboard (quem pode acessá-lo) estão na [Spec 037](037-dashboard-autenticacao.md); as permissões desta spec decidem o que se pode **fazer** dentro dele.
 
 ## Acceptance Criteria
 

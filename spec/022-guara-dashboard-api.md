@@ -31,6 +31,7 @@ O dashboard precisa de dados: filas, jobs (por estado), detalhes, servidores/nó
 ## Domain Model
 
 - Recursos: `queues`, `jobs`, `jobs/{id}`, `servers`, `stats`, `recurring`.
+- O detalhe do job (`jobs/{id}`) inclui a **linha do tempo de estados** quando o `StateHistory` estiver habilitado ([Spec 004](004-guara-storage.md)); sem ele, exibe apenas o estado atual.
 - DTOs planos (sem vazar entidades internas); paginação `?page&pageSize` com teto.
 - Ações mapeadas às permissões `guara:*` (Spec 021).
 

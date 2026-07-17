@@ -26,7 +26,7 @@ PostgreSQL é o backend favorito de boa parte da comunidade open-source. Ele ofe
 
 ## Domain Model
 
-- Tabelas: `jobs`, `queues`, `locks`, `servers` (nomes conforme convenção do provider; mapeadas ao contrato).
+- Tabelas (schema `guara`): `jobs`, `queues`, `locks`, `servers`, `recurring` (recorrentes), `calendars` (calendários — spec 038), `continuations` (vínculos pai→filho) e `state_history` (timeline de estados — opcional, `EnableStateHistory`). Visão consolidada do esquema: [Spec 004](004-guara-storage.md).
 - Índice parcial para elegibilidade `(queue, state, scheduled_for, lease_until)`.
 - `Capabilities`: transações `true`, lock distribuído `true` (advisory), push `true` (LISTEN/NOTIFY), server-side filter `true`.
 
@@ -77,7 +77,8 @@ PostgreSQL via `Npgsql`; `ISerializer` para payloads.
 
 - **DD-1 — EF Core vs Npgsql raw.** *Fallback:* migrations com EF Core; hot path com SQL/Npgsql otimizado. *Revisão:* benchmarks.
 - **DD-2 — Versão mínima.** *Fallback:* PostgreSQL 13+. *Revisão:* nenhuma.
-- **DD-3 — Schema.** *Fallback:* schema `guara`; configurável. *Revisão:* feedback.
+- **DD-3 — Schema.** *Fallback:* schema `guara`; configurável via `PostgreSqlStorageOptions.Schema`. *Revisão:* feedback.
+- **DD-4 — AutoMigrate (resolvido 2026-07-16).** *Decisão:* `PostgreSqlStorageOptions.AutoMigrate` (default **`true`**, estilo `PrepareSchemaIfNecessary` do Hangfire) aplica as migrations idempotentes no startup, coordenadas por advisory lock; em produção recomenda-se `false` + CLI `guara migrate` (spec 027) no pipeline.
 
 ## Open Questions
 
