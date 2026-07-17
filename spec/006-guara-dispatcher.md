@@ -85,7 +85,7 @@ Usa `IJobStorage` (Spec 004) e emite `WorkerRequested` consumido pelo `Worker` (
 ## Deferred Decisions
 
 - **DD-1 — Push vs polling default.** *Fallback:* polling 5s; push habilitado quando `Capabilities.SupportsServerSideTimers`/notificação existir. *Revisão:* por provider.
-- **DD-2 — Prioridade entre filas.** *Fallback:* ordem de configuração (lista ordenada); sem pesos. *Revisão:* pós-MVP se houver demanda.
+- **DD-2 — Prioridade entre filas (resolvido 2026-07-17).** *Decisão:* **prioridade estrita** pela ordem da lista; **starvation é possível por design** e documentada ([semantics](../docs/semantics.md)) — dimensionamento de filas/workers é responsabilidade do usuário (modelo Hangfire). Rodízio ponderado poderá vir como opção extend-only.
 - **DD-3 — FetchBatchSize default.** *Fallback:* 10. *Revisão:* durante benchmarks.
 
 > **Implementação (2026-07-17):** `GuaraDispatcher` entregue com polling + aquisição atômica em drain por fila (prioridade = ordem da lista). **Backpressure sem `MaxInFlight` explícito**: o `WorkerRequested` é publicado no event bus síncrono e o handler do Worker grava num canal **limitado** — publicar aguarda vaga, então o dispatcher nunca busca além da capacidade (`MaxInFlight`/`FetchBatchSize` removidos das options; podem voltar extend-only). Falha de storage → back-off exponencial até `MaxBackoff` (1 min) com log estruturado. Push por provider (`SupportsServerSideTimers`) fica para os providers persistentes.

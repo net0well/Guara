@@ -351,9 +351,20 @@ All configuration follows the .NET Options pattern under the `Guara` section (va
 | Remaining providers, cluster, CLI, analyzers, job attributes | Planned |
 | First NuGet release | Planned |
 
+## Semantics and guarantees
+
+Guará documents its guarantees precisely in [`docs/semantics.md`](docs/semantics.md) (Portuguese) — read it before designing your jobs. The key points:
+
+- **At-least-once delivery**: a job may run more than once under failure (worker dies after doing the work, before persisting the final state). Idempotent jobs are the ideal case; for irreversible side effects use `[GuaraRetentativas(0)]` plus idempotency at the destination; for mutual exclusion, `[GuaraDesabilitarConcorrencia]`.
+- **Cooperative cancellation**: a side effect that already happened is never rolled back; a shutdown mid-execution leaves the state untouched and the lease guarantees reprocessing.
+- **Recurring jobs**: occurrences overlap by default (like Quartz/Hangfire); a misfire runs **one** catch-up occurrence on restart; resuming a paused job does not backfill.
+- **Strict queue priority**: list order is law — size your queues/workers to avoid starvation.
+- **~FIFO start order per queue**, no completion-order guarantee; fire precision is bounded by polling/push (not a real-time system).
+
 ## Documentation
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — architectural philosophy, dependency rules, package structure, execution flows, performance principles (Portuguese)
+- [`docs/semantics.md`](docs/semantics.md) — semantic guarantees (delivery, ordering, retries, cancellation, recurring jobs)
 - [`docs/adr/`](docs/adr/) — Architecture Decision Records
 - [`spec/`](spec/) — the full specification, one document per component, with acceptance criteria
 - [`Infra/`](Infra/) — reference Docker deployment (PostgreSQL + reverse proxy)

@@ -351,9 +351,20 @@ Toda a configuração segue o padrão Options do .NET, sob a seção `Guara` (va
 | Demais providers, cluster, CLI, analyzers, atributos de job | Planejado |
 | Primeira publicação no NuGet | Planejado |
 
+## Semântica e garantias
+
+O Guará documenta suas garantias com precisão em [`docs/semantics.md`](docs/semantics.md) — leia antes de projetar seus jobs. Os pontos centrais:
+
+- **Entrega at-least-once**: um job pode executar mais de uma vez em cenário de falha (worker morre após o trabalho, antes de persistir o estado). Jobs idempotentes são o caso ideal; para efeitos irreversíveis use `[GuaraRetentativas(0)]` e idempotência na ponta; para exclusão mútua, `[GuaraDesabilitarConcorrencia]`.
+- **Cancelamento cooperativo**: efeito já ocorrido nunca é revertido; shutdown no meio da execução deixa o estado intocado e o lease garante o reprocesso.
+- **Recorrentes**: ocorrências sobrepõem por padrão (como Quartz/Hangfire); misfire executa **uma** compensação ao religar; retomar um pausado não faz backfill.
+- **Filas com prioridade estrita**: a ordem da lista é lei — dimensione para evitar starvation.
+- **Ordem ~FIFO por fila no início da execução**, sem garantia de ordem de conclusão; precisão de disparo limitada pelo polling/push (não é tempo real).
+
 ## Documentação
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — filosofia arquitetural, regras de dependência, estrutura de pacotes, fluxos de execução, princípios de performance
+- [`docs/semantics.md`](docs/semantics.md) — garantias semânticas (entrega, ordem, retentativas, cancelamento, recorrentes)
 - [`docs/adr/`](docs/adr/) — Architecture Decision Records
 - [`spec/`](spec/) — a especificação completa, um documento por componente, com critérios de aceite
 - [`Infra/`](Infra/) — deploy Docker de referência (PostgreSQL + proxy reverso)
