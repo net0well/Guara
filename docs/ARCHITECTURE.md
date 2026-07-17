@@ -13,6 +13,7 @@ Este documento é o **hub da arquitetura**. Ele define os princípios e aponta p
 | [dependency-rules.md](dependency-rules.md) | Regras de dependência em profundidade + camadas |
 | [naming-conventions.md](naming-conventions.md) | Convenções de nomenclatura de tipos, pacotes, namespaces e extensões |
 | [execution-flows.md](execution-flows.md) | Ciclo de vida do Job, fluxo de eventos e pipeline de middlewares |
+| [semantics.md](semantics.md) | **Garantias semânticas**: entrega at-least-once, ordem, precisão, retentativas, cancelamento/tempo limite, recorrentes (sobreposição/misfire), exclusão, filas |
 | [patterns.md](patterns.md) | Padrões obrigatórios: componente, API fluente, extensão de DI, middleware, provider |
 | [anti-patterns.md](anti-patterns.md) | O que **nunca** fazer no Guará |
 | [performance.md](performance.md) | Princípios de performance e regras de alocação |

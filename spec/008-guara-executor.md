@@ -87,7 +87,7 @@ Roda o pipeline do Core (Spec 002); invoca via dispatch gerado (Spec 029); persi
 
 ## Deferred Decisions
 
-- **DD-1 — Política de retry default** (herda DD-1 da Spec 002). *Fallback:* 3 tentativas, back-off exponencial (2^n com jitter), `0` para efeito irreversível. *Revisão:* resolvida aqui — **confirmada**.
+- **DD-1 — Política de retry default** (herda DD-1 da Spec 002). *Fallback:* 3 tentativas, back-off exponencial (2^n com jitter), `0` para efeito irreversível. *Revisão:* resolvida aqui — **confirmada**. **Semântica-alvo (2026-07-17, [semantics](../docs/semantics.md)): retentativa persistente** — falha grava `Retrying` + reagendamento com back-off e `Attempt` no storage (sobrevive a restart; dashboard mostra a contagem real); a retentativa in-process atual é interim. Garantia de entrega do Guará: **at-least-once**.
 - **DD-2 — Continuations (resolvido).** *Decisão:* **no escopo 1.0** — especificado em [Spec 030](030-continuations.md); o Executor emite `JobCompleted`/`JobFailed` que disparam a promoção das continuações.
 - **DD-3 — Timeout por job.** *Fallback:* opcional por job (atributo/opção), sem default global. *Revisão:* pós-MVP.
 - **DD-4 — Armazenamento de resultado.** *Fallback:* resultado serializado (Spec 003) e persistido no `JobRecord`; truncado acima de um limite configurável. *Revisão:* Spec 004/010.

@@ -73,7 +73,7 @@ Estende Dashboard.Api (Spec 022) e SPA (Spec 024); consome métricas (Spec 016) 
 
 - **AC-1 — Busca.** *Dado* filtros por tipo+fila+estado+intervalo, *então* a API retorna resultados paginados corretos.
 - **AC-2 — Gráficos ao vivo.** *Dado* jobs sendo processados, *então* os gráficos atualizam via SSE em ~1s.
-- **AC-3 — Recorrentes.** *Dado* um recurring, *quando* pauso, *então* ele não dispara até retomar; disparo manual funciona.
+- **AC-3 — Recorrentes.** *Dado* um recurring, *quando* pauso, *então* ele não dispara até retomar; disparo manual funciona. *Quando* retomo, *então* **sem backfill** — nada do período pausado roda; a próxima ocorrência é a próxima válida ([semantics](../docs/semantics.md)).
 - **AC-4 — Ações em massa.** *Dado* 50 jobs selecionados, *quando* re-enfileiro, *então* todos os autorizados são re-enfileirados e o resultado por item é reportado.
 - **AC-5 — Permissão em massa.** *Dado* usuário sem `guara:delete`, *então* a ação de exclusão em massa é negada.
 - **AC-6 — Degradação.** *Dado* provider com busca limitada, *então* a UI oferece os filtros suportados e informa os indisponíveis (sem erro 500).

@@ -54,6 +54,7 @@ Mesma política de enfileiramento do `IGuaraClient` (Spec 005/021).
 - **Disparo duplicado** (retry do pai / múltiplos nós) → promoção idempotente (via lease/lock, Spec 004/025); filho enfileira uma única vez.
 - **Cadeia longa / ciclo** → detecção de ciclo; profundidade máxima configurável.
 - **Pai purgado por retenção** antes do disparo → filhos órfãos tratados (disparo garantido antes da purga do pai).
+- **Pai excluído** (`ExcluirAsync`) → continuações pendentes **descartadas e registradas** (visíveis no dashboard), nunca disparadas ([semantics](../docs/semantics.md)).
 
 ## Non-Functional Requirements
 

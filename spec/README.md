@@ -19,6 +19,7 @@ Alvo é o **produto completo 1.0** (não um MVP) — construído passo a passo. 
 | **Recursos 1.0** | Continuations (OSS) · Batches (**Pro/comercial**) · Dashboard avançado (OSS). Multi-tenancy **fora do 1.0**. |
 | **Split OSS × Pro** | OSS: todo o runtime, providers, dashboard (tempo real + avançado), continuations, cluster, CLI, analyzers, source gen. **Pro (comercial):** `Guara.Pro.Batches` (e futuros extras). *Proposta — me avise se quiser mover a fronteira.* |
 | **Logs** | Estruturados via `ILogger` (sink-agnóstico, ADR-0009); `Guara.Host` usa o JSON console formatter **nativo** do .NET (sem Serilog); sinks/painéis de terceiros são opção do usuário. |
+| **Semântica** | Garantias canônicas em [docs/semantics.md](../docs/semantics.md) (2026-07-17): entrega **at-least-once**; tempo limite cooperativo (job que ignora o token e completa = Succeeded+aviso); recorrentes **sobrepõem por padrão**; misfire = **uma** compensação; filas com **prioridade estrita** (starvation documentada); retentativa **persistente** como alvo. |
 
 ## Roadmap (ordem de dependência)
 

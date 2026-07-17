@@ -102,8 +102,8 @@ N/A (declarativo). O lock de concorrência usa o `ILockProvider` do storage conf
 - **Nó morre segurando o lock** → TTL do lock expira (fail-safe do `ILockProvider`, spec 004).
 - **Storage sem lock distribuído** (`SupportsDistributedLock=false`, ex.: Memory) → mutex vale por processo; documentado e refletido em `Capabilities`.
 - **Placeholder de chave inválido** (`{9}` sem argumento) → **erro de compilação** via source generator/analyzer, não erro em runtime.
-- **`[GuaraTempoLimite]` excedido** → cancelamento **cooperativo** (job deve honrar o `CancellationToken`); estado `Failed` com motivo "tempo limite".
-- **`[GuaraPularSeAnteriorEmExecucao]`** → ocorrência pulada é registrada (visível no dashboard), não silenciosa.
+- **`[GuaraTempoLimite]` excedido** → cancelamento **cooperativo** (job deve honrar o `CancellationToken`). Job que honra o token → `Failed` com motivo "tempo limite". Job que **ignora** o token e completa → **`Succeeded` + aviso no log** — o estado reflete a realidade (o efeito já ocorreu); o slot fica ocupado até o fim (decisão 2026-07-17, [semantics](../docs/semantics.md)).
+- **`[GuaraPularSeAnteriorEmExecucao]`** → ocorrência pulada é registrada (visível no dashboard), não silenciosa. **Sem o atributo, ocorrências de recorrentes sobrepõem por padrão** (modelo Quartz/Hangfire — decisão 2026-07-17, [semantics](../docs/semantics.md)).
 - **Atributo em método e classe** → método vence (documentado).
 
 ## Non-Functional Requirements
