@@ -50,7 +50,8 @@ await jobs.AdicionarOuAtualizarRecorrenteAsync(job => job
 - **`ICalendarBuilder`**: `ExcluirData(DateOnly)`, `ExcluirIntervalo(DateOnly, DateOnly)`, `ExcluirDiasDaSemana(params DayOfWeek[])`, `ExcluirCron(expr)` (janelas por cron).
 - **`IGuaraClient`** ganha (extend-only): `AdicionarOuAtualizarRecorrenteAsync(Action<IRecurringJobBuilder>, ct)` e `AdicionarOuAtualizarCalendarioAsync(nome, Action<ICalendarBuilder>, ct)` / `ExcluirCalendarioAsync(nome, ct)`.
 - **Persistência**: definição recorrente completa (com vigência/descrição/calendário) na estrutura `Recurring`; calendários na estrutura **`Calendars`** (adicionada ao esquema da [Spec 004](004-guara-storage.md)) via `IRecurringStorage`.
-- **Semântica do calendário**: ao computar a próxima ocorrência (Spec 005), datas excluídas são **puladas** para a ocorrência seguinte válida.
+- **Semântica do calendário**: ao computar a próxima ocorrência (Spec 005), datas excluídas são **puladas** para a ocorrência seguinte válida. Calendários também são **gerenciáveis pelo dashboard** ([Spec 032](032-dashboard-avancado.md)) — mesmo caminho de persistência, mesmo recálculo automático.
+- **Semântica de `EntreHorarios(início, fim)`** (janela diária do `ACada`): a janela governa **o cálculo das ocorrências, não a duração da execução** — um job iniciado às 17:59 que leve 5 minutos termina normalmente depois das 18:00 (um job em andamento **nunca** é interrompido pela janela; limite de duração é `[GuaraTempoLimite]`, spec 036). Após o fim da janela, a próxima ocorrência é o **próximo início de janela** (ex.: dia seguinte às 08:00). A janela é avaliada no fuso de `NoFusoHorario`. `início > fim` significa janela que **cruza a meia-noite** (ex.: 22:00–06:00).
 
 ## API Contract
 

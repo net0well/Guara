@@ -66,7 +66,7 @@ The name comes from the *lobo-guará* (maned wolf), a fast and resilient animal 
 | Fire-and-forget | Enqueue a job and return immediately |
 | Delayed jobs | Run once after a given delay |
 | Recurring jobs | Cron expressions or intervals, with a Quartz-style **fluent builder** (`ComId`, `IniciaEm`, `ComCalendario`...) |
-| Calendars | Excluded dates and windows (holidays, weekends) reusable across recurring jobs |
+| Calendars | Excluded dates and windows (holidays, weekends) reusable across recurring jobs — manageable from code or from the dashboard |
 | Native time zones | IANA (`America/Sao_Paulo`) and Windows ids accepted on both OSes — no third-party packages |
 | Continuations | Chain jobs: run B automatically when A finishes |
 | Automatic retries | Exponential back-off, configurable per job, opt-out for non-idempotent work |
@@ -178,6 +178,8 @@ await jobs.AdicionarOuAtualizarCalendarioAsync("holidays", cal => cal
     .ExcluirDiasDaSemana(DayOfWeek.Sunday),
     ct);
 ```
+
+Calendars can also be created and maintained **through the dashboard UI** — a lightweight month view for adding holidays and excluding dates — with the same effect: recurring jobs using them are recomputed automatically, whether the change comes from code or from the panel.
 
 ### Continuations and deletion
 

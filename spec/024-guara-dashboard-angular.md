@@ -22,7 +22,7 @@ Operadores precisam de uma interface para **observar e agir** sobre os jobs: ver
 - **Atualização em tempo real** via SSE (`/api/v1/stream`): contadores, listas e detalhe refletem mudanças sem refresh (com fallback para polling).
 - Tema claro/escuro, i18n (pt-BR/en), acessibilidade (WCAG/ARIA).
 - Build (Angular CLI) que gera **assets estáticos** embutidos por `Guara.Dashboard` (Spec 023).
-- Telas avançadas (busca/filtros, gráficos ao vivo, gestão de recorrentes, ações em massa) → [Spec 032](032-dashboard-avancado.md).
+- Telas avançadas (busca/filtros, gráficos ao vivo, gestão de recorrentes, **calendários** — visão mensal leve para feriados/exclusões — e ações em massa) → [Spec 032](032-dashboard-avancado.md).
 
 ### Out
 
