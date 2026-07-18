@@ -15,6 +15,9 @@ public sealed class ServerOptions
     /// <summary>Intervalo entre ciclos de manutenção (purga por retenção, limpeza de nós).</summary>
     public TimeSpan MaintenanceInterval { get; set; } = TimeSpan.FromMinutes(1);
 
+    /// <summary>Intervalo entre varreduras de recorrentes vencidos (promoção de ocorrências).</summary>
+    public TimeSpan RecurringPollInterval { get; set; } = TimeSpan.FromSeconds(15);
+
     /// <summary>Por quanto tempo jobs terminados permanecem consultáveis antes da purga.</summary>
     public RetentionPolicy Retention { get; set; } = RetentionPolicy.Default;
 }
