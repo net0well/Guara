@@ -19,7 +19,7 @@ public class SystemTextJsonSerializerTests
             options);
     }
 
-    // AC-1 — round-trip de JobDescriptor
+    // round-trip de JobDescriptor
     [Fact]
     public void Serialize_JobDescriptor_RoundTrips()
     {
@@ -40,7 +40,7 @@ public class SystemTextJsonSerializerTests
         Assert.Equal("abc", restored.Metadata?["correlationId"]);
     }
 
-    // AC-1 — round-trip de argumentos (primitivos + tipo custom + null)
+    // round-trip de argumentos (primitivos + tipo custom + null)
     [Fact]
     public void SerializeArgs_MixedArgs_RoundTrip()
     {
@@ -58,7 +58,7 @@ public class SystemTextJsonSerializerTests
         Assert.Equal(3.14, restored[4]);
     }
 
-    // AC-3 — allowlist: discriminador desconhecido nunca instancia tipo
+    // allowlist: discriminador desconhecido nunca instancia tipo
     [Fact]
     public void DeserializeArgs_UnknownDiscriminator_Throws()
     {
@@ -69,7 +69,7 @@ public class SystemTextJsonSerializerTests
         Assert.Contains("tipoMalicioso", ex.Message);
     }
 
-    // AC-3 (espelho) — serializar tipo não registrado falha com mensagem acionável
+    // espelho da allowlist: serializar tipo não registrado falha com mensagem acionável
     [Fact]
     public void SerializeArgs_UnregisteredType_Throws()
     {
@@ -80,7 +80,7 @@ public class SystemTextJsonSerializerTests
         Assert.Contains(nameof(TestPayload), ex.Message);
     }
 
-    // AC-4 — campo desconhecido (payload de versão futura) é ignorado
+    // campo desconhecido (payload de versão futura) é ignorado
     [Fact]
     public void Deserialize_UnknownField_IsIgnored()
     {
@@ -92,7 +92,7 @@ public class SystemTextJsonSerializerTests
         Assert.Equal(new TestPayload("ok", 2), result);
     }
 
-    // AC-5 — campo ausente (payload antigo) assume default
+    // campo ausente (payload antigo) assume default
     [Fact]
     public void Deserialize_MissingField_UsesDefault()
     {
@@ -106,7 +106,7 @@ public class SystemTextJsonSerializerTests
         Assert.Equal(0, result.Count);
     }
 
-    // AC-6 — payload corrompido gera erro determinístico (não crash)
+    // payload corrompido gera erro determinístico (não crash)
     [Fact]
     public void Deserialize_CorruptPayload_ThrowsGuaraSerializationException()
     {
@@ -117,7 +117,7 @@ public class SystemTextJsonSerializerTests
         Assert.Throws<GuaraSerializationException>(() => serializer.DeserializeArgs(garbage));
     }
 
-    // AC-7 — payload idêntico independentemente da cultura da máquina
+    // payload idêntico independentemente da cultura da máquina
     [Fact]
     public void SerializeArgs_IsCultureInvariant()
     {
@@ -141,7 +141,7 @@ public class SystemTextJsonSerializerTests
         }
     }
 
-    // Envelope de versão futura é rejeitado explicitamente (DD-3)
+    // envelope de versão futura é rejeitado explicitamente
     [Fact]
     public void DeserializeArgs_UnsupportedEnvelopeVersion_Throws()
     {

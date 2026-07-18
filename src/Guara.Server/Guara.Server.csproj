@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Guara.Server</PackageId>
+    <Description>Servidor do Guará: ciclo de vida dos motores, heartbeat do nó, manutenção (retenção/limpeza) e integração com o Generic Host via IHostedService.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Guara.Abstractions\Guara.Abstractions.csproj" />
+    <ProjectReference Include="..\Guara.Storage\Guara.Storage.csproj" />
+    <ProjectReference Include="..\Guara.Scheduler\Guara.Scheduler.csproj" />
+    <ProjectReference Include="..\Guara.Dispatcher\Guara.Dispatcher.csproj" />
+    <ProjectReference Include="..\Guara.Worker\Guara.Worker.csproj" />
+    <ProjectReference Include="..\Guara.Executor\Guara.Executor.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+</Project>

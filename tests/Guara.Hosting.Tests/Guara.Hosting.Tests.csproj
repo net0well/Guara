@@ -6,11 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Guara.Dispatcher\Guara.Dispatcher.csproj" />
-    <ProjectReference Include="..\..\src\Guara.Worker\Guara.Worker.csproj" />
-    <ProjectReference Include="..\..\src\Guara.Executor\Guara.Executor.csproj" />
-    <ProjectReference Include="..\..\src\Guara.Scheduler\Guara.Scheduler.csproj" />
     <ProjectReference Include="..\..\src\Guara.Hosting\Guara.Hosting.csproj" />
+    <ProjectReference Include="..\..\src\Guara.Server\Guara.Server.csproj" />
     <ProjectReference Include="..\..\src\Guara.Storage.Memory\Guara.Storage.Memory.csproj" />
   </ItemGroup>
 

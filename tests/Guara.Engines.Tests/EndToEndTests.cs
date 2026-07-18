@@ -1,5 +1,4 @@
 using Guara.Abstractions;
-using Guara.Core;
 using Guara.Executor;
 using Guara.Storage;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,20 +13,12 @@ namespace Guara.Engines.Tests;
 /// </summary>
 public class EndToEndTests
 {
-    private sealed class TestGuaraBuilder(IServiceCollection services) : IGuaraBuilder
-    {
-        public IServiceCollection Services { get; } = services;
-    }
-
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     private static ServiceProvider BuildHost()
     {
         var services = new ServiceCollection();
-        var builder = new TestGuaraBuilder(services);
-
-        services.AddSingleton<IEventPublisher, InProcessEventPublisher>(); // wiring do Hosting (spec 009), manual por ora
-        builder
+        services.AddGuara()
             .UseMemoryStorage()
             .AddGuaraScheduler()
             .AddGuaraExecutor(retry => retry.Backoff = static _ => TimeSpan.Zero)
