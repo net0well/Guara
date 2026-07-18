@@ -23,6 +23,9 @@ public interface IStorage
     /// <summary>Registro de nós servidores (heartbeat/descoberta).</summary>
     IServerRegistry Servers { get; }
 
+    /// <summary>Definições recorrentes e calendários.</summary>
+    IRecurringStorage Recurring { get; }
+
     /// <summary>
     /// Inicia uma transação, quando <see cref="StorageCapabilities.SupportsTransactions"/>.
     /// </summary>

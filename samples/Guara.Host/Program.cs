@@ -9,7 +9,7 @@ var builder = Host.CreateApplicationBuilder(args);
 builder.Services
     .AddGuara(options => options.ApplicationName = "guara-host")
     .UseMemoryStorage()
-    .AddGuaraServer();
+    .AddGuaraServer(server => server.RecurringPollInterval = TimeSpan.FromSeconds(5));
 
 var host = builder.Build();
 
@@ -25,6 +25,12 @@ host.Services.GetRequiredService<JobHandlerRegistry>()
 var jobs = host.Services.GetRequiredService<IGuaraClient>();
 await jobs.EnfileirarAsync(new JobDescriptor("Demo", "Saudacao", default));
 await jobs.AgendarAsync(new JobDescriptor("Demo", "Saudacao", default), TimeSpan.FromSeconds(5));
-logger.LogInformation("Dois jobs de demonstração criados: um imediato e um agendado para daqui a 5s");
+await jobs.AdicionarOuAtualizarRecorrenteAsync(job => job
+    .ComId("saudacao-recorrente")
+    .Executa(new JobDescriptor("Demo", "Saudacao", default))
+    .ACada(TimeSpan.FromSeconds(15))
+    .ComDescricao("Saudação recorrente de demonstração"));
+logger.LogInformation(
+    "Jobs de demonstração criados: um imediato, um agendado para daqui a 5s e um recorrente a cada 15s");
 
 await host.RunAsync();

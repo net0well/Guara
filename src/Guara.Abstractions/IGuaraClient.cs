@@ -2,9 +2,8 @@ namespace Guara.Abstractions;
 
 /// <summary>
 /// A API pública de operação de jobs do Guará — métodos em <b>português</b>.
-/// Injete em qualquer serviço para enfileirar, agendar e excluir jobs.
-/// Métodos de recorrentes/calendários (builder fluente) entram como adições
-/// extend-only mais adiante.
+/// Injete em qualquer serviço para enfileirar, agendar e excluir jobs, além de
+/// gerenciar recorrentes e calendários de exclusão.
 /// </summary>
 public interface IGuaraClient
 {
@@ -28,4 +27,48 @@ public interface IGuaraClient
     /// <param name="ct">Token de cancelamento.</param>
     /// <returns><c>true</c> se o job foi excluído; <c>false</c> se não existe ou está em execução.</returns>
     ValueTask<bool> ExcluirAsync(JobId id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Cria ou atualiza um job recorrente (upsert pelo <c>ComId</c>). Atualizar recalcula
+    /// o próximo disparo a partir de agora com a nova agenda.
+    /// </summary>
+    /// <param name="configurar">Configuração fluente do recorrente.</param>
+    /// <param name="ct">Token de cancelamento.</param>
+    /// <returns>Uma <see cref="ValueTask"/> que conclui quando a definição está persistida.</returns>
+    ValueTask AdicionarOuAtualizarRecorrenteAsync(Action<IRecurringJobBuilder> configurar, CancellationToken ct = default);
+
+    /// <summary>Forma posicional de conveniência para recorrentes por cron.</summary>
+    /// <param name="id">Id estável da definição.</param>
+    /// <param name="job">O que executar.</param>
+    /// <param name="cron">Expressão cron de 5 campos.</param>
+    /// <param name="fuso">Fuso da agenda.</param>
+    /// <param name="ct">Token de cancelamento.</param>
+    /// <returns>Uma <see cref="ValueTask"/> que conclui quando a definição está persistida.</returns>
+    ValueTask AdicionarOuAtualizarRecorrenteAsync(
+        string id, JobDescriptor job, string cron, TimeZoneInfo fuso, CancellationToken ct = default);
+
+    /// <summary>Remove uma definição recorrente (ocorrências já enfileiradas não são afetadas).</summary>
+    /// <param name="id">Id da definição.</param>
+    /// <param name="ct">Token de cancelamento.</param>
+    /// <returns><c>true</c> se a definição existia e foi removida.</returns>
+    ValueTask<bool> ExcluirRecorrenteAsync(string id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Cria ou atualiza um calendário de exclusões. Ao substituir um calendário existente,
+    /// os recorrentes que o usam têm o próximo disparo recalculado automaticamente.
+    /// </summary>
+    /// <param name="nome">Nome único do calendário.</param>
+    /// <param name="configurar">Configuração fluente das exclusões.</param>
+    /// <param name="ct">Token de cancelamento.</param>
+    /// <returns>Uma <see cref="ValueTask"/> que conclui quando o calendário está persistido.</returns>
+    ValueTask AdicionarOuAtualizarCalendarioAsync(
+        string nome, Action<ICalendarBuilder> configurar, CancellationToken ct = default);
+
+    /// <summary>
+    /// Remove um calendário. Falha se algum recorrente o usa (a mensagem lista quais).
+    /// </summary>
+    /// <param name="nome">Nome do calendário.</param>
+    /// <param name="ct">Token de cancelamento.</param>
+    /// <returns><c>true</c> se o calendário existia e foi removido.</returns>
+    ValueTask<bool> ExcluirCalendarioAsync(string nome, CancellationToken ct = default);
 }

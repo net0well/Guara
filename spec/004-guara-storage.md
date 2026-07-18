@@ -98,6 +98,8 @@ public interface ILockProvider
 
 > **Implementação (2026-07-18, junto com a Spec 010):** família ganhou, extend-only: `IStorage.Servers` (**`IServerRegistry`**: `AnnounceAsync` upsert, `HeartbeatAsync`→**bool** (`false` = registro sumiu, chamador reanuncia), `RemoveAsync`, `ListAsync`, `RemoveExpiredAsync`→count — espelho do `AnnounceServer/Heartbeat/RemoveTimedOutServers` do Hangfire); `JobRecord.FinishedAt` (carimbado pelo storage na **primeira** transição terminal, preservado em reaplicações — base da retenção); `IJobStorage.PurgeAsync(state, finishedBefore)` (só `Succeeded`/`Failed`, lança `ArgumentException` para não-terminais). Conformance kit agora cobre também FinishedAt/purga/registro de servidores.
 
+> **Implementação (2026-07-18, junto com as Specs 005/038):** família ganhou, extend-only: `IStorage.Recurring` (**`IRecurringStorage`**) com as estruturas **`Recurring`** (`RecurringJobRecord`: agenda cron **ou** intervalo + janela diária, fuso, vigência, fila, calendário, pausa, e o histórico `LastRunAt`/`LastRunJobId`/`NextRunAt`/`LastSkippedAt` — upsert pela chave `Id`) e **`Calendars`** (`CalendarRecord`: datas, intervalos de datas, dias-da-semana e janelas cron excluídos, com `SchemaVersion` no payload — upsert pela chave `Name`). `ListDueAsync(now)` devolve definições ativas com `NextRunAt <= now` em ordem de vencimento (a consulta do laço de promoção da spec 010). Conformance kit cobre round-trip/upsert/delete de ambos e o filtro/ordenação do `ListDueAsync` (pausado e sem-próximo ficam fora).
+
 ## Authorization
 
 N/A no contrato. Providers **não** confiam no payload para resolver tipos (ver [Spec 003](003-guara-serialization.md)); acesso ao storage é responsabilidade de infra (connection string/segredos via `Configuration`).

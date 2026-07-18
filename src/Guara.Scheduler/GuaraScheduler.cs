@@ -23,29 +23,9 @@ public sealed class GuaraScheduler(ICronParser cronParser) : IScheduler
             ScheduleKind.Cron or ScheduleKind.Recurring => cronParser.GetNext(
                 schedule.CronExpression
                     ?? throw new InvalidOperationException("ScheduleDescriptor de cron sem expressão."),
-                ResolveTimeZone(schedule.TimeZoneId),
+                TimeZones.Resolve(schedule.TimeZoneId),
                 after),
             _ => null,
         };
-    }
-
-    private static TimeZoneInfo ResolveTimeZone(string? timeZoneId)
-    {
-        if (string.IsNullOrEmpty(timeZoneId))
-        {
-            return TimeZoneInfo.Utc; // default quando o fuso não é especificado
-        }
-
-        try
-        {
-            // Aceita IANA e Windows: o .NET converte nativamente quando necessário.
-            return TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
-        }
-        catch (TimeZoneNotFoundException ex)
-        {
-            throw new TimeZoneNotFoundException(
-                $"Fuso horário '{timeZoneId}' não encontrado. Use um id IANA " +
-                "(ex.: 'America/Sao_Paulo') ou Windows (ex.: 'E. South America Standard Time').", ex);
-        }
     }
 }

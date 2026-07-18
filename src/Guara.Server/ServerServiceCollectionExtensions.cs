@@ -1,5 +1,6 @@
 using Guara.Abstractions;
 using Guara.Dispatcher;
+using Guara.Scheduler;
 using Guara.Server;
 using Guara.Storage;
 using Guara.Worker;
@@ -41,6 +42,8 @@ public static class ServerServiceCollectionExtensions
             sp.GetRequiredService<IStorage>(),
             sp.GetRequiredService<IDispatcher>(),
             sp.GetRequiredService<IWorker>(),
+            sp.GetRequiredService<IGuaraClient>(),
+            sp.GetRequiredService<RecurrenceCalculator>(),
             sp.GetRequiredService<ServerOptions>(),
             sp.GetRequiredService<DispatcherOptions>(),
             sp.GetRequiredService<WorkerOptions>(),
