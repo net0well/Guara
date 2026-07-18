@@ -6,9 +6,9 @@ using Microsoft.Extensions.Logging;
 namespace Guara.Worker;
 
 /// <summary>
-/// Implementação default de <see cref="IWorker"/> (spec 007): consome
+/// Implementação default de <see cref="IWorker"/>: consome
 /// <see cref="WorkerRequested"/> num canal limitado (backpressure natural até o
-/// Dispatcher — ADR-0004), executa em N slots concorrentes, renova a posse durante a
+/// Dispatcher), executa em N slots concorrentes, renova a posse durante a
 /// execução (posse perdida → aborta local, evitando execução dupla) e faz drain
 /// gracioso no shutdown.
 /// </summary>
@@ -102,7 +102,7 @@ public sealed class GuaraWorker : IWorker, IEventHandler<WorkerRequested>
         var timeout = Task.Delay(_options.ShutdownDrainTimeout, _time, CancellationToken.None);
         if (await Task.WhenAny(drain, timeout) == timeout)
         {
-            // 3) …e cancela cooperativamente os excedentes (spec 007, AC-5).
+            // 3) …e cancela cooperativamente os excedentes.
             await _executionCts.CancelAsync();
         }
 
@@ -175,7 +175,7 @@ public sealed class GuaraWorker : IWorker, IEventHandler<WorkerRequested>
                 if (!await _storage.Jobs.RenewLeaseAsync(id, _options.LeaseDuration, ct))
                 {
                     // Posse perdida (outro nó pode assumir): aborta a execução local
-                    // para nunca processar em dobro (spec 007, AC-7).
+                    // para nunca processar o job em dobro.
                     _logger.LogWarning(
                         "Posse do job {JobId} perdida; abortando a execução local", id.Value);
                     await jobCts.CancelAsync();

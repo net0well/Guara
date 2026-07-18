@@ -1,10 +1,10 @@
 namespace Guara.Abstractions;
 
 /// <summary>
-/// A API pública de operação de jobs do Guará — métodos em <b>português</b> (ADR-0010).
+/// A API pública de operação de jobs do Guará — métodos em <b>português</b>.
 /// Injete em qualquer serviço para enfileirar, agendar e excluir jobs.
 /// Métodos de recorrentes/calendários (builder fluente) entram como adições
-/// extend-only junto da implementação da spec 038.
+/// extend-only mais adiante.
 /// </summary>
 public interface IGuaraClient
 {

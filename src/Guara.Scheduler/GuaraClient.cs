@@ -6,7 +6,7 @@ namespace Guara.Scheduler;
 /// <summary>
 /// Implementação default de <see cref="IGuaraClient"/>: persiste o job no storage
 /// ("o storage é a fila") e emite os eventos do fluxo (<see cref="JobCreated"/>,
-/// <see cref="JobScheduled"/>) — nunca chama outro componente diretamente (ADR-0002).
+/// <see cref="JobScheduled"/>) — nunca chama outro componente diretamente.
 /// </summary>
 public sealed class GuaraClient(IStorage storage, IEventPublisher events, TimeProvider time) : IGuaraClient
 {

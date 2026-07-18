@@ -6,7 +6,7 @@ namespace Guara.Core;
 /// <summary>
 /// Publicador de eventos <b>em processo</b>: faz fan-out síncrono para todos os
 /// <see cref="IEventHandler{TEvent}"/> registrados no contêiner. Entrega best-effort —
-/// a falha de um handler não impede os demais (spec 002/ADR-0002). A resolução usa o
+/// a falha de um handler não impede os demais. A resolução usa o
 /// tipo estático <c>TEvent</c> (genérico fechado), sem reflection → AOT-safe.
 /// </summary>
 /// <remarks>

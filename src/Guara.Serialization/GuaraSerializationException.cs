@@ -3,7 +3,7 @@ namespace Guara.Serialization;
 /// <summary>
 /// Erro de (de)serialização do Guará: payload corrompido, tipo não registrado na
 /// allowlist ou envelope em versão não suportada. Um job com payload inválido vira
-/// <c>Failed</c> com motivo — nunca derruba o worker (spec 003).
+/// <c>Failed</c> com motivo — nunca derruba o worker.
 /// </summary>
 public sealed class GuaraSerializationException : Exception
 {

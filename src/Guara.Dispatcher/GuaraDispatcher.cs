@@ -5,11 +5,11 @@ using Microsoft.Extensions.Logging;
 namespace Guara.Dispatcher;
 
 /// <summary>
-/// Implementação default de <see cref="IDispatcher"/> (spec 006): laço de polling que
+/// Implementação default de <see cref="IDispatcher"/>: laço de polling que
 /// adquire jobs elegíveis (aquisição atômica com lease — a fonte da verdade é o storage)
 /// e emite <see cref="WorkerRequested"/>. O backpressure vem do canal limitado do worker:
 /// publicar aguarda vaga, então o dispatcher nunca busca além da capacidade.
-/// Falha de storage não derruba o laço — back-off exponencial e retomada (AC-5).
+/// Falha de storage não derruba o laço — back-off exponencial e retomada.
 /// </summary>
 public sealed class GuaraDispatcher(
     IStorage storage,
@@ -81,7 +81,7 @@ public sealed class GuaraDispatcher(
 
             if (!dispatched)
             {
-                await DelayAsync(options.PollingInterval, ct); // fila vazia: sem busy-loop (AC-4)
+                await DelayAsync(options.PollingInterval, ct); // fila vazia: dorme até o próximo ciclo, sem busy-loop
             }
         }
     }
@@ -90,7 +90,7 @@ public sealed class GuaraDispatcher(
     {
         var dispatched = false;
 
-        // Filas em ordem de prioridade (spec 006, AC-6): drena a mais prioritária primeiro.
+        // Filas em ordem de prioridade: drena a mais prioritária antes de olhar a próxima.
         foreach (var queue in options.Queues)
         {
             while (!ct.IsCancellationRequested)
@@ -103,7 +103,7 @@ public sealed class GuaraDispatcher(
                 }
 
                 dispatched = true;
-                // Backpressure: se o canal do worker está cheio, aguarda aqui (AC-3).
+                // Backpressure: se o canal do worker está cheio, aguarda aqui.
                 await events.PublishAsync(new WorkerRequested(job.Id, time.GetUtcNow()), ct);
             }
         }

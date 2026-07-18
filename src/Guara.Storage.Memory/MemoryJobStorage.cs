@@ -5,7 +5,7 @@ namespace Guara.Storage.Memory;
 
 /// <summary>
 /// Persistência de jobs em memória. Atomicidade por exclusão mútua sobre o dicionário —
-/// nenhum job é adquirido por dois consumidores (spec 004, AC-2).
+/// nenhum job é adquirido por dois consumidores.
 /// </summary>
 internal sealed class MemoryJobStorage(TimeProvider time) : IJobStorage
 {

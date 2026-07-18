@@ -6,7 +6,7 @@ namespace Guara.Scheduler;
 /// Implementação default de <see cref="IScheduler"/>: imediato dispara já; delay soma o
 /// atraso; cron/recorrente delegam ao <see cref="ICronParser"/>. Fusos aceitam ids IANA
 /// (<c>America/Sao_Paulo</c>) e Windows nos dois sistemas — resolução nativa do .NET,
-/// sem pacotes de terceiros (ADR-0009/spec 038).
+/// sem pacotes de terceiros.
 /// </summary>
 public sealed class GuaraScheduler(ICronParser cronParser) : IScheduler
 {
@@ -33,7 +33,7 @@ public sealed class GuaraScheduler(ICronParser cronParser) : IScheduler
     {
         if (string.IsNullOrEmpty(timeZoneId))
         {
-            return TimeZoneInfo.Utc; // default do Guará (spec 005, DD-3)
+            return TimeZoneInfo.Utc; // default quando o fuso não é especificado
         }
 
         try

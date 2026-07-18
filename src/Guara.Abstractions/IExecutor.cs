@@ -3,7 +3,7 @@ namespace Guara.Abstractions;
 /// <summary>
 /// Executa um job já adquirido (com posse/lease): roda o pipeline de middlewares,
 /// invoca o método do job e persiste o estado final, emitindo
-/// <see cref="JobCompleted"/>/<see cref="JobFailed"/> (spec 008).
+/// <see cref="JobCompleted"/>/<see cref="JobFailed"/>.
 /// </summary>
 public interface IExecutor
 {
@@ -17,7 +17,7 @@ public interface IExecutor
 /// <summary>
 /// Invoca o método do job a partir do <see cref="IJobContext"/> — <b>sem reflection</b>.
 /// A implementação definitiva é gerada em compilação pelo <c>Guara.SourceGenerators</c>
-/// (spec 029); até lá, o <c>Guara.Executor</c> fornece um registro manual.
+/// até que essa geração exista, o <c>Guara.Executor</c> fornece um registro manual.
 /// </summary>
 public interface IJobInvoker
 {

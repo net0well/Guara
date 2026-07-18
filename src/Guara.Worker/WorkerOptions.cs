@@ -1,6 +1,6 @@
 namespace Guara.Worker;
 
-/// <summary>Opções do worker (spec 007).</summary>
+/// <summary>Opções do worker.</summary>
 public sealed class WorkerOptions
 {
     /// <summary>Máximo de jobs executando simultaneamente. Default: nº de CPUs.</summary>

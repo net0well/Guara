@@ -2,7 +2,7 @@ using Guara.Abstractions;
 
 namespace Guara.Core;
 
-/// <summary>Governa as transições válidas de <see cref="JobState"/> (ver spec 002).</summary>
+/// <summary>Governa as transições válidas de <see cref="JobState"/>.</summary>
 public sealed class JobStateMachine
 {
     private static readonly Dictionary<JobState, JobState[]> Allowed = new()

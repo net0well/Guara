@@ -5,8 +5,8 @@ namespace Guara.Serialization;
 
 /// <summary>
 /// Contexto de serialização gerado em compilação (<see cref="JsonSerializerContext"/>)
-/// para os tipos do framework e primitivos comuns — zero reflection em runtime
-/// (ADR-0005/ADR-0008). Tipos do usuário entram via contextos adicionais encadeados
+/// para os tipos do framework e primitivos comuns — zero reflection em runtime.
+/// Tipos do usuário entram via contextos adicionais encadeados
 /// no <c>TypeInfoResolverChain</c> (futuramente gerados pelo <c>Guara.SourceGenerators</c>).
 /// </summary>
 [JsonSerializable(typeof(JobDescriptor))]

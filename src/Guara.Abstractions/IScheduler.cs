@@ -2,7 +2,7 @@ namespace Guara.Abstractions;
 
 /// <summary>
 /// Calcula <b>quando</b> um job deve rodar a partir do seu <see cref="ScheduleDescriptor"/>.
-/// Não executa, não busca e não persiste — apenas calcula (spec 005).
+/// Não executa, não busca e não persiste — apenas calcula.
 /// </summary>
 public interface IScheduler
 {

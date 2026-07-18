@@ -1,8 +1,8 @@
 namespace Guara.Core;
 
 /// <summary>
-/// Slots canônicos do pipeline de execução de jobs, na ordem em que executam
-/// (ver spec 002 e ADR-0007). Cada componente contribui com o middleware do seu slot;
+/// Slots canônicos do pipeline de execução de jobs, na ordem em que executam.
+/// Cada componente contribui com o middleware do seu slot;
 /// slots ausentes simplesmente não têm etapa.
 /// </summary>
 public enum PipelineSlot

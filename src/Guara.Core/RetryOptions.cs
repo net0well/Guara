@@ -5,7 +5,7 @@ public sealed class RetryOptions
 {
     /// <summary>
     /// Número máximo de retentativas após a primeira falha. <c>3</c> por padrão
-    /// (jobs com efeito colateral irreversível devem usar <c>0</c> — spec 008).
+    /// (jobs com efeito colateral irreversível devem usar <c>0</c>).
     /// </summary>
     public int MaxAttempts { get; set; } = 3;
 

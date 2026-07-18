@@ -103,6 +103,13 @@ Detalhe em [docs/](docs/ARCHITECTURE.md). Violações são anti-padrões ([docs/
 - **Comunicação por evento/contrato** — nunca chamada direta entre componentes.
 - **Um `AddGuara...()`/`Use...()` por pacote**, no namespace `Microsoft.Extensions.DependencyInjection`.
 - **API do usuário em português** (ADR-0010): métodos do `IGuaraClient`/`IBatchClient` — `EnfileirarAsync`, `AgendarAsync`, `AdicionarOuAtualizarRecorrenteAsync`, `ExcluirAsync`, `ContinuarComAsync` — e **atributos de job** (spec 036) — `[GuaraFila]`, `[GuaraRetentativas]`, `[GuaraDesabilitarConcorrencia]`, `[GuaraTempoLimite]`, `[GuaraPularSeAnteriorEmExecucao]`. Tipos, DI, options, rotas, CLI e contratos internos permanecem em inglês.
+
+## Norma de comentários de código (obrigatória)
+
+Comentários (incluindo XML docs) descrevem **100% o código** — o quê e o porquê no nível técnico, com mensagens claras e objetivas. **Nunca** referenciam specs, ADRs, `AC-N`, `DD-N`, decisões datadas, atividades ou caminhos de documento — isso vive nos `.md`, não no código. Exemplo:
+
+- ❌ `// posse perdida; aborta a execução local (spec 007, AC-7)`
+- ✅ `// posse perdida: aborta a execução local para nunca processar o job em dobro`
 - **Zero reflection em runtime** (Source Generators); `ValueTask` no hot path; `CancellationToken` propagado; **AOT/Trimming-safe**.
 - Sem factory global estática, sem singleton estático, sem `.Result`/`.Wait()`/`Thread.Sleep`.
 

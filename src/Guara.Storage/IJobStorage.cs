@@ -6,7 +6,7 @@ namespace Guara.Storage;
 /// Persistência e transição de jobs. A operação central é
 /// <see cref="AcquireNextDueAsync"/>: aquisição <b>atômica</b> do próximo job elegível
 /// com lease (visibility timeout) — no máximo um consumidor obtém cada job, mesmo
-/// entre múltiplos nós (spec 004, AC-2/AC-3).
+/// entre múltiplos nós.
 /// </summary>
 public interface IJobStorage
 {
@@ -31,7 +31,7 @@ public interface IJobStorage
     /// <summary>
     /// Renova a posse de um job em execução. Retorna <c>false</c> quando a posse foi
     /// perdida (lease expirou e outro nó assumiu, ou o job não existe) — o worker deve
-    /// abortar a execução local para evitar processamento duplo (spec 007, AC-7).
+    /// abortar a execução local para evitar processamento duplo.
     /// </summary>
     /// <param name="id">Id do job.</param>
     /// <param name="lease">Nova duração da posse a partir de agora.</param>
@@ -67,7 +67,7 @@ public interface IJobStorage
 
     /// <summary>
     /// Lista jobs para o dashboard. Sempre paginada; providers aplicam o teto
-    /// <see cref="JobQuery.MaxPageSize"/> (spec 004, AC-7).
+    /// <see cref="JobQuery.MaxPageSize"/>.
     /// </summary>
     /// <param name="query">Filtros e paginação.</param>
     /// <param name="ct">Token de cancelamento.</param>

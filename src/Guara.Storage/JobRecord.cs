@@ -11,7 +11,7 @@ public sealed record JobRecord
     /// <summary>Identificador do job.</summary>
     public required JobId Id { get; init; }
 
-    /// <summary>Descrição do que executar (argumentos já serializados — spec 003).</summary>
+    /// <summary>Descrição do que executar (argumentos já serializados).</summary>
     public required JobDescriptor Descriptor { get; init; }
 
     /// <summary>Estado atual.</summary>
@@ -31,7 +31,7 @@ public sealed record JobRecord
 
     /// <summary>
     /// Posse do job por um worker até este instante (visibility timeout).
-    /// Lease expirado torna o job novamente elegível — cobre crash de worker (spec 004).
+    /// Lease expirado torna o job novamente elegível — cobre crash de worker.
     /// </summary>
     public DateTimeOffset? LeaseUntil { get; init; }
 
