@@ -2,6 +2,7 @@ using Guara.Abstractions;
 using Guara.Scheduler;
 using Guara.Storage;
 using Guara.Storage.Memory;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Guara.Scheduler.Tests;
@@ -33,7 +34,10 @@ public class GuaraClientTests
     {
         var storage = new MemoryStorage(new FixedTimeProvider(T0));
         var events = new RecordingPublisher();
-        return (new GuaraClient(storage, events, new FixedTimeProvider(T0)), storage, events);
+        var client = new GuaraClient(
+            storage, events, new RecurrenceCalculator(new GuaraCronParser()),
+            new FixedTimeProvider(T0), NullLogger<GuaraClient>.Instance);
+        return (client, storage, events);
     }
 
     private static JobDescriptor Descriptor(string queue = "default")

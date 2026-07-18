@@ -1,6 +1,9 @@
 using Guara.Abstractions;
 using Guara.Scheduler;
+using Guara.Storage;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Microsoft.Extensions.DependencyInjection; // extensões neste namespace aparecem no IntelliSense de builder.Services
 
@@ -20,7 +23,13 @@ public static class SchedulerServiceCollectionExtensions
         builder.Services.TryAddSingleton(TimeProvider.System);
         builder.Services.TryAddSingleton<ICronParser, GuaraCronParser>();
         builder.Services.TryAddSingleton<IScheduler, GuaraScheduler>();
-        builder.Services.TryAddSingleton<IGuaraClient, GuaraClient>();
+        builder.Services.TryAddSingleton<RecurrenceCalculator>();
+        builder.Services.TryAddSingleton<IGuaraClient>(sp => new GuaraClient(
+            sp.GetRequiredService<IStorage>(),
+            sp.GetRequiredService<IEventPublisher>(),
+            sp.GetRequiredService<RecurrenceCalculator>(),
+            sp.GetRequiredService<TimeProvider>(),
+            sp.GetService<ILogger<GuaraClient>>() ?? NullLogger<GuaraClient>.Instance));
         return builder;
     }
 }
