@@ -66,6 +66,18 @@ public interface IJobStorage
     ValueTask<bool> DeleteAsync(JobId id, CancellationToken ct);
 
     /// <summary>
+    /// Remove definitivamente jobs em estado terminal finalizados antes do corte
+    /// (política de retenção). Só aceita <see cref="JobState.Succeeded"/> ou
+    /// <see cref="JobState.Failed"/>.
+    /// </summary>
+    /// <param name="state">Estado terminal a purgar.</param>
+    /// <param name="finishedBefore">Instante de corte sobre <see cref="JobRecord.FinishedAt"/>.</param>
+    /// <param name="ct">Token de cancelamento.</param>
+    /// <returns>Quantidade de jobs removidos.</returns>
+    /// <exception cref="ArgumentException">Quando <paramref name="state"/> não é terminal.</exception>
+    ValueTask<int> PurgeAsync(JobState state, DateTimeOffset finishedBefore, CancellationToken ct);
+
+    /// <summary>
     /// Lista jobs para o dashboard. Sempre paginada; providers aplicam o teto
     /// <see cref="JobQuery.MaxPageSize"/>.
     /// </summary>

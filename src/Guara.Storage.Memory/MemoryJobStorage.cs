@@ -78,11 +78,39 @@ internal sealed class MemoryJobStorage(TimeProvider time) : IJobStorage
                     Error = state is JobState.Failed or JobState.Retrying ? resultOrError : job.Error,
                     // estados não-Processing liberam a posse
                     LeaseUntil = state == JobState.Processing ? job.LeaseUntil : null,
+                    // primeira transição terminal carimba o fim; reaplicações preservam o instante original
+                    FinishedAt = state is JobState.Succeeded or JobState.Failed
+                        ? job.FinishedAt ?? time.GetUtcNow()
+                        : job.FinishedAt,
                 };
             }
         }
 
         return ValueTask.CompletedTask;
+    }
+
+    public ValueTask<int> PurgeAsync(JobState state, DateTimeOffset finishedBefore, CancellationToken ct)
+    {
+        if (state is not (JobState.Succeeded or JobState.Failed))
+        {
+            throw new ArgumentException(
+                $"Apenas estados terminais (Succeeded/Failed) podem ser purgados; recebido: {state}.", nameof(state));
+        }
+
+        lock (_sync)
+        {
+            var expired = _jobs.Values
+                .Where(j => j.State == state && j.FinishedAt is { } finished && finished < finishedBefore)
+                .Select(j => j.Id)
+                .ToList();
+
+            foreach (var id in expired)
+            {
+                _jobs.Remove(id);
+            }
+
+            return ValueTask.FromResult(expired.Count);
+        }
     }
 
     public ValueTask<JobRecord?> GetAsync(JobId id, CancellationToken ct)

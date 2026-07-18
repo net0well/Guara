@@ -47,7 +47,7 @@ Estruturas que os providers materializam (nomes na convenção de cada backend, 
 | `Jobs` | `JobRecord`: descriptor serializado, estado atual, tentativa, fila, `ScheduledFor`, `LeaseUntil`, resultado/erro | `IJobStorage` |
 | `Queues` | Metadados/introspecção de filas | `IQueueStorage` |
 | `Locks` | Locks distribuídos com TTL | `ILockProvider` |
-| `Servers` | Nós/heartbeat ([Spec 010](010-guara-server.md)) | contrato definido com a Spec 010 |
+| `Servers` | Nós/heartbeat ([Spec 010](010-guara-server.md)) | `IServerRegistry` (Announce/Heartbeat→bool/Remove/List/RemoveExpired) |
 | `Recurring` | Recorrentes: id, agenda (cron/intervalo), timezone, vigência (início/fim), descrição, calendário, último/próximo disparo, descriptor | `IRecurringStorage` — **adição extend-only**, definida com a [Spec 005](005-guara-scheduler.md)/[038](038-agendamento-fluente.md) |
 | `Calendars` | Calendários reutilizáveis (datas/dias/janelas excluídas — [Spec 038](038-agendamento-fluente.md)) | `IRecurringStorage` |
 | `Continuations` | Vínculo pai→filho + gatilho ([Spec 030](030-continuations.md)) | `IContinuationStorage` — **adição extend-only**, definida com a Spec 030 |
@@ -77,6 +77,7 @@ public interface IJobStorage
     ValueTask UpdateStateAsync(JobId id, JobState state, string? resultOrError, CancellationToken ct);
     ValueTask<JobRecord?> GetAsync(JobId id, CancellationToken ct);
     ValueTask<bool> DeleteAsync(JobId id, CancellationToken ct); // false = inexistente ou Processing (não exclui job rodando)
+    ValueTask<int> PurgeAsync(JobState state, DateTimeOffset finishedBefore, CancellationToken ct); // só terminais; base da retenção
     ValueTask<IReadOnlyList<JobRecord>> ListAsync(JobQuery query, CancellationToken ct); // paginada, teto MaxPageSize=100
 }
 
@@ -94,6 +95,8 @@ public interface ILockProvider
 > - `ILockHandle` (`IAsyncDisposable` + `RenewAsync` → bool) com posse por token: só o dono renova/libera.
 > - `JobQuery` com `MaxPageSize = 100` (AC-7).
 > - **Conformance kit** implementado como classe abstrata `StorageConformanceTests` (18 testes: aquisição atômica concorrente, lease/visibility, renovação, idempotência, paginação, locks TTL) — hoje em `tests/Guara.Storage.Memory.Tests/Conformance/`; será extraído para pacote compartilhado quando o segundo provider (specs 012+) chegar.
+
+> **Implementação (2026-07-18, junto com a Spec 010):** família ganhou, extend-only: `IStorage.Servers` (**`IServerRegistry`**: `AnnounceAsync` upsert, `HeartbeatAsync`→**bool** (`false` = registro sumiu, chamador reanuncia), `RemoveAsync`, `ListAsync`, `RemoveExpiredAsync`→count — espelho do `AnnounceServer/Heartbeat/RemoveTimedOutServers` do Hangfire); `JobRecord.FinishedAt` (carimbado pelo storage na **primeira** transição terminal, preservado em reaplicações — base da retenção); `IJobStorage.PurgeAsync(state, finishedBefore)` (só `Succeeded`/`Failed`, lança `ArgumentException` para não-terminais). Conformance kit agora cobre também FinishedAt/purga/registro de servidores.
 
 ## Authorization
 

@@ -4,7 +4,7 @@ using Guara.Storage.Memory;
 
 namespace Guara.Storage.Memory.Tests;
 
-/// <summary>O provider in-memory passa 100% do conformance kit (spec 011, AC-1).</summary>
+/// <summary>O provider in-memory passa 100% do kit de conformidade.</summary>
 public sealed class MemoryStorageConformanceTests : StorageConformanceTests
 {
     protected override ValueTask<IStorage> CreateStorageAsync(TimeProvider timeProvider)
