@@ -88,6 +88,8 @@ Coordena os motores via seus contratos; persiste heartbeat e roda manutenção v
 - **DD-2 — Retenção default.** *Fallback:* Succeeded 24h / Failed 7d (herda Spec 004 DD-3). *Revisão:* feedback de produção.
 - **DD-3 — Servidor no mesmo processo do app vs standalone.** *Fallback:* mesmo processo (via `IHostedService`); modo standalone/worker-service documentado como opção. *Revisão:* pós-MVP.
 
+> **Implementação (2026-07-18):** `GuaraServer` entregue (identidade do nó `maquina:pid:sufixo`, com filas e concorrência visíveis). **Heartbeat com reanúncio**: `HeartbeatAsync` devolvendo `false` (registro removido pela manutenção durante indisponibilidade) faz o nó se reanunciar — espelho do comportamento watchdog/`BackgroundServerGoneException` do Hangfire; falha de storage não derruba o laço. **Manutenção sob lock** (`guara:maintenance`, TTL = um ciclo): entre N nós só um executa por vez (substitui o gating de líder até a Spec 025) — remove nós expirados (`ServerTimeout`, novo, default 1 min) e purga terminais pela retenção. **Recuperação de leases é implícita** na aquisição (jobs `Processing` com lease vencido voltam a ser elegíveis) — não é tarefa de manutenção. `ShutdownTimeout` saiu das opções: o drain pertence ao Worker (`ShutdownDrainTimeout`); o `StopAsync` ordena dispatcher→worker→laços→desregistro (best-effort). `AddGuaraServer()` compõe scheduler+executor+worker+dispatcher (customize um motor chamando o `AddGuara*` dele **antes** — primeira configuração vence) e registra o hosted service idempotentemente. Recurring/recompute continuam pendentes (Spec 038).
+
 ## Open Questions
 
 _(vazio)_

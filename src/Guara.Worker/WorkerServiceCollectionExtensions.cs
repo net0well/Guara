@@ -33,8 +33,8 @@ public static class WorkerServiceCollectionExtensions
             sp.GetRequiredService<TimeProvider>(),
             sp.GetService<ILogger<GuaraWorker>>() ?? NullLogger<GuaraWorker>.Instance));
         builder.Services.TryAddSingleton<IWorker>(sp => sp.GetRequiredService<GuaraWorker>());
-        builder.Services.AddSingleton<IEventHandler<WorkerRequested>>(
-            sp => sp.GetRequiredService<GuaraWorker>());
+        builder.Services.TryAddEnumerable(
+            ServiceDescriptor.Singleton<IEventHandler<WorkerRequested>, WorkerRequestedForwarder>());
         return builder;
     }
 }

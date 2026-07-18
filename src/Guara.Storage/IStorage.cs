@@ -20,6 +20,9 @@ public interface IStorage
     /// <summary>Locks com TTL (distribuídos quando <see cref="StorageCapabilities.SupportsDistributedLock"/>).</summary>
     ILockProvider Locks { get; }
 
+    /// <summary>Registro de nós servidores (heartbeat/descoberta).</summary>
+    IServerRegistry Servers { get; }
+
     /// <summary>
     /// Inicia uma transação, quando <see cref="StorageCapabilities.SupportsTransactions"/>.
     /// </summary>

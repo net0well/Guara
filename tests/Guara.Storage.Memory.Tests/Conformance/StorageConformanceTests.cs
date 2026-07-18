@@ -5,9 +5,10 @@ using Xunit;
 namespace Guara.Storage.Conformance;
 
 /// <summary>
-/// Kit de conformidade de storage (spec 004, AC-6): TODO provider — inclusive de
-/// terceiros — deve herdar esta classe e passar 100%. Cobre aquisição atômica (AC-2),
-/// lease/visibility (AC-3), idempotência de estado (AC-4) e paginação limitada (AC-7).
+/// Kit de conformidade de storage: TODO provider — inclusive de terceiros — deve
+/// herdar esta classe e passar 100%. Cobre aquisição atômica sob concorrência,
+/// lease/visibility, idempotência de estado, retenção/purga, registro de servidores,
+/// locks com TTL e paginação limitada.
 /// O provider deve usar o <see cref="TimeProvider"/> recebido para lease/TTL.
 /// </summary>
 public abstract class StorageConformanceTests
@@ -50,7 +51,7 @@ public abstract class StorageConformanceTests
         Assert.Null(await storage.Jobs.GetAsync(new JobId("nao-existe"), CancellationToken.None));
     }
 
-    // --- Aquisição atômica (AC-2) ---
+    // --- Aquisição atômica ---
 
     [Fact]
     public async Task Acquire_EnqueuedJob_SetsProcessingAndLease()
@@ -98,7 +99,7 @@ public abstract class StorageConformanceTests
         Assert.Equal(jobCount, acquired.Distinct().Count()); // nenhum job processado 2x
     }
 
-    // --- Agendamento e lease/visibility (AC-3) ---
+    // --- Agendamento e lease/visibility ---
 
     [Fact]
     public async Task Acquire_ScheduledJob_OnlyWhenDue()
@@ -163,7 +164,7 @@ public abstract class StorageConformanceTests
         Assert.False(await storage.Jobs.RenewLeaseAsync(new JobId("j1"), TimeSpan.FromMinutes(5), CancellationToken.None));
     }
 
-    // --- Transições de estado (AC-4) ---
+    // --- Transições de estado ---
 
     [Fact]
     public async Task UpdateState_Succeeded_IsIdempotent_AndClearsLease()
@@ -220,7 +221,106 @@ public abstract class StorageConformanceTests
         Assert.NotNull(await storage.Jobs.GetAsync(new JobId("j1"), CancellationToken.None));
     }
 
-    // --- Listagem paginada (AC-7) ---
+    // --- Estados terminais e retenção ---
+
+    [Fact]
+    public async Task UpdateState_Terminal_StampsFinishedAt_AndPreservesItOnReapply()
+    {
+        var time = new ManualTimeProvider(T0);
+        var storage = await CreateStorageAsync(time);
+        await storage.Jobs.CreateAsync(NewJob("j1"), CancellationToken.None);
+
+        time.Advance(TimeSpan.FromMinutes(1));
+        await storage.Jobs.UpdateStateAsync(new JobId("j1"), JobState.Succeeded, "ok", CancellationToken.None);
+        var first = await storage.Jobs.GetAsync(new JobId("j1"), CancellationToken.None);
+        Assert.Equal(T0 + TimeSpan.FromMinutes(1), first!.FinishedAt);
+
+        // reaplicar a mesma transição não altera o instante de término original
+        time.Advance(TimeSpan.FromMinutes(5));
+        await storage.Jobs.UpdateStateAsync(new JobId("j1"), JobState.Succeeded, "ok", CancellationToken.None);
+        var second = await storage.Jobs.GetAsync(new JobId("j1"), CancellationToken.None);
+        Assert.Equal(first.FinishedAt, second!.FinishedAt);
+    }
+
+    [Fact]
+    public async Task Purge_RemovesOnlyMatchingStateOlderThanCutoff()
+    {
+        var time = new ManualTimeProvider(T0);
+        var storage = await CreateStorageAsync(time);
+        await storage.Jobs.CreateAsync(NewJob("velho-ok"), CancellationToken.None);
+        await storage.Jobs.CreateAsync(NewJob("novo-ok"), CancellationToken.None);
+        await storage.Jobs.CreateAsync(NewJob("velho-falho"), CancellationToken.None);
+
+        await storage.Jobs.UpdateStateAsync(new JobId("velho-ok"), JobState.Succeeded, null, CancellationToken.None);
+        await storage.Jobs.UpdateStateAsync(new JobId("velho-falho"), JobState.Failed, "erro", CancellationToken.None);
+        time.Advance(TimeSpan.FromHours(2));
+        await storage.Jobs.UpdateStateAsync(new JobId("novo-ok"), JobState.Succeeded, null, CancellationToken.None);
+
+        var removed = await storage.Jobs.PurgeAsync(
+            JobState.Succeeded, T0 + TimeSpan.FromHours(1), CancellationToken.None);
+
+        Assert.Equal(1, removed);
+        Assert.Null(await storage.Jobs.GetAsync(new JobId("velho-ok"), CancellationToken.None));
+        Assert.NotNull(await storage.Jobs.GetAsync(new JobId("novo-ok"), CancellationToken.None));    // mais novo que o corte
+        Assert.NotNull(await storage.Jobs.GetAsync(new JobId("velho-falho"), CancellationToken.None)); // estado diferente
+    }
+
+    [Fact]
+    public async Task Purge_NonTerminalState_Throws()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            async () => await storage.Jobs.PurgeAsync(JobState.Enqueued, T0, CancellationToken.None));
+    }
+
+    // --- Registro de servidores ---
+
+    [Fact]
+    public async Task Servers_AnnounceHeartbeatListAndRemove()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Servers.AnnounceAsync(new ServerNode
+        {
+            Id = "n1",
+            MachineName = "maquina",
+            StartedAt = T0,
+            LastHeartbeat = T0,
+            Queues = ["default"],
+            MaxConcurrency = 4,
+        }, CancellationToken.None);
+
+        Assert.True(await storage.Servers.HeartbeatAsync("n1", T0 + TimeSpan.FromSeconds(30), CancellationToken.None));
+        var listed = Assert.Single(await storage.Servers.ListAsync(CancellationToken.None));
+        Assert.Equal(T0 + TimeSpan.FromSeconds(30), listed.LastHeartbeat);
+
+        Assert.False(await storage.Servers.HeartbeatAsync("desconhecido", T0, CancellationToken.None));
+
+        await storage.Servers.RemoveAsync("n1", CancellationToken.None);
+        Assert.Empty(await storage.Servers.ListAsync(CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Servers_RemoveExpired_RemovesOnlyStaleNodes()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Servers.AnnounceAsync(new ServerNode
+        {
+            Id = "morto", MachineName = "m1", StartedAt = T0, LastHeartbeat = T0,
+        }, CancellationToken.None);
+        await storage.Servers.AnnounceAsync(new ServerNode
+        {
+            Id = "vivo", MachineName = "m2", StartedAt = T0, LastHeartbeat = T0 + TimeSpan.FromMinutes(5),
+        }, CancellationToken.None);
+
+        var removed = await storage.Servers.RemoveExpiredAsync(T0 + TimeSpan.FromMinutes(1), CancellationToken.None);
+
+        Assert.Equal(1, removed);
+        var remaining = Assert.Single(await storage.Servers.ListAsync(CancellationToken.None));
+        Assert.Equal("vivo", remaining.Id);
+    }
+
+    // --- Listagem paginada ---
 
     [Fact]
     public async Task List_CapsPageSize()
@@ -313,7 +413,7 @@ public abstract class StorageConformanceTests
         Assert.Null(await storage.Locks.TryAcquireAsync("chave", TimeSpan.FromMinutes(1), CancellationToken.None));
     }
 
-    // --- Capabilities (AC-5) ---
+    // --- Capabilities ---
 
     [Fact]
     public async Task Capabilities_AreDeclared()

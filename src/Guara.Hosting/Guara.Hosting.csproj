@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Guara.Hosting</PackageId>
+    <Description>Hosting do Guará: AddGuara(), builder fluente e o wiring dos serviços de núcleo (event bus, máquina de estados, opções globais).</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Guara.Abstractions\Guara.Abstractions.csproj" />
+    <ProjectReference Include="..\Guara.Core\Guara.Core.csproj" />
+  </ItemGroup>
+
+</Project>

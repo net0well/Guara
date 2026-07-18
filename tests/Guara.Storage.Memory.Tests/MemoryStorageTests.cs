@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Guara.Storage.Memory.Tests;
 
-/// <summary>Comportamentos específicos do provider in-memory (spec 011).</summary>
+/// <summary>Comportamentos específicos do provider in-memory.</summary>
 public sealed class MemoryStorageTests
 {
     [Fact]

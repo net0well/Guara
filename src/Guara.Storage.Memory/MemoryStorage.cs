@@ -19,6 +19,7 @@ public sealed class MemoryStorage : IStorage
         _jobs = new MemoryJobStorage(time);
         Queues = new MemoryQueueStorage(_jobs);
         Locks = new MemoryLockProvider(time);
+        Servers = new MemoryServerRegistry();
     }
 
     /// <inheritdoc />
@@ -40,6 +41,9 @@ public sealed class MemoryStorage : IStorage
 
     /// <inheritdoc />
     public ILockProvider Locks { get; }
+
+    /// <inheritdoc />
+    public IServerRegistry Servers { get; }
 
     /// <inheritdoc />
     public ValueTask<ITransaction> BeginTransactionAsync(CancellationToken ct)

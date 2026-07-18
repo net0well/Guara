@@ -189,3 +189,15 @@ public sealed class GuaraWorker : IWorker, IEventHandler<WorkerRequested>
         }
     }
 }
+
+/// <summary>
+/// Encaminha <see cref="WorkerRequested"/> ao <see cref="GuaraWorker"/> singleton.
+/// Ter um tipo concreto próprio permite registro idempotente por tipo de implementação:
+/// múltiplas chamadas de configuração nunca duplicam o handler (o que faria cada job
+/// entrar duas vezes na fila interna).
+/// </summary>
+internal sealed class WorkerRequestedForwarder(GuaraWorker worker) : IEventHandler<WorkerRequested>
+{
+    public ValueTask HandleAsync(WorkerRequested @event, CancellationToken ct)
+        => worker.HandleAsync(@event, ct);
+}

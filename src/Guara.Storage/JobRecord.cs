@@ -35,6 +35,12 @@ public sealed record JobRecord
     /// </summary>
     public DateTimeOffset? LeaseUntil { get; init; }
 
+    /// <summary>
+    /// Instante da transição para estado terminal (UTC), gravado pelo storage.
+    /// Base da política de retenção/purga; preservado em atualizações repetidas.
+    /// </summary>
+    public DateTimeOffset? FinishedAt { get; init; }
+
     /// <summary>Resultado serializado, quando <see cref="State"/> é <see cref="JobState.Succeeded"/>.</summary>
     public string? Result { get; init; }
 

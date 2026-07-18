@@ -91,6 +91,8 @@ Integra-se ao Generic Host (.NET) via `IHostedService`; compõe Core (Spec 002) 
 - **DD-2 — Dois storages.** *Fallback:* erro no startup (ambiguidade explícita). *Revisão:* nenhuma.
 - **DD-3 — Descoberta de jobs.** *Fallback:* source generator + marcador de assembly (`[assembly: GuaraJobs]`); sem varredura por reflection. *Revisão:* Spec 029.
 
+> **Implementação (2026-07-18):** `AddGuara()` entregue no pacote `Guara.Hosting`: registra `GuaraOptions` (validação **eager** — falha na própria chamada, antes mesmo do boot), `TimeProvider`, `JobStateMachine` e `IEventPublisher` (`InProcessEventPublisher`), tudo com `TryAdd` (idempotente); devolve o `GuaraBuilder` interno. O **`IHostedService` vive no `Guara.Server`** e é registrado pelo `AddGuaraServer()` (AC-5 preservado) — assim o Hosting não referencia o Server; a validação "nenhum storage" acontece no `StartAsync` do hosted service com mensagem acionável (AC-4). Binding de `GuaraOptions` a partir de `IConfiguration` fica para a Spec 018.
+
 ## Open Questions
 
 _(vazio)_
