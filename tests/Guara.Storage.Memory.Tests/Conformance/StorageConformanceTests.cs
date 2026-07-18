@@ -413,6 +413,89 @@ public abstract class StorageConformanceTests
         Assert.Null(await storage.Locks.TryAcquireAsync("chave", TimeSpan.FromMinutes(1), CancellationToken.None));
     }
 
+    // --- Recorrentes ---
+
+    private static RecurringJobRecord NewRecurring(string id, DateTimeOffset? nextRunAt = null, bool paused = false) => new()
+    {
+        Id = id,
+        Descriptor = new JobDescriptor("Tipo", "Metodo", default),
+        CronExpression = "0 3 * * *",
+        CreatedAt = T0,
+        NextRunAt = nextRunAt,
+        Paused = paused,
+    };
+
+    [Fact]
+    public async Task Recurring_UpsertGetDelete_RoundTrips()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Recurring.UpsertAsync(NewRecurring("r1", T0), CancellationToken.None);
+
+        var found = await storage.Recurring.GetAsync("r1", CancellationToken.None);
+        Assert.NotNull(found);
+        Assert.Equal("0 3 * * *", found.CronExpression);
+        Assert.Equal(T0, found.NextRunAt);
+
+        // upsert da mesma chave substitui a definição
+        await storage.Recurring.UpsertAsync(
+            NewRecurring("r1", T0) with { Description = "atualizado" }, CancellationToken.None);
+        Assert.Equal("atualizado", (await storage.Recurring.GetAsync("r1", CancellationToken.None))!.Description);
+
+        Assert.True(await storage.Recurring.DeleteAsync("r1", CancellationToken.None));
+        Assert.False(await storage.Recurring.DeleteAsync("r1", CancellationToken.None));
+        Assert.Null(await storage.Recurring.GetAsync("r1", CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Recurring_ListDue_ReturnsOnlyActiveDue_OrderedByNextRun()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Recurring.UpsertAsync(NewRecurring("futuro", T0 + TimeSpan.FromHours(1)), CancellationToken.None);
+        await storage.Recurring.UpsertAsync(NewRecurring("vencido-b", T0 - TimeSpan.FromMinutes(1)), CancellationToken.None);
+        await storage.Recurring.UpsertAsync(NewRecurring("vencido-a", T0 - TimeSpan.FromMinutes(5)), CancellationToken.None);
+        await storage.Recurring.UpsertAsync(NewRecurring("pausado", T0 - TimeSpan.FromMinutes(5), paused: true), CancellationToken.None);
+        await storage.Recurring.UpsertAsync(NewRecurring("sem-proximo"), CancellationToken.None);
+
+        var due = await storage.Recurring.ListDueAsync(T0, CancellationToken.None);
+
+        Assert.Equal(["vencido-a", "vencido-b"], due.Select(r => r.Id).ToArray());
+    }
+
+    [Fact]
+    public async Task Recurring_List_ReturnsAllDefinitions()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Recurring.UpsertAsync(NewRecurring("r1"), CancellationToken.None);
+        await storage.Recurring.UpsertAsync(NewRecurring("r2", paused: true), CancellationToken.None);
+
+        Assert.Equal(2, (await storage.Recurring.ListAsync(CancellationToken.None)).Count);
+    }
+
+    // --- Calendários ---
+
+    [Fact]
+    public async Task Calendars_UpsertGetListDelete()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Recurring.UpsertCalendarAsync(new CalendarRecord
+        {
+            Name = "feriados",
+            ExcludedDates = [new DateOnly(2026, 12, 25)],
+            ExcludedDaysOfWeek = [DayOfWeek.Sunday],
+        }, CancellationToken.None);
+
+        var found = await storage.Recurring.GetCalendarAsync("feriados", CancellationToken.None);
+        Assert.NotNull(found);
+        Assert.Single(found.ExcludedDates);
+        Assert.Single(found.ExcludedDaysOfWeek);
+        Assert.Single(await storage.Recurring.ListCalendarsAsync(CancellationToken.None));
+        Assert.Null(await storage.Recurring.GetCalendarAsync("desconhecido", CancellationToken.None));
+
+        Assert.True(await storage.Recurring.DeleteCalendarAsync("feriados", CancellationToken.None));
+        Assert.False(await storage.Recurring.DeleteCalendarAsync("feriados", CancellationToken.None));
+        Assert.Null(await storage.Recurring.GetCalendarAsync("feriados", CancellationToken.None));
+    }
+
     // --- Capabilities ---
 
     [Fact]
@@ -424,5 +507,6 @@ public abstract class StorageConformanceTests
         Assert.NotNull(storage.Jobs);
         Assert.NotNull(storage.Queues);
         Assert.NotNull(storage.Locks);
+        Assert.NotNull(storage.Recurring);
     }
 }

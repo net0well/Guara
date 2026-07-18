@@ -20,6 +20,7 @@ public sealed class MemoryStorage : IStorage
         Queues = new MemoryQueueStorage(_jobs);
         Locks = new MemoryLockProvider(time);
         Servers = new MemoryServerRegistry();
+        Recurring = new MemoryRecurringStorage();
     }
 
     /// <inheritdoc />
@@ -44,6 +45,9 @@ public sealed class MemoryStorage : IStorage
 
     /// <inheritdoc />
     public IServerRegistry Servers { get; }
+
+    /// <inheritdoc />
+    public IRecurringStorage Recurring { get; }
 
     /// <inheritdoc />
     public ValueTask<ITransaction> BeginTransactionAsync(CancellationToken ct)
