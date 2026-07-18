@@ -3,7 +3,7 @@ namespace Guara.Abstractions;
 /// <summary>
 /// Gerencia <b>capacidade</b>: consome sinais de trabalho, limita a concorrência,
 /// renova a posse (lease) durante a execução e delega ao <see cref="IExecutor"/>.
-/// Não agenda, não busca, não sabe como o job roda por dentro (spec 007).
+/// Não agenda, não busca, não sabe como o job roda por dentro.
 /// </summary>
 public interface IWorker
 {

@@ -6,7 +6,7 @@ namespace Guara.Executor;
 /// <summary>
 /// Registro manual de handlers de job (<c>tipo.método → delegate</c>), usado pelo
 /// <see cref="RegistryJobInvoker"/>. É infraestrutura <b>temporária</b>: o
-/// <c>Guara.SourceGenerators</c> (spec 029) passará a gerar o registro em compilação.
+/// <c>Guara.SourceGenerators</c> passará a gerar o registro em compilação.
 /// Registre durante o bootstrap; leituras posteriores são thread-safe.
 /// </summary>
 public sealed class JobHandlerRegistry

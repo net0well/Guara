@@ -4,7 +4,7 @@ namespace Guara.Storage.Memory;
 
 /// <summary>
 /// Implementação in-memory de <see cref="IStorage"/> — desenvolvimento, testes e demos.
-/// <b>Não durável</b>: o estado se perde ao reiniciar o processo (documentado, spec 011).
+/// <b>Não durável</b>: o estado se perde ao reiniciar o processo.
 /// Aquisição atômica e lease/visibility idênticos aos providers persistentes.
 /// </summary>
 public sealed class MemoryStorage : IStorage

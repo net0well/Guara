@@ -70,5 +70,8 @@ Trabalhamos de baixo para cima na pirâmide de dependências: contratos primeiro
 | 036 | Atributos de Job (`[GuaraFila]`, `[GuaraRetentativas]`, `[GuaraDesabilitarConcorrencia]`, `[GuaraTempoLimite]`, `[GuaraPularSeAnteriorEmExecucao]`) | `Guara.Abstractions` + pipeline/generator (feature) | OSS | ✅ Approved (2026-07-16) |
 | 037 | Dashboard — autenticação: regras fluentes (`UseGuaraAuthentication`), `IDashboardAccessRule`/`DashboardContext`, login fixo, página de login com a logo | `Guara.Dashboard.*` (feature) | OSS | ✅ Approved (2026-07-16) |
 | 038 | Agendamento fluente — builder estilo Quartz, `GuaraDatas`, calendários, fuso IANA/Windows nativo | `Guara.Scheduler`/`Guara.Extensions` (feature) | OSS | ✅ Approved (2026-07-16) |
+| 039 | Modelo de plugins (`IGuaraPlugin`) — composição de handlers/middlewares/hosted services; opt-in, pós-1.0 | `Guara.Abstractions` + `Guara.Plugins.*` | OSS | ✅ Approved (2026-07-18) |
+
+> **Benchmarks** não têm spec própria: a suíte `guara/benchmarks/` (BenchmarkDotNet, net8+net10) está no escopo das specs 033/034 e detalhada em [docs/reference/benchmarks.md](../docs/reference/benchmarks.md) (espelhando `Quartz.Benchmark`).
 
 > A ordem pode ser ajustada; capacidades transversais da API pública (fire-and-forget, delayed, recurring, retry) são especificadas dentro das specs dos componentes que as realizam (principalmente 001, 005, 008, 009). As specs 030–035 cruzam vários pacotes por serem **features/infra transversais**.

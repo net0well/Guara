@@ -14,6 +14,7 @@ Este documento é o **hub da arquitetura**. Ele define os princípios e aponta p
 | [naming-conventions.md](naming-conventions.md) | Convenções de nomenclatura de tipos, pacotes, namespaces e extensões |
 | [execution-flows.md](execution-flows.md) | Ciclo de vida do Job, fluxo de eventos e pipeline de middlewares |
 | [semantics.md](semantics.md) | **Garantias semânticas**: entrega at-least-once, ordem, precisão, retentativas, cancelamento/tempo limite, recorrentes (sobreposição/misfire), exclusão, filas |
+| [reference/](reference/README.md) | **Referência competitiva** (Hangfire × Quartz.NET): como cada funcionalidade é implementada nas duas ferramentas + matriz de paridade, para guiar a implementação do Guará |
 | [patterns.md](patterns.md) | Padrões obrigatórios: componente, API fluente, extensão de DI, middleware, provider |
 | [anti-patterns.md](anti-patterns.md) | O que **nunca** fazer no Guará |
 | [performance.md](performance.md) | Princípios de performance e regras de alocação |

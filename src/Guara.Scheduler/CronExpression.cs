@@ -4,7 +4,7 @@ namespace Guara.Scheduler;
 
 /// <summary>
 /// Expressão cron de 5 campos (<c>minuto hora dia-do-mês mês dia-da-semana</c>) com
-/// implementação <b>própria</b> — sem bibliotecas de terceiros (ADR-0009).
+/// implementação <b>própria</b> — sem bibliotecas de terceiros.
 /// Suporta <c>*</c>, valores, listas (<c>,</c>), intervalos (<c>-</c>), passos (<c>/</c>)
 /// e nomes (<c>JAN..DEC</c>, <c>SUN..SAT</c>); <c>7</c> equivale a domingo.
 /// Dia-do-mês e dia-da-semana ambos restritos seguem a regra clássica do cron (OU).

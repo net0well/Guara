@@ -7,7 +7,7 @@ namespace Guara.Serialization;
 
 /// <summary>
 /// Implementação default de <see cref="ISerializer"/> sobre System.Text.Json com
-/// source generators — zero reflection, AOT-safe (spec 003).
+/// source generators — zero reflection, AOT-safe.
 /// Argumentos de job trafegam num envelope versionado com <b>discriminador</b> por
 /// argumento; a desserialização resolve tipos apenas pela allowlist
 /// (<see cref="SerializerTypeRegistry"/>) — nunca por nome de tipo no payload.

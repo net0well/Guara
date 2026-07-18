@@ -6,7 +6,7 @@ using Microsoft.Extensions.ObjectPool;
 namespace Guara.Executor;
 
 /// <summary>
-/// Implementação default de <see cref="IExecutor"/> (spec 008): obtém o job, roda o
+/// Implementação default de <see cref="IExecutor"/>: obtém o job, roda o
 /// pipeline (retry no slot canônico + middlewares custom + invocação) e persiste o
 /// estado final com token <b>não-cancelável</b> — efeito já ocorrido nunca é revertido
 /// por cancelamento tardio. <c>JobContext</c> é pooled (alocação amortizada ~zero).
@@ -72,14 +72,14 @@ public sealed class GuaraExecutor : IExecutor
         {
             await _pipeline(context, ct);
 
-            // Persistência pós-efeito com token não-cancelável (spec 008, AC-7).
+            // Persistência do estado final com token não-cancelável: um efeito já concluído não deve reverter por cancelamento tardio.
             await _storage.Jobs.UpdateStateAsync(id, JobState.Succeeded, null, CancellationToken.None);
             await _events.PublishAsync(new JobCompleted(id, _time.GetUtcNow()), CancellationToken.None);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
             // Shutdown ou posse perdida: estado permanece Processing; o lease expira
-            // e o job volta a ser elegível (spec 008, AC-6). Nunca marca Failed aqui.
+            // e o job volta a ser elegível. Nunca marca Failed aqui.
         }
         catch (Exception ex)
         {

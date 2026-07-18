@@ -4,7 +4,7 @@ namespace Guara.Scheduler;
 
 /// <summary>
 /// Fachada de cálculo de cron usada pelo scheduler. A implementação default é
-/// <b>própria</b> (<see cref="GuaraCronParser"/>) — sem terceiros (ADR-0009) — e
+/// <b>própria</b> (<see cref="GuaraCronParser"/>) — sem terceiros — e
 /// substituível para cenários especiais.
 /// </summary>
 public interface ICronParser

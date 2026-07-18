@@ -3,9 +3,9 @@ namespace Guara.Serialization;
 /// <summary>
 /// Allowlist de tipos serializáveis: mapa bidirecional <c>discriminador ⇄ Type</c>.
 /// A desserialização de argumentos só resolve tipos registrados aqui — nunca a partir
-/// de nomes qualificados vindos do payload (segurança, spec 003).
+/// de nomes qualificados vindos do payload (por segurança).
 /// Registre durante o bootstrap; leituras posteriores são thread-safe.
-/// No futuro, o registro será preenchido em compilação pelo <c>Guara.SourceGenerators</c> (spec 029).
+/// No futuro, o registro será preenchido em compilação pelo <c>Guara.SourceGenerators</c>.
 /// </summary>
 public sealed class SerializerTypeRegistry
 {

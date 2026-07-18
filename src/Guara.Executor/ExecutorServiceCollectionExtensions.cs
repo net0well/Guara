@@ -3,7 +3,7 @@ using Guara.Core;
 using Guara.Executor;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Microsoft.Extensions.DependencyInjection; // namespace obrigatório (ADR-0006)
+namespace Microsoft.Extensions.DependencyInjection; // extensões neste namespace aparecem no IntelliSense de builder.Services
 
 /// <summary>Extensão única do pacote <c>Guara.Executor</c>.</summary>
 public static class ExecutorServiceCollectionExtensions

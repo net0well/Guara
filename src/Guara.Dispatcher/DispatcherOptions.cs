@@ -1,6 +1,6 @@
 namespace Guara.Dispatcher;
 
-/// <summary>Opções do dispatcher (spec 006).</summary>
+/// <summary>Opções do dispatcher.</summary>
 public sealed class DispatcherOptions
 {
     /// <summary>Intervalo de polling quando não há jobs elegíveis.</summary>

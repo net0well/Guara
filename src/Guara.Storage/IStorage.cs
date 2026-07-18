@@ -1,7 +1,7 @@
 namespace Guara.Storage;
 
 /// <summary>
-/// Fachada do storage do Guará — "o storage é a fila" (ADR-0003). Providers
+/// Fachada do storage do Guará — "o storage é a fila". Providers
 /// (<c>Guara.Storage.*</c>) implementam esta família de contratos; os motores só
 /// conhecem as interfaces. Consulte <see cref="Capabilities"/> antes de usar
 /// recursos opcionais (transações, locks distribuídos, push).

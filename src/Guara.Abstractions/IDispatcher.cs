@@ -2,7 +2,7 @@ namespace Guara.Abstractions;
 
 /// <summary>
 /// Busca jobs elegíveis no storage e sinaliza que há trabalho (evento
-/// <see cref="WorkerRequested"/>). Não executa, não agenda, não serializa (spec 006).
+/// <see cref="WorkerRequested"/>). Não executa, não agenda, não serializa.
 /// </summary>
 public interface IDispatcher
 {

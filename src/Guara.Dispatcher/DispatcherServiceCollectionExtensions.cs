@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Microsoft.Extensions.DependencyInjection; // namespace obrigatório (ADR-0006)
+namespace Microsoft.Extensions.DependencyInjection; // extensões neste namespace aparecem no IntelliSense de builder.Services
 
 /// <summary>Extensão única do pacote <c>Guara.Dispatcher</c>.</summary>
 public static class DispatcherServiceCollectionExtensions

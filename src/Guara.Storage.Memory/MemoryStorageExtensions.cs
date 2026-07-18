@@ -2,7 +2,7 @@ using Guara.Abstractions;
 using Guara.Storage;
 using Guara.Storage.Memory;
 
-namespace Microsoft.Extensions.DependencyInjection; // namespace obrigatório (ADR-0006)
+namespace Microsoft.Extensions.DependencyInjection; // extensões neste namespace aparecem no IntelliSense de builder.Services
 
 /// <summary>Extensão única do pacote <c>Guara.Storage.Memory</c>.</summary>
 public static class MemoryStorageExtensions

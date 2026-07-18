@@ -4,7 +4,7 @@ namespace Guara.Storage;
 
 /// <summary>
 /// Consulta paginada de jobs (listagens do dashboard). Toda listagem é paginada e
-/// limitada por <see cref="MaxPageSize"/> — nunca retorno ilimitado (spec 004/022).
+/// limitada por <see cref="MaxPageSize"/> — nunca retorno ilimitado.
 /// </summary>
 /// <param name="State">Filtra por estado, quando informado.</param>
 /// <param name="Queue">Filtra por fila, quando informado.</param>

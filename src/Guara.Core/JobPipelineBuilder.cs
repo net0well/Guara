@@ -4,7 +4,7 @@ namespace Guara.Core;
 
 /// <summary>
 /// Compõe os <see cref="IJobMiddleware"/> registrados em um único <see cref="JobDelegate"/>,
-/// ordenando pelos <see cref="PipelineSlot"/> canônicos (Validation → … → Notifications, spec 002).
+/// ordenando pelos <see cref="PipelineSlot"/> canônicos (Validation → … → Notifications).
 /// Dentro de um mesmo slot, a ordem de registro é preservada (estável).
 /// </summary>
 public sealed class JobPipelineBuilder
