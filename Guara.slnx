@@ -9,6 +9,11 @@
     <Project Path="src/Guara.Dispatcher/Guara.Dispatcher.csproj" />
     <Project Path="src/Guara.Worker/Guara.Worker.csproj" />
     <Project Path="src/Guara.Executor/Guara.Executor.csproj" />
+    <Project Path="src/Guara.Hosting/Guara.Hosting.csproj" />
+    <Project Path="src/Guara.Server/Guara.Server.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/Guara.Host/Guara.Host.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Guara.Core.Tests/Guara.Core.Tests.csproj" />
@@ -16,5 +21,6 @@
     <Project Path="tests/Guara.Storage.Memory.Tests/Guara.Storage.Memory.Tests.csproj" />
     <Project Path="tests/Guara.Scheduler.Tests/Guara.Scheduler.Tests.csproj" />
     <Project Path="tests/Guara.Engines.Tests/Guara.Engines.Tests.csproj" />
+    <Project Path="tests/Guara.Hosting.Tests/Guara.Hosting.Tests.csproj" />
   </Folder>
 </Solution>
