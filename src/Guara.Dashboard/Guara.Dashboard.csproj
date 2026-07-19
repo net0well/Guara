@@ -22,4 +22,57 @@
     <EmbeddedResource Include="..\..\assets\logo.png" Link="Assets\logo.png" />
   </ItemGroup>
 
+  <!--
+    Integração com a SPA (Guara.Dashboard.Angular): o build .NET constrói a SPA quando
+    há Node e embute o dist como recursos (prefixo Guara.Dashboard.Spa.*). Sem Node, um
+    aviso é emitido e o dashboard serve a página placeholder. Defina SkipAngularBuild=true
+    para pular (ex.: dev focado no backend). node_modules e dist ficam fora do git.
+  -->
+  <PropertyGroup>
+    <AngularProjectDir>$(MSBuildProjectDirectory)\..\guara-dashboard-angular</AngularProjectDir>
+    <AngularDist>$(AngularProjectDir)\dist\guara-dashboard-angular\browser</AngularDist>
+    <SkipAngularBuild Condition="'$(SkipAngularBuild)' == ''">false</SkipAngularBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AngularInputs Include="$(AngularProjectDir)\src\**\*" />
+    <AngularInputs Include="$(AngularProjectDir)\angular.json;$(AngularProjectDir)\package.json;$(AngularProjectDir)\package-lock.json;$(AngularProjectDir)\tsconfig.json;$(AngularProjectDir)\tsconfig.app.json" />
+  </ItemGroup>
+
+  <Target Name="BuildAngularDashboard"
+          Condition="'$(SkipAngularBuild)' != 'true'"
+          Inputs="@(AngularInputs)"
+          Outputs="$(AngularDist)\index.html">
+    <Exec Command="node --version" ContinueOnError="true" ConsoleToMSBuild="true"
+          StandardOutputImportance="low" StandardErrorImportance="low">
+      <Output TaskParameter="ExitCode" PropertyName="_GuaraNodeExit" />
+    </Exec>
+    <Warning Condition="'$(_GuaraNodeExit)' != '0'"
+             Text="Guara.Dashboard: Node não encontrado — a SPA não será embutida; o dashboard servirá a página placeholder. Instale Node 20.19+/22 (ou defina SkipAngularBuild=true)." />
+    <Message Condition="'$(_GuaraNodeExit)' == '0'" Importance="high" Text="Guara.Dashboard: construindo a SPA Angular…" />
+    <Exec Condition="'$(_GuaraNodeExit)' == '0' and !Exists('$(AngularProjectDir)\node_modules')"
+          Command="npm ci" WorkingDirectory="$(AngularProjectDir)" />
+    <Exec Condition="'$(_GuaraNodeExit)' == '0'"
+          Command="npm run build" WorkingDirectory="$(AngularProjectDir)" />
+  </Target>
+
+  <!-- Antes de AssignTargetPaths/CreateManifestResourceNames: os itens precisam existir
+       antes de o SDK congelar a lista de recursos que o compilador recebe. -->
+  <Target Name="EmbedAngularDashboard"
+          BeforeTargets="AssignTargetPaths;CreateManifestResourceNames"
+          DependsOnTargets="BuildAngularDashboard">
+    <!-- Primeiro materializa o glob; num segundo ItemGroup projeta em EmbeddedResource
+         usando metadado QUALIFICADO (%(_SpaFile.Filename)) — assim o nome por arquivo
+         não sofre batching contra os recursos já existentes (a logo). -->
+    <ItemGroup Condition="Exists('$(AngularDist)\index.html')">
+      <_SpaFile Include="$(AngularDist)\**\*" />
+    </ItemGroup>
+    <ItemGroup Condition="Exists('$(AngularDist)\index.html')">
+      <EmbeddedResource Include="@(_SpaFile)">
+        <LogicalName>Guara.Dashboard.Spa.%(_SpaFile.RecursiveDir)%(_SpaFile.Filename)%(_SpaFile.Extension)</LogicalName>
+        <Visible>false</Visible>
+      </EmbeddedResource>
+    </ItemGroup>
+  </Target>
+
 </Project>

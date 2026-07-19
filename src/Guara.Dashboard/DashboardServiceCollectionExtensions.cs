@@ -62,6 +62,7 @@ public static class DashboardServiceCollectionExtensions
             sp.GetRequiredService<DashboardOptions>(), sp.GetRequiredService<TimeProvider>()));
         builder.Services.TryAddSingleton<LoginRateLimiter>(sp => new LoginRateLimiter(
             sp.GetRequiredService<TimeProvider>()));
+        builder.Services.TryAddSingleton<DashboardSpa>();
         return builder;
     }
 }
