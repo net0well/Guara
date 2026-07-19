@@ -3,6 +3,7 @@
     <Project Path="src/Guara.Abstractions/Guara.Abstractions.csproj" />
     <Project Path="src/Guara.Configuration/Guara.Configuration.csproj" />
     <Project Path="src/Guara.Core/Guara.Core.csproj" />
+    <Project Path="src/Guara.Dashboard.Api/Guara.Dashboard.Api.csproj" />
     <Project Path="src/Guara.Diagnostics/Guara.Diagnostics.csproj" />
     <Project Path="src/Guara.Serialization/Guara.Serialization.csproj" />
     <Project Path="src/Guara.SourceGenerators/Guara.SourceGenerators.csproj" />
@@ -21,6 +22,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Guara.Core.Tests/Guara.Core.Tests.csproj" />
+    <Project Path="tests/Guara.Dashboard.Api.Tests/Guara.Dashboard.Api.Tests.csproj" />
     <Project Path="tests/Guara.Serialization.Tests/Guara.Serialization.Tests.csproj" />
     <Project Path="tests/Guara.SourceGenerators.Tests/Guara.SourceGenerators.Tests.csproj" />
     <Project Path="tests/Guara.Storage.Conformance/Guara.Storage.Conformance.csproj" />

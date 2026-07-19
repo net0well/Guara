@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Guara.Dashboard.Api</PackageId>
+    <Description>APIs HTTP do dashboard do Guará (Minimal API): filas, jobs, servidores, recorrentes, contadores e stream SSE em tempo real — só JSON, paginado e versionado; a UI vive em Guara.Dashboard.Angular.</Description>
+    <!-- Exceção justificada (docs/checklist.md item 6): o binding de Minimal API em
+         biblioteca usa o caminho por reflection (o Request Delegate Generator só roda
+         no app consumidor). O dashboard é um host web opcional; o NÚCLEO do Guará
+         permanece AOT — quem publica AOT roda headless sem este pacote. -->
+    <IsAotCompatible>false</IsAotCompatible>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Guara.Abstractions\Guara.Abstractions.csproj" />
+    <ProjectReference Include="..\Guara.Storage\Guara.Storage.csproj" />
+  </ItemGroup>
+
+</Project>
