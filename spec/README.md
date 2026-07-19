@@ -71,7 +71,15 @@ Trabalhamos de baixo para cima na pirâmide de dependências: contratos primeiro
 | 037 | Dashboard — autenticação: regras fluentes (`UseGuaraAuthentication`), `IDashboardAccessRule`/`DashboardContext`, login fixo, página de login com a logo | `Guara.Dashboard.*` (feature) | OSS | ✅ Approved (2026-07-16) |
 | 038 | Agendamento fluente — builder estilo Quartz, `GuaraDatas`, calendários, fuso IANA/Windows nativo | `Guara.Scheduler`/`Guara.Extensions` (feature) | OSS | ✅ Approved (2026-07-16) |
 | 039 | Modelo de plugins (`IGuaraPlugin`) — composição de handlers/middlewares/hosted services; opt-in, pós-1.0 | `Guara.Abstractions` + `Guara.Plugins.*` | OSS | ✅ Approved (2026-07-18) |
+| 040 | Storage MySQL (8+, `FOR UPDATE SKIP LOCKED` — blueprint da spec 013) | `Guara.Storage.MySql` | OSS | Draft (2026-07-19) |
 
 > **Benchmarks** não têm spec própria: a suíte `guara/benchmarks/` (BenchmarkDotNet, net8+net10) está no escopo das specs 033/034 e detalhada em [docs/reference/benchmarks.md](../docs/reference/benchmarks.md) (espelhando `Quartz.Benchmark`).
 
 > A ordem pode ser ajustada; capacidades transversais da API pública (fire-and-forget, delayed, recurring, retry) são especificadas dentro das specs dos componentes que as realizam (principalmente 001, 005, 008, 009). As specs 030–035 cruzam vários pacotes por serem **features/infra transversais**.
+
+### Sequência acordada das próximas fases (2026-07-19)
+
+1. **Fase D** — source generators (029) + `Enfileirar` tipado (019) + atributos de job (036).
+2. **Fase E** — dashboard (022 → 023 → 024 → 032 → 037) + push LISTEN/NOTIFY (006+013).
+3. **`samples/Guara.Example`** (decisão do autor, 2026-07-19): app simples (MVC) exercitando **todas** as funcionalidades, inclusive o dashboard — bancada de teste real e exemplo público de uso. `IsPackable=false` (nunca vira pacote); vive em `samples/`, que nenhum projeto `src/` referencia — zero impacto em performance ou nos pacotes.
+4. **Fase F — providers restantes**, nesta ordem: SQL Server (012) → **MySQL (040)** → MongoDB (015) → Redis (014, re-escopar: storage primário em Redis é frágil — decidir se vira acelerador/cache ou provider pleno). Cada um herda o conformance kit (`tests/Guara.Storage.Conformance`) e segue o blueprint do PostgreSQL.
