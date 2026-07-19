@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Guara.Storage.PostgreSql</PackageId>
+    <Description>Storage PostgreSQL do Guará: dequeue sem contenção via FOR UPDATE SKIP LOCKED, locks distribuídos com TTL, esquema idempotente com AutoMigrate e persistência completa de jobs, recorrentes, calendários e continuações.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Guara.Configuration\Guara.Configuration.csproj" />
+    <ProjectReference Include="..\Guara.Storage\Guara.Storage.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql" />
+  </ItemGroup>
+
+</Project>
