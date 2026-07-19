@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Guara.Storage.Memory\Guara.Storage.Memory.csproj" />
+    <ProjectReference Include="..\Guara.Storage.Conformance\Guara.Storage.Conformance.csproj" />
   </ItemGroup>
 
   <ItemGroup>
