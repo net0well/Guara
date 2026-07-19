@@ -1,5 +1,6 @@
 using Guara.Abstractions;
 using Guara.Executor;
+using Guara.Host;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -17,7 +18,8 @@ var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
 var guara = builder.Services
     .AddGuara()
     .UseConfiguration(builder.Configuration)
-    .UseGuaraDiagnostics();
+    .UseGuaraDiagnostics()
+    .AddGuaraJobs(); // jobs [GuaraJob] deste assembly (gerado em compilação)
 
 var postgres = builder.Configuration["Guara:Storage:PostgreSql:ConnectionString"];
 if (string.IsNullOrWhiteSpace(postgres))
@@ -51,6 +53,7 @@ var jobs = host.Services.GetRequiredService<IGuaraClient>();
 var saudacaoId = await jobs.EnfileirarAsync(new JobDescriptor("Demo", "Saudacao", default));
 await jobs.ContinuarComAsync(saudacaoId, new JobDescriptor("Demo", "Despedida", default));
 await jobs.AgendarAsync(new JobDescriptor("Demo", "Saudacao", default), TimeSpan.FromSeconds(5));
+await jobs.EnfileirarAsync(RelatorioJobsGuara.GerarAsync(42)); // descritor tipado gerado
 await jobs.AdicionarOuAtualizarRecorrenteAsync(job => job
     .ComId("saudacao-recorrente")
     .Executa(new JobDescriptor("Demo", "Saudacao", default))

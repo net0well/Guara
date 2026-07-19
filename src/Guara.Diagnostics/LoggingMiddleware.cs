@@ -17,7 +17,9 @@ public sealed class LoggingMiddleware(ILogger<LoggingMiddleware>? logger = null)
     /// <inheritdoc />
     public async ValueTask InvokeAsync(IJobContext context, JobDelegate next, CancellationToken ct)
     {
-        using var scope = _logger.BeginScope(new Dictionary<string, object?>
+        // Dictionary<string, object> (sem anulável): é a forma que os formatters
+        // estruturados reconhecem como pares chave-valor (KeyValuePair não tem variância).
+        using var scope = _logger.BeginScope(new Dictionary<string, object>
         {
             ["JobId"] = context.Id.Value,
             ["Queue"] = context.Descriptor.Queue,

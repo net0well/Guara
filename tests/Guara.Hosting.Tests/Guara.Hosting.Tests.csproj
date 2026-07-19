@@ -9,6 +9,8 @@
     <ProjectReference Include="..\..\src\Guara.Hosting\Guara.Hosting.csproj" />
     <ProjectReference Include="..\..\src\Guara.Server\Guara.Server.csproj" />
     <ProjectReference Include="..\..\src\Guara.Storage.Memory\Guara.Storage.Memory.csproj" />
+    <ProjectReference Include="..\..\src\Guara.SourceGenerators\Guara.SourceGenerators.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

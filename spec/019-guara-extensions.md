@@ -73,6 +73,8 @@ Depende só de `Guara.Abstractions`; coopera com `Guara.SourceGenerators` (Spec 
 
 - **DD-1 — Superfície de conveniência.** *Fallback:* começar mínimo (Enqueue/Schedule tipados); crescer sob demanda real. *Revisão:* feedback da comunidade.
 
+> **Implementação (2026-07-19) — decisão de arquitetura:** a API de `Expression` (`EnfileirarAsync(() => svc.Fazer(x))`) foi **rejeitada** após análise: traduzi-la "em compilação" é inviável — interceptors não alcançam variáveis capturadas em closure, e avaliar a árvore em runtime exige reflection sobre os campos da closure (exatamente o que o Hangfire faz e o ADR-0005 proíbe; quebra AOT). A forma tipada canônica do Guará é a **factory de descritor gerada por job** (spec 029): `jobs.EnfileirarAsync(RelatorioJobsGuara.GerarAsync(42))` — argumentos serializados em compilação, fila/metadados dos atributos aplicados na criação, e **assinatura errada é erro de compilação** (mais seguro que a lambda do Hangfire, que quebra em runtime). Com isso o pacote `Guara.Extensions` ficou **sem conteúdo próprio no 1.0** (AC-4: nenhum helper órfão — GuaraDatas vive no Scheduler junto do builder que o usa); ele passa a existir quando houver açúcar realmente transversal. AC-1/AC-2 são satisfeitos pela factory gerada; AC-3 virou diagnóstico de build do generator.
+
 ## Open Questions
 
 _(vazio)_
