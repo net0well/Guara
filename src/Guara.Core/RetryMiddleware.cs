@@ -3,9 +3,12 @@ using Guara.Abstractions;
 namespace Guara.Core;
 
 /// <summary>
-/// Middleware genérico de retentativa (slot <see cref="PipelineSlot.Retry"/>): reexecuta o
-/// restante do pipeline em caso de exceção, respeitando <see cref="RetryOptions.MaxAttempts"/>
-/// e o back-off. Usa <see cref="TimeProvider"/> para os atrasos (testável).
+/// Middleware <b>opcional</b> de retentativa em processo (slot <see cref="PipelineSlot.Retry"/>):
+/// reexecuta o restante do pipeline em caso de exceção, respeitando
+/// <see cref="RetryOptions.MaxAttempts"/> e o back-off, sem tocar o storage. Útil para
+/// oscilações rápidas (ex.: chamadas HTTP instáveis) dentro de uma mesma tentativa; a
+/// retentativa entre tentativas é a persistente, feita pelo executor. Usa
+/// <see cref="TimeProvider"/> para os atrasos (testável).
 /// </summary>
 public sealed class RetryMiddleware(RetryOptions options, TimeProvider? timeProvider = null) : IJobMiddleware
 {

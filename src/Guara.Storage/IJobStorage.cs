@@ -18,8 +18,9 @@ public interface IJobStorage
 
     /// <summary>
     /// Adquire atomicamente o próximo job elegível da fila: <c>Enqueued</c>, <c>Scheduled</c>
-    /// vencido (<c>ScheduledFor &lt;= now</c>) ou <c>Processing</c> com lease expirado.
-    /// O job adquirido passa a <c>Processing</c> com <c>LeaseUntil = now + lease</c>.
+    /// ou <c>Retrying</c> vencidos (<c>ScheduledFor &lt;= now</c>), ou <c>Processing</c> com
+    /// lease expirado. O job adquirido passa a <c>Processing</c> com
+    /// <c>LeaseUntil = now + lease</c>; o <c>Attempt</c> é preservado.
     /// </summary>
     /// <param name="queue">Fila a consumir.</param>
     /// <param name="lease">Duração da posse (renovável via <see cref="RenewLeaseAsync"/>).</param>
@@ -38,6 +39,19 @@ public interface IJobStorage
     /// <param name="ct">Token de cancelamento.</param>
     /// <returns><c>true</c> se a posse foi renovada.</returns>
     ValueTask<bool> RenewLeaseAsync(JobId id, TimeSpan lease, CancellationToken ct);
+
+    /// <summary>
+    /// Agenda uma retentativa <b>persistente</b> após uma falha, em uma única operação:
+    /// o job passa a <c>Retrying</c> com o motivo registrado, <c>Attempt</c> incrementado,
+    /// <c>ScheduledFor = retryAt</c> e a posse liberada — sobrevive a restart do nó e
+    /// volta a ser elegível na aquisição quando vencer. Job inexistente é ignorado.
+    /// </summary>
+    /// <param name="id">Id do job que falhou.</param>
+    /// <param name="error">Motivo da falha desta tentativa.</param>
+    /// <param name="retryAt">Quando o job volta a ser elegível.</param>
+    /// <param name="ct">Token de cancelamento.</param>
+    /// <returns>Uma <see cref="ValueTask"/> que conclui quando a retentativa está persistida.</returns>
+    ValueTask ScheduleRetryAsync(JobId id, string error, DateTimeOffset retryAt, CancellationToken ct);
 
     /// <summary>
     /// Atualiza o estado do job. Idempotente: reaplicar a mesma transição não corrompe

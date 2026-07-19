@@ -1,6 +1,9 @@
 namespace Guara.Core;
 
-/// <summary>Opções do <see cref="RetryMiddleware"/>.</summary>
+/// <summary>
+/// Política de retentativa após falha — usada pela retentativa persistente do executor
+/// e pelo <see cref="RetryMiddleware"/> opcional em processo.
+/// </summary>
 public sealed class RetryOptions
 {
     /// <summary>

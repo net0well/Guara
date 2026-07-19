@@ -22,8 +22,15 @@ public sealed record ExecutorStarted(JobId Id, DateTimeOffset OccurredAt) : IGua
 /// <summary>Um job foi concluído com sucesso.</summary>
 public sealed record JobCompleted(JobId Id, DateTimeOffset OccurredAt) : IGuaraEvent;
 
-/// <summary>Um job falhou.</summary>
+/// <summary>Um job falhou definitivamente (retentativas esgotadas ou desabilitadas).</summary>
 /// <param name="Id">Identificador do job.</param>
 /// <param name="OccurredAt">Instante do evento (UTC).</param>
 /// <param name="Reason">Motivo da falha, quando conhecido.</param>
 public sealed record JobFailed(JobId Id, DateTimeOffset OccurredAt, string? Reason = null) : IGuaraEvent;
+
+/// <summary>Um job falhou e teve uma retentativa agendada.</summary>
+/// <param name="Id">Identificador do job.</param>
+/// <param name="OccurredAt">Instante do evento (UTC).</param>
+/// <param name="Attempt">Número da tentativa que vai executar (1 = primeira retentativa).</param>
+/// <param name="RetryAt">Quando o job volta a ser elegível.</param>
+public sealed record JobRetryScheduled(JobId Id, DateTimeOffset OccurredAt, int Attempt, DateTimeOffset RetryAt) : IGuaraEvent;

@@ -65,6 +65,26 @@ internal sealed class MemoryJobStorage(TimeProvider time) : IJobStorage
         }
     }
 
+    public ValueTask ScheduleRetryAsync(JobId id, string error, DateTimeOffset retryAt, CancellationToken ct)
+    {
+        lock (_sync)
+        {
+            if (_jobs.TryGetValue(id, out var job))
+            {
+                _jobs[id] = job with
+                {
+                    State = JobState.Retrying,
+                    Error = error,
+                    Attempt = job.Attempt + 1,
+                    ScheduledFor = retryAt,
+                    LeaseUntil = null, // posse liberada: a reexecução será adquirida como qualquer job vencido
+                };
+            }
+        }
+
+        return ValueTask.CompletedTask;
+    }
+
     public ValueTask UpdateStateAsync(JobId id, JobState state, string? resultOrError, CancellationToken ct)
     {
         lock (_sync)
@@ -167,6 +187,7 @@ internal sealed class MemoryJobStorage(TimeProvider time) : IJobStorage
     {
         JobState.Enqueued => true,
         JobState.Scheduled => job.ScheduledFor is { } due && due <= now,
+        JobState.Retrying => job.ScheduledFor is { } due && due <= now, // retentativa vencida
         JobState.Processing => job.LeaseUntil is { } lease && lease < now, // lease expirado → reelegível
         _ => false,
     };
