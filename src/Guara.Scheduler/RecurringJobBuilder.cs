@@ -157,6 +157,11 @@ internal sealed class RecurringJobBuilder : IRecurringJobBuilder
 
         TimeZones.Resolve(_timeZoneId);
 
+        // O job pode declarar [GuaraPularSeAnteriorEmExecucao]: a factory gerada marca
+        // o descriptor e o builder honra sem exigir a chamada fluente.
+        var skipIfPreviousRunning = _skipIfPreviousRunning
+            || _descriptor.Metadata?.ContainsKey(JobMetadataKeys.SkipIfPreviousRunning) is true;
+
         return new RecurringJobRecord
         {
             Id = _id,
@@ -171,7 +176,7 @@ internal sealed class RecurringJobBuilder : IRecurringJobBuilder
             Description = _description,
             Queue = _queue ?? _descriptor.Queue,
             CalendarName = _calendarName,
-            SkipIfPreviousRunning = _skipIfPreviousRunning,
+            SkipIfPreviousRunning = skipIfPreviousRunning,
             CreatedAt = createdAt,
         };
     }
