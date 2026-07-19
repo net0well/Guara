@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, resource, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { GuaraApi } from '../../core/guara-api';
@@ -89,21 +89,23 @@ export class JobsComponent {
   protected readonly fila = signal<string | null>(null);
   protected readonly pagina = signal(1);
 
-  protected readonly filas = resource({
-    request: () => this.sse.refresh(),
-    loader: () => this.api.queues(),
-  });
+  protected readonly filas = resource({ loader: () => this.api.queues() });
 
+  // request só com os filtros: mudar filtro re-consulta (mostra carregando, ok); o
+  // pulso do SSE recarrega via reload() preservando a lista (sem piscar).
   protected readonly jobs = resource({
-    request: () => ({
-      state: this.estado(),
-      queue: this.fila(),
-      page: this.pagina(),
-      tick: this.sse.refresh(),
-    }),
+    request: () => ({ state: this.estado(), queue: this.fila(), page: this.pagina() }),
     loader: ({ request }) =>
       this.api.jobs({ state: request.state, queue: request.queue, page: request.page, pageSize: PAGE_SIZE }),
   });
+
+  constructor() {
+    effect(() => {
+      this.sse.refresh();
+      this.jobs.reload();
+      this.filas.reload();
+    });
+  }
 
   // Página cheia sugere que há próxima (a API não devolve total — paginação simples).
   protected readonly temProxima = computed(() => (this.jobs.value()?.items.length ?? 0) === PAGE_SIZE);

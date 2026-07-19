@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, resource } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, resource } from '@angular/core';
 
 import { GuaraApi } from '../../core/guara-api';
 import { I18nService } from '../../core/i18n.service';
@@ -68,8 +68,12 @@ export class RecurringComponent {
   protected readonly i18n = inject(I18nService);
   protected readonly describe = describeError;
 
-  protected readonly recurring = resource({
-    request: () => this.sse.refresh(),
-    loader: () => this.api.recurring(),
-  });
+  protected readonly recurring = resource({ loader: () => this.api.recurring() });
+
+  constructor() {
+    effect(() => {
+      this.sse.refresh();
+      this.recurring.reload();
+    });
+  }
 }
