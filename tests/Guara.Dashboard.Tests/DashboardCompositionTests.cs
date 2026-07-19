@@ -1,5 +1,6 @@
 using System.Net;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 using Guara.Dashboard;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -81,6 +82,48 @@ public sealed class DashboardCompositionTests : IAsyncDisposable
         var logo = await client.GetAsync("/guara/assets/logo.png", Ct);
         Assert.Equal(HttpStatusCode.OK, logo.StatusCode);
         Assert.Equal("image/png", logo.Content.Headers.ContentType!.MediaType);
+    }
+
+    [Fact]
+    public async Task ServesEmbeddedSpa_AndResolvesHashedAssets()
+    {
+        var client = await StartAsync(dash => dash.RequireAuthorization = false);
+
+        var index = await client.GetStringAsync("/guara", Ct);
+        Assert.Contains("<app-root></app-root>", index);       // shell Angular, não o placeholder
+        Assert.Contains("<base href=\"/guara/\">", index);      // base do BasePath default
+
+        // Um asset com hash referenciado no index resolve sob a rota base.
+        var asset = Regex.Match(index, @"(?:src|href)=""(main[^""]*\.js|chunk[^""]*\.js)""").Groups[1].Value;
+        Assert.NotEmpty(asset);
+        var js = await client.GetAsync($"/guara/{asset}", Ct);
+        Assert.Equal(HttpStatusCode.OK, js.StatusCode);
+        Assert.Contains("javascript", js.Content.Headers.ContentType!.MediaType!);
+    }
+
+    [Fact]
+    public async Task SpaBaseHref_IsRewrittenToCustomBasePath()
+    {
+        var client = await StartAsync(dash =>
+        {
+            dash.BasePath = "/painel";
+            dash.RequireAuthorization = false;
+        });
+
+        var index = await client.GetStringAsync("/painel", Ct);
+        Assert.Contains("<base href=\"/painel/\">", index);      // <base> reescrito no serve
+        Assert.DoesNotContain("<base href=\"/guara/\">", index);
+    }
+
+    [Fact]
+    public async Task DeepLink_FallsBackToSpaIndex()
+    {
+        var client = await StartAsync(dash => dash.RequireAuthorization = false);
+
+        // Rota de cliente (SPA) que não é asset: devolve o index para o router assumir.
+        var deep = await client.GetAsync("/guara/jobs/abc123", Ct);
+        Assert.Equal(HttpStatusCode.OK, deep.StatusCode);
+        Assert.Contains("<app-root></app-root>", await deep.Content.ReadAsStringAsync(Ct));
     }
 
     [Fact]

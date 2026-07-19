@@ -74,14 +74,30 @@ public static class DashboardEndpointExtensions
                 ?? NullLogger.Instance);
         var secured = endpoints.MapGroup(root).WithTags("Guara").AddEndpointFilter(filter);
 
+        var spa = endpoints.ServiceProvider.GetRequiredService<DashboardSpa>();
         secured.MapGuaraDashboardApi("/api/v1");
-        secured.MapGet("/", ServeUi).WithName("GuaraUi");
-        secured.MapGet("/{**caminho}", ServeUi).WithName("GuaraUiFallback");
+        secured.MapGet("/", (HttpContext http) => ServeUi(http, null)).WithName("GuaraUi");
+        secured.MapGet("/{**caminho}", (HttpContext http, string caminho) => ServeUi(http, caminho))
+            .WithName("GuaraUiFallback");
 
         return endpoints;
 
-        IResult ServeUi(HttpContext http)
+        IResult ServeUi(HttpContext http, string? caminho)
         {
+            if (spa.Available)
+            {
+                if (caminho is { Length: > 0 } && spa.Asset(caminho) is { } bytes)
+                {
+                    // Assets têm hash no nome: cache longo e imutável.
+                    http.Response.Headers.CacheControl = "public, max-age=31536000, immutable";
+                    return Results.Bytes(bytes, DashboardSpa.ContentType(caminho));
+                }
+
+                // Shell e deep-links da SPA: index com o <base href> ajustado ao BasePath.
+                http.Response.Headers.CacheControl = "no-cache";
+                return Results.Bytes(spa.Index(root), "text/html; charset=utf-8");
+            }
+
             var english = DashboardPages.PrefersEnglish(http.Request.Headers.AcceptLanguage);
             return Results.Content(DashboardPages.Placeholder(root, english), "text/html; charset=utf-8");
         }
