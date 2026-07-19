@@ -87,6 +87,8 @@ Compõe Spec 022 (API) e Spec 024 (SPA); integra ao pipeline ASP.NET Core do hos
 - **DD-1 — Empacotamento dos assets.** *Fallback:* recursos embutidos no assembly gerados no build da SPA (Spec 024). *Revisão:* Spec 024/CI.
 - **DD-2 — Base path default.** *Fallback:* `/guara`. *Revisão:* feedback.
 
+> **Implementação (2026-07-19):** composição entregue — `AddGuaraDashboard(dash => ...)` (compõe a API da spec 022, opções com binding `Guara:Dashboard`, sessão e rate limiter) + `MapGuaraDashboard(basePath?)` (parâmetro vence as opções — AC-5): rotas públicas (`/login`, `/logout`, `/assets/logo.png` — a logo do lobo-guará embutida no assembly, ~1MB; otimização de asset fica para o build da SPA) e o grupo protegido com o **portão de acesso** (endpoint filter da spec 037) cobrindo API (`{base}/api/v1` — AC-2), stream SSE e UI. **Seguro por padrão (AC-4):** `RequireAuthorization=true`; desligar registra **aviso forte** no log. **Interim da UI (AC-3/AC-6 ajustados até a spec 024):** sem a SPA ainda, `{base}` serve uma página placeholder embutida (identidade Guará, aponta para a API) — quando os assets Angular forem embutidos, o placeholder sai e o erro-claro-sem-assets do AC-6 passa a valer. OpenAPI/rate-limiting das ações continuam wiring do host (spec 022).
+
 ## Open Questions
 
 _(vazio)_
