@@ -54,6 +54,18 @@ public interface IJobStorage
     ValueTask ScheduleRetryAsync(JobId id, string error, DateTimeOffset retryAt, CancellationToken ct);
 
     /// <summary>
+    /// Devolve um job em execução à fila <b>sem consumir tentativa</b>: volta a
+    /// <c>Scheduled</c> com <c>ScheduledFor = scheduledFor</c> e posse liberada.
+    /// Usado quando a execução não pôde começar (ex.: chave de exclusão mútua
+    /// ocupada) — não é falha nem retentativa. Job inexistente é ignorado.
+    /// </summary>
+    /// <param name="id">Id do job.</param>
+    /// <param name="scheduledFor">Quando o job volta a ser elegível.</param>
+    /// <param name="ct">Token de cancelamento.</param>
+    /// <returns>Uma <see cref="ValueTask"/> que conclui quando o job foi devolvido.</returns>
+    ValueTask RescheduleAsync(JobId id, DateTimeOffset scheduledFor, CancellationToken ct);
+
+    /// <summary>
     /// Atualiza o estado do job. Idempotente: reaplicar a mesma transição não corrompe
     /// o registro. Estados terminais limpam o lease.
     /// </summary>

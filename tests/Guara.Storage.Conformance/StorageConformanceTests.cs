@@ -279,6 +279,29 @@ public abstract class StorageConformanceTests : IAsyncDisposable
         Assert.Null(await storage.Jobs.GetAsync(new JobId("nao-existe"), CancellationToken.None));
     }
 
+    [Fact]
+    public async Task Reschedule_ReturnsJobToQueue_WithoutConsumingAttempt()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Jobs.CreateAsync(NewJob("j1"), CancellationToken.None);
+        await storage.Jobs.AcquireNextDueAsync("default", TimeSpan.FromMinutes(5), T0, CancellationToken.None);
+
+        await storage.Jobs.RescheduleAsync(new JobId("j1"), T0 + TimeSpan.FromSeconds(30), CancellationToken.None);
+
+        var job = await storage.Jobs.GetAsync(new JobId("j1"), CancellationToken.None);
+        Assert.NotNull(job);
+        Assert.Equal(JobState.Scheduled, job.State);
+        Assert.Equal(0, job.Attempt); // devolução não é falha
+        Assert.Equal(T0 + TimeSpan.FromSeconds(30), job.ScheduledFor);
+        Assert.Null(job.LeaseUntil);
+
+        // volta a ser elegível só quando vencer
+        Assert.Null(await storage.Jobs.AcquireNextDueAsync(
+            "default", TimeSpan.FromMinutes(5), T0, CancellationToken.None));
+        Assert.NotNull(await storage.Jobs.AcquireNextDueAsync(
+            "default", TimeSpan.FromMinutes(5), T0 + TimeSpan.FromSeconds(30), CancellationToken.None));
+    }
+
     // --- Exclusão ---
 
     [Fact]

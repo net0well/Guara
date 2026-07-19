@@ -15,6 +15,7 @@ public class JobStateMachineTests
     [InlineData(JobState.Processing, JobState.Succeeded)]
     [InlineData(JobState.Processing, JobState.Failed)]
     [InlineData(JobState.Processing, JobState.Retrying)]
+    [InlineData(JobState.Processing, JobState.Scheduled)]
     [InlineData(JobState.Retrying, JobState.Enqueued)]
     public void ValidTransitions_Allowed(JobState from, JobState to)
         => Assert.True(_sm.CanTransition(from, to));
