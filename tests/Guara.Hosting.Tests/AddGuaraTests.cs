@@ -38,22 +38,24 @@ public class AddGuaraTests
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    public void AddGuara_EmptyApplicationName_Throws(string applicationName)
+    public void AddGuara_EmptyApplicationName_FailsAtFirstResolution(string applicationName)
     {
         var services = new ServiceCollection();
+        services.AddGuara(options => options.ApplicationName = applicationName);
+        using var provider = services.BuildServiceProvider();
 
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => services.AddGuara(options => options.ApplicationName = applicationName));
+        var ex = Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService<GuaraOptions>());
         Assert.Contains("ApplicationName", ex.Message);
     }
 
     [Fact]
-    public void AddGuara_EmptyQueues_Throws()
+    public void AddGuara_EmptyQueues_FailsAtFirstResolution()
     {
         var services = new ServiceCollection();
+        services.AddGuara(options => options.DefaultQueues = []);
+        using var provider = services.BuildServiceProvider();
 
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => services.AddGuara(options => options.DefaultQueues = []));
+        var ex = Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService<GuaraOptions>());
         Assert.Contains("DefaultQueues", ex.Message);
     }
 }

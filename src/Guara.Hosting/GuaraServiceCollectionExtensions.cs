@@ -14,17 +14,21 @@ public static class GuaraServiceCollectionExtensions
     /// <c>services.AddGuara().UseMemoryStorage().AddGuaraServer()</c>.
     /// </summary>
     /// <param name="services">Coleção de serviços da aplicação.</param>
-    /// <param name="configure">Ajuste opcional das opções globais (validadas imediatamente).</param>
+    /// <param name="configure">Ajuste opcional das opções globais (validadas no boot).</param>
     /// <returns>O builder do Guará, para encadeamento fluente.</returns>
     public static IGuaraBuilder AddGuara(this IServiceCollection services, Action<GuaraOptions>? configure = null)
     {
         ArgumentNullException.ThrowIfNull(services);
 
-        var options = new GuaraOptions();
-        configure?.Invoke(options);
-        options.Validate();
-
-        services.TryAddSingleton(options);
+        services.TryAddSingleton<GuaraOptions>(sp =>
+        {
+            // Precedência: defaults → raiz da seção Guara → delegate (o código vence).
+            var options = new GuaraOptions();
+            GuaraOptionsBinder.Bind(sp.GetService<Guara.Configuration.GuaraConfiguration>(), options);
+            configure?.Invoke(options);
+            options.Validate();
+            return options;
+        });
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<JobStateMachine>();
         services.TryAddSingleton<IEventPublisher, InProcessEventPublisher>();

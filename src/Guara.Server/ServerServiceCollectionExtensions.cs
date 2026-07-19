@@ -28,16 +28,21 @@ public static class ServerServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        var options = new ServerOptions();
-        configure?.Invoke(options);
-
         builder
             .AddGuaraScheduler()
             .AddGuaraExecutor()
             .AddGuaraWorker()
             .AddGuaraDispatcher();
 
-        builder.Services.TryAddSingleton(options);
+        builder.Services.TryAddSingleton<ServerOptions>(sp =>
+        {
+            // Precedência: defaults → seção Guara:Server → delegate (o código vence).
+            var options = new ServerOptions();
+            ServerOptionsBinder.Bind(sp.GetService<Guara.Configuration.GuaraConfiguration>(), options);
+            configure?.Invoke(options);
+            options.Validate();
+            return options;
+        });
         builder.Services.TryAddSingleton<IGuaraServer>(sp => new GuaraServer(
             sp.GetRequiredService<IStorage>(),
             sp.GetRequiredService<IDispatcher>(),

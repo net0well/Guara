@@ -1,6 +1,6 @@
 namespace Guara.Server;
 
-/// <summary>Opções do servidor.</summary>
+/// <summary>Opções do servidor. Configuráveis pela seção <c>Guara:Server</c>.</summary>
 public sealed class ServerOptions
 {
     /// <summary>Intervalo entre heartbeats do nó.</summary>
@@ -20,6 +20,40 @@ public sealed class ServerOptions
 
     /// <summary>Por quanto tempo jobs terminados permanecem consultáveis antes da purga.</summary>
     public RetentionPolicy Retention { get; set; } = RetentionPolicy.Default;
+
+    internal void Validate()
+    {
+        if (HeartbeatInterval <= TimeSpan.Zero)
+        {
+            throw new InvalidOperationException(
+                $"ServerOptions.HeartbeatInterval precisa ser positivo (recebido: {HeartbeatInterval}).");
+        }
+
+        if (ServerTimeout <= HeartbeatInterval)
+        {
+            throw new InvalidOperationException(
+                $"ServerOptions.ServerTimeout ({ServerTimeout}) precisa exceder HeartbeatInterval " +
+                $"({HeartbeatInterval}) — senão nós saudáveis seriam removidos entre heartbeats.");
+        }
+
+        if (MaintenanceInterval <= TimeSpan.Zero)
+        {
+            throw new InvalidOperationException(
+                $"ServerOptions.MaintenanceInterval precisa ser positivo (recebido: {MaintenanceInterval}).");
+        }
+
+        if (RecurringPollInterval <= TimeSpan.Zero)
+        {
+            throw new InvalidOperationException(
+                $"ServerOptions.RecurringPollInterval precisa ser positivo (recebido: {RecurringPollInterval}).");
+        }
+
+        if (Retention is null || Retention.Succeeded < TimeSpan.Zero || Retention.Failed < TimeSpan.Zero)
+        {
+            throw new InvalidOperationException(
+                "ServerOptions.Retention precisa de períodos não negativos para Succeeded e Failed.");
+        }
+    }
 }
 
 /// <summary>Política de retenção de jobs em estado terminal.</summary>

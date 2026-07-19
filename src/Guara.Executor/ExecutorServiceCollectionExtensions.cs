@@ -20,11 +20,16 @@ public static class ExecutorServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        var retryOptions = new RetryOptions();
-        configureRetry?.Invoke(retryOptions);
-
         builder.Services.TryAddSingleton(TimeProvider.System);
-        builder.Services.TryAddSingleton(retryOptions);
+        builder.Services.TryAddSingleton<RetryOptions>(sp =>
+        {
+            // Precedência: defaults → seção Guara:Retry → delegate (o código vence).
+            var options = new RetryOptions();
+            RetryOptionsBinder.Bind(sp.GetService<Guara.Configuration.GuaraConfiguration>(), options);
+            configureRetry?.Invoke(options);
+            RetryOptionsBinder.Validate(options);
+            return options;
+        });
         builder.Services.TryAddSingleton<JobHandlerRegistry>();
         builder.Services.TryAddSingleton<IJobInvoker, RegistryJobInvoker>();
         builder.Services.TryAddSingleton<IExecutor, GuaraExecutor>();

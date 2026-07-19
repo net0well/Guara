@@ -20,11 +20,16 @@ public static class DispatcherServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        var options = new DispatcherOptions();
-        configure?.Invoke(options);
-
         builder.Services.TryAddSingleton(TimeProvider.System);
-        builder.Services.TryAddSingleton(options);
+        builder.Services.TryAddSingleton<DispatcherOptions>(sp =>
+        {
+            // Precedência: defaults → seção Guara:Dispatcher → delegate (o código vence).
+            var options = new DispatcherOptions();
+            DispatcherOptionsBinder.Bind(sp.GetService<Guara.Configuration.GuaraConfiguration>(), options);
+            configure?.Invoke(options);
+            options.Validate();
+            return options;
+        });
         builder.Services.TryAddSingleton<IDispatcher>(sp => new GuaraDispatcher(
             sp.GetRequiredService<Guara.Storage.IStorage>(),
             sp.GetRequiredService<IEventPublisher>(),
