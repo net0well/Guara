@@ -44,6 +44,7 @@ public static class ServerServiceCollectionExtensions
             sp.GetRequiredService<IWorker>(),
             sp.GetRequiredService<IGuaraClient>(),
             sp.GetRequiredService<RecurrenceCalculator>(),
+            sp.GetRequiredService<ContinuationPromoter>(),
             sp.GetRequiredService<ServerOptions>(),
             sp.GetRequiredService<DispatcherOptions>(),
             sp.GetRequiredService<WorkerOptions>(),

@@ -21,12 +21,26 @@ public interface IGuaraClient
     ValueTask<JobId> AgendarAsync(JobDescriptor job, TimeSpan atraso, CancellationToken ct = default);
 
     /// <summary>
-    /// Exclui um job que ainda não está em execução.
+    /// Exclui um job que ainda não está em execução. Continuações pendentes do job
+    /// excluído são descartadas e registradas — nunca disparadas.
     /// </summary>
     /// <param name="id">Id do job.</param>
     /// <param name="ct">Token de cancelamento.</param>
     /// <returns><c>true</c> se o job foi excluído; <c>false</c> se não existe ou está em execução.</returns>
     ValueTask<bool> ExcluirAsync(JobId id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Registra um job filho que dispara automaticamente quando o pai atinge o estado
+    /// final do gatilho (sucesso por padrão). O filho aguarda sem consumir workers;
+    /// pai já finalizado no registro é avaliado imediatamente.
+    /// </summary>
+    /// <param name="paiId">Id do job pai.</param>
+    /// <param name="filho">Descrição do job filho.</param>
+    /// <param name="opcoes">Opções da continuação (gatilho).</param>
+    /// <param name="ct">Token de cancelamento.</param>
+    /// <returns>O id do job filho criado.</returns>
+    ValueTask<JobId> ContinuarComAsync(
+        JobId paiId, JobDescriptor filho, ContinuationOptions? opcoes = null, CancellationToken ct = default);
 
     /// <summary>
     /// Cria ou atualiza um job recorrente (upsert pelo <c>ComId</c>). Atualizar recalcula

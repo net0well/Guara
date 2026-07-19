@@ -13,9 +13,13 @@ public sealed class GuaraClient(
     IStorage storage,
     IEventPublisher events,
     RecurrenceCalculator calculator,
+    ContinuationPromoter continuations,
     TimeProvider time,
     ILogger<GuaraClient> logger) : IGuaraClient
 {
+    // Teto da cadeia de continuações: barra registro desgovernado (ex.: laço registrando
+    // filho do filho indefinidamente) com folga ampla para fluxos reais.
+    private const int MaxContinuationDepth = 100;
     /// <inheritdoc />
     public async ValueTask<JobId> EnfileirarAsync(JobDescriptor job, CancellationToken ct = default)
     {
@@ -62,8 +66,77 @@ public sealed class GuaraClient(
     }
 
     /// <inheritdoc />
-    public ValueTask<bool> ExcluirAsync(JobId id, CancellationToken ct = default)
-        => storage.Jobs.DeleteAsync(id, ct);
+    public async ValueTask<bool> ExcluirAsync(JobId id, CancellationToken ct = default)
+    {
+        if (!await storage.Jobs.DeleteAsync(id, ct))
+        {
+            return false;
+        }
+
+        await continuations.DiscardPendingAsync(id, "O job pai foi excluído antes de finalizar.", ct);
+        return true;
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<JobId> ContinuarComAsync(
+        JobId paiId, JobDescriptor filho, ContinuationOptions? opcoes = null, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(filho);
+        if (paiId.IsEmpty)
+        {
+            throw new ArgumentException("O id do job pai é obrigatório.", nameof(paiId));
+        }
+
+        var parent = await storage.Jobs.GetAsync(paiId, ct)
+            ?? throw new InvalidOperationException(
+                $"Job pai '{paiId.Value}' não existe (pode ter sido excluído ou purgado pela retenção).");
+
+        var parentLink = await storage.Continuations.GetByChildAsync(paiId, ct);
+        var depth = (parentLink?.Depth ?? -1) + 1;
+        if (depth >= MaxContinuationDepth)
+        {
+            throw new InvalidOperationException(
+                $"A cadeia de continuações a partir de '{paiId.Value}' excederia a profundidade máxima " +
+                $"({MaxContinuationDepth}). Revise o fluxo — cadeias tão longas normalmente indicam um laço de registro.");
+        }
+
+        var now = time.GetUtcNow();
+        var childId = NewId();
+
+        // O filho aguarda como Scheduled sem ScheduledFor: nunca elegível até o gatilho.
+        await storage.Jobs.CreateAsync(new JobRecord
+        {
+            Id = childId,
+            Descriptor = filho,
+            State = JobState.Scheduled,
+            Queue = filho.Queue,
+            CreatedAt = now,
+        }, ct);
+        var link = new ContinuationRecord
+        {
+            ChildId = childId,
+            ParentId = paiId,
+            Trigger = (opcoes ?? new ContinuationOptions()).Trigger,
+            Depth = depth,
+            CreatedAt = now,
+        };
+        await storage.Continuations.AddAsync(link, ct);
+        await events.PublishAsync(new JobCreated(childId, now), ct);
+
+        // O pai pode ter finalizado (ou sumido) entre a leitura e o vínculo: reavalia
+        // agora — a resolução única garante que o disparo não duplica.
+        var current = await storage.Jobs.GetAsync(paiId, ct);
+        if (current is null)
+        {
+            await continuations.DiscardPendingAsync(paiId, "O job pai foi excluído durante o registro.", ct);
+        }
+        else if (current.State is JobState.Succeeded or JobState.Failed)
+        {
+            await continuations.EvaluateAsync(link, current.State, ct);
+        }
+
+        return childId;
+    }
 
     /// <inheritdoc />
     public async ValueTask AdicionarOuAtualizarRecorrenteAsync(

@@ -32,11 +32,13 @@ public class GuaraClientTests
 
     private static (GuaraClient Client, MemoryStorage Storage, RecordingPublisher Events) NewClient()
     {
-        var storage = new MemoryStorage(new FixedTimeProvider(T0));
+        var time = new FixedTimeProvider(T0);
+        var storage = new MemoryStorage(time);
         var events = new RecordingPublisher();
         var client = new GuaraClient(
             storage, events, new RecurrenceCalculator(new GuaraCronParser()),
-            new FixedTimeProvider(T0), NullLogger<GuaraClient>.Instance);
+            new ContinuationPromoter(storage, time, NullLogger<ContinuationPromoter>.Instance),
+            time, NullLogger<GuaraClient>.Instance);
         return (client, storage, events);
     }
 

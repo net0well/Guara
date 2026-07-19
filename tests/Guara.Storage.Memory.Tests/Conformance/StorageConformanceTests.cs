@@ -197,6 +197,63 @@ public abstract class StorageConformanceTests
         Assert.Equal("boom", job.Error);
     }
 
+    // --- Retentativa persistente ---
+
+    [Fact]
+    public async Task ScheduleRetry_PersistsRetryingWithAttemptScheduleAndError()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Jobs.CreateAsync(NewJob("j1"), CancellationToken.None);
+        await storage.Jobs.AcquireNextDueAsync("default", TimeSpan.FromMinutes(5), T0, CancellationToken.None);
+
+        await storage.Jobs.ScheduleRetryAsync(
+            new JobId("j1"), "erro 1", T0 + TimeSpan.FromSeconds(30), CancellationToken.None);
+
+        var job = await storage.Jobs.GetAsync(new JobId("j1"), CancellationToken.None);
+        Assert.NotNull(job);
+        Assert.Equal(JobState.Retrying, job.State);
+        Assert.Equal(1, job.Attempt);
+        Assert.Equal("erro 1", job.Error);
+        Assert.Equal(T0 + TimeSpan.FromSeconds(30), job.ScheduledFor);
+        Assert.Null(job.LeaseUntil); // posse liberada
+
+        // cada nova falha incrementa a contagem e substitui o motivo
+        await storage.Jobs.ScheduleRetryAsync(
+            new JobId("j1"), "erro 2", T0 + TimeSpan.FromMinutes(2), CancellationToken.None);
+        job = await storage.Jobs.GetAsync(new JobId("j1"), CancellationToken.None);
+        Assert.Equal(2, job!.Attempt);
+        Assert.Equal("erro 2", job.Error);
+    }
+
+    [Fact]
+    public async Task Acquire_RetryingJob_OnlyWhenDue_PreservingAttempt()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Jobs.CreateAsync(NewJob("j1"), CancellationToken.None);
+        await storage.Jobs.AcquireNextDueAsync("default", TimeSpan.FromMinutes(5), T0, CancellationToken.None);
+        await storage.Jobs.ScheduleRetryAsync(
+            new JobId("j1"), "erro", T0 + TimeSpan.FromSeconds(30), CancellationToken.None);
+
+        Assert.Null(await storage.Jobs.AcquireNextDueAsync(
+            "default", TimeSpan.FromMinutes(5), T0, CancellationToken.None)); // retentativa ainda não venceu
+
+        var acquired = await storage.Jobs.AcquireNextDueAsync(
+            "default", TimeSpan.FromMinutes(5), T0 + TimeSpan.FromSeconds(30), CancellationToken.None);
+        Assert.NotNull(acquired);
+        Assert.Equal(JobState.Processing, acquired.State);
+        Assert.Equal(1, acquired.Attempt);
+    }
+
+    [Fact]
+    public async Task ScheduleRetry_UnknownJob_IsNoOp()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+
+        await storage.Jobs.ScheduleRetryAsync(new JobId("nao-existe"), "erro", T0, CancellationToken.None);
+
+        Assert.Null(await storage.Jobs.GetAsync(new JobId("nao-existe"), CancellationToken.None));
+    }
+
     // --- Exclusão ---
 
     [Fact]
@@ -496,6 +553,77 @@ public abstract class StorageConformanceTests
         Assert.Null(await storage.Recurring.GetCalendarAsync("feriados", CancellationToken.None));
     }
 
+    // --- Continuações ---
+
+    private static ContinuationRecord NewContinuation(
+        string child, string parent, ContinuationTrigger trigger = ContinuationTrigger.OnSucceeded) => new()
+    {
+        ChildId = new JobId(child),
+        ParentId = new JobId(parent),
+        Trigger = trigger,
+        CreatedAt = T0,
+    };
+
+    [Fact]
+    public async Task Continuations_AddGetList_RoundTrips()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Continuations.AddAsync(NewContinuation("c1", "p1"), CancellationToken.None);
+        await storage.Continuations.AddAsync(
+            NewContinuation("c2", "p1", ContinuationTrigger.OnAnyFinishedState), CancellationToken.None);
+        await storage.Continuations.AddAsync(NewContinuation("c3", "p2"), CancellationToken.None);
+
+        var found = await storage.Continuations.GetByChildAsync(new JobId("c1"), CancellationToken.None);
+        Assert.NotNull(found);
+        Assert.Equal(new JobId("p1"), found.ParentId);
+        Assert.Equal(ContinuationStatus.Pending, found.Status);
+        Assert.Null(await storage.Continuations.GetByChildAsync(new JobId("desconhecido"), CancellationToken.None));
+
+        Assert.Equal(2, (await storage.Continuations.ListByParentAsync(new JobId("p1"), CancellationToken.None)).Count);
+
+        // registrar o mesmo filho de novo não substitui o vínculo original
+        await storage.Continuations.AddAsync(
+            NewContinuation("c1", "p1", ContinuationTrigger.OnAnyFinishedState), CancellationToken.None);
+        var unchanged = await storage.Continuations.GetByChildAsync(new JobId("c1"), CancellationToken.None);
+        Assert.Equal(ContinuationTrigger.OnSucceeded, unchanged!.Trigger);
+    }
+
+    [Fact]
+    public async Task Continuations_TryResolve_OnlyOnce()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Continuations.AddAsync(NewContinuation("c1", "p1"), CancellationToken.None);
+
+        Assert.True(await storage.Continuations.TryResolveAsync(
+            new JobId("c1"), ContinuationStatus.Enqueued, null, T0 + TimeSpan.FromMinutes(1), CancellationToken.None));
+
+        var resolved = await storage.Continuations.GetByChildAsync(new JobId("c1"), CancellationToken.None);
+        Assert.Equal(ContinuationStatus.Enqueued, resolved!.Status);
+        Assert.Equal(T0 + TimeSpan.FromMinutes(1), resolved.ResolvedAt);
+
+        // segunda resolução perde: o vínculo permanece como o primeiro desfecho
+        Assert.False(await storage.Continuations.TryResolveAsync(
+            new JobId("c1"), ContinuationStatus.Discarded, "tarde demais", T0 + TimeSpan.FromMinutes(2), CancellationToken.None));
+        Assert.Equal(ContinuationStatus.Enqueued,
+            (await storage.Continuations.GetByChildAsync(new JobId("c1"), CancellationToken.None))!.Status);
+
+        Assert.False(await storage.Continuations.TryResolveAsync(
+            new JobId("desconhecido"), ContinuationStatus.Enqueued, null, T0, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Continuations_ListPending_ReturnsOnlyPending()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Continuations.AddAsync(NewContinuation("c1", "p1"), CancellationToken.None);
+        await storage.Continuations.AddAsync(NewContinuation("c2", "p1"), CancellationToken.None);
+        await storage.Continuations.TryResolveAsync(
+            new JobId("c2"), ContinuationStatus.Discarded, "motivo", T0, CancellationToken.None);
+
+        var pending = Assert.Single(await storage.Continuations.ListPendingAsync(CancellationToken.None));
+        Assert.Equal(new JobId("c1"), pending.ChildId);
+    }
+
     // --- Capabilities ---
 
     [Fact]
@@ -508,5 +636,6 @@ public abstract class StorageConformanceTests
         Assert.NotNull(storage.Queues);
         Assert.NotNull(storage.Locks);
         Assert.NotNull(storage.Recurring);
+        Assert.NotNull(storage.Continuations);
     }
 }

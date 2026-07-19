@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Guara.Abstractions;
 using Guara.Executor;
 using Guara.Server;
@@ -115,6 +116,119 @@ public class GuaraServerTests
             }
 
             Assert.True(reannounced, "O servidor deveria reanunciar-se após o registro sumir.");
+        }
+        finally
+        {
+            await hosted.StopAsync(Ct);
+        }
+    }
+
+    [Fact]
+    public async Task Retry_TransientFailure_RecoversWithPersistedAttempts()
+    {
+        await using var provider = BuildHost();
+        var calls = 0;
+        provider.GetRequiredService<JobHandlerRegistry>().Register("Demo", "Instavel", (_, _) =>
+        {
+            if (Interlocked.Increment(ref calls) <= 2)
+            {
+                throw new InvalidOperationException("instabilidade transitória");
+            }
+
+            return ValueTask.CompletedTask;
+        });
+
+        var hosted = HostedService(provider);
+        var storage = provider.GetRequiredService<IStorage>();
+
+        await hosted.StartAsync(Ct);
+        try
+        {
+            var id = await provider.GetRequiredService<IGuaraClient>()
+                .EnfileirarAsync(new JobDescriptor("Demo", "Instavel", default), Ct);
+
+            var job = await WaitUntilAsync(storage, id, j => j?.State == JobState.Succeeded, TimeSpan.FromSeconds(10));
+            Assert.Equal(JobState.Succeeded, job?.State);
+            Assert.Equal(2, job!.Attempt); // duas falhas persistidas antes do sucesso
+            Assert.Equal(3, calls);
+        }
+        finally
+        {
+            await hosted.StopAsync(Ct);
+        }
+    }
+
+    [Fact]
+    public async Task Continuation_ChildRunsAfterParentSucceeds()
+    {
+        await using var provider = BuildHost();
+        var order = new ConcurrentQueue<string>();
+        var registry = provider.GetRequiredService<JobHandlerRegistry>();
+        registry.Register("Demo", "Pai", (_, _) =>
+        {
+            order.Enqueue("pai");
+            return ValueTask.CompletedTask;
+        });
+        registry.Register("Demo", "Filho", (_, _) =>
+        {
+            order.Enqueue("filho");
+            return ValueTask.CompletedTask;
+        });
+
+        var hosted = HostedService(provider);
+        var storage = provider.GetRequiredService<IStorage>();
+        var client = provider.GetRequiredService<IGuaraClient>();
+
+        await hosted.StartAsync(Ct);
+        try
+        {
+            var paiId = await client.EnfileirarAsync(new JobDescriptor("Demo", "Pai", default), Ct);
+            var filhoId = await client.ContinuarComAsync(paiId, new JobDescriptor("Demo", "Filho", default), ct: Ct);
+
+            var filho = await WaitUntilAsync(storage, filhoId, j => j?.State == JobState.Succeeded, TimeSpan.FromSeconds(10));
+            Assert.Equal(JobState.Succeeded, filho?.State);
+            Assert.Equal(["pai", "filho"], order.ToArray());
+        }
+        finally
+        {
+            await hosted.StopAsync(Ct);
+        }
+    }
+
+    [Fact]
+    public async Task Continuation_ParentFails_OnSucceededChildIsDiscarded()
+    {
+        await using var provider = BuildHost();
+        var childRan = false;
+        var registry = provider.GetRequiredService<JobHandlerRegistry>();
+        registry.Register("Demo", "Falha", static (_, _) => throw new InvalidOperationException("sempre falha"));
+        registry.Register("Demo", "Filho", (_, _) =>
+        {
+            childRan = true;
+            return ValueTask.CompletedTask;
+        });
+
+        var hosted = HostedService(provider);
+        var storage = provider.GetRequiredService<IStorage>();
+        var client = provider.GetRequiredService<IGuaraClient>();
+
+        await hosted.StartAsync(Ct);
+        try
+        {
+            var paiId = await client.EnfileirarAsync(new JobDescriptor("Demo", "Falha", default), Ct);
+            var filhoId = await client.ContinuarComAsync(paiId, new JobDescriptor("Demo", "Filho", default), ct: Ct);
+
+            var deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(10);
+            ContinuationRecord? link = null;
+            while (DateTimeOffset.UtcNow < deadline && link?.Status != ContinuationStatus.Discarded)
+            {
+                link = await storage.Continuations.GetByChildAsync(filhoId, Ct);
+                await Task.Delay(25, Ct);
+            }
+
+            Assert.Equal(ContinuationStatus.Discarded, link?.Status);
+            Assert.Null(await storage.Jobs.GetAsync(filhoId, Ct));
+            Assert.False(childRan);
         }
         finally
         {
