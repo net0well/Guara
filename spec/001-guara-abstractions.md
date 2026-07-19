@@ -58,7 +58,7 @@ Sucesso = superfície **mínima, estável, imutável e AOT-safe**, que raramente
 - **`JobState`** — enum com exatamente: `Created`, `Enqueued`, `Scheduled`, `Processing`, `Succeeded`, `Failed`, `Retrying` (ver [execution-flows](../docs/execution-flows.md)). As **transições** (máquina de estados) são Core (Spec 002).
 - **`JobDescriptor`** — descrição imutável e serializável do que executar: tipo-alvo, método, argumentos e metadados/headers. Forma em DD-2.
 - **`ScheduleDescriptor`** — descrição de **quando**: imediato / delay (`TimeSpan`) / cron (expressão) / recorrente. Cálculo é do `IScheduler` (Spec 005).
-- **Eventos** (`IGuaraEvent`, registros imutáveis no passado): `JobCreated`, `JobScheduled`, `WorkerRequested`, `ExecutorStarted`, `JobCompleted`, `JobFailed`.
+- **Eventos** (`IGuaraEvent`, registros imutáveis no passado): `JobCreated`, `JobScheduled`, `WorkerRequested`, `ExecutorStarted`, `JobCompleted`, `JobFailed`, `JobRetryScheduled` *(adição extend-only 2026-07-18, junto com a retentativa persistente — specs 004/008)*.
 
 Ciclo de vida dos tipos: são **imutáveis**; não há create→archive→delete (não há estado persistido neste pacote). O ciclo de vida do **job** (estados) é modelado por `JobState`, mas transicionado fora daqui.
 

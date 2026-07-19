@@ -25,6 +25,7 @@ public sealed class GuaraServer : IGuaraServer
     private readonly IWorker _worker;
     private readonly IGuaraClient _client;
     private readonly RecurrenceCalculator _calculator;
+    private readonly ContinuationPromoter _continuations;
     private readonly ServerOptions _options;
     private readonly TimeProvider _time;
     private readonly ILogger<GuaraServer> _logger;
@@ -39,6 +40,7 @@ public sealed class GuaraServer : IGuaraServer
     /// <param name="worker">Motor de capacidade/execução.</param>
     /// <param name="client">Enfileiramento das ocorrências promovidas.</param>
     /// <param name="calculator">Cálculo do próximo disparo dos recorrentes.</param>
+    /// <param name="continuations">Varredura de recuperação das continuações.</param>
     /// <param name="options">Opções do servidor.</param>
     /// <param name="dispatcherOptions">Filas consumidas (exibidas na identidade do nó).</param>
     /// <param name="workerOptions">Concorrência máxima (exibida na identidade do nó).</param>
@@ -50,6 +52,7 @@ public sealed class GuaraServer : IGuaraServer
         IWorker worker,
         IGuaraClient client,
         RecurrenceCalculator calculator,
+        ContinuationPromoter continuations,
         ServerOptions options,
         DispatcherOptions dispatcherOptions,
         WorkerOptions workerOptions,
@@ -61,6 +64,7 @@ public sealed class GuaraServer : IGuaraServer
         ArgumentNullException.ThrowIfNull(worker);
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(calculator);
+        ArgumentNullException.ThrowIfNull(continuations);
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(dispatcherOptions);
         ArgumentNullException.ThrowIfNull(workerOptions);
@@ -70,6 +74,7 @@ public sealed class GuaraServer : IGuaraServer
         _worker = worker;
         _client = client;
         _calculator = calculator;
+        _continuations = continuations;
         _options = options;
         _time = time;
         _logger = logger;
@@ -283,6 +288,10 @@ public sealed class GuaraServer : IGuaraServer
                 }
 
                 var now = _time.GetUtcNow();
+
+                // Continuações primeiro: pendências de pais já finalizados disparam antes
+                // de qualquer purga poder remover o pai.
+                await _continuations.SweepAsync(ct);
 
                 var deadServers = await _storage.Servers.RemoveExpiredAsync(now - _options.ServerTimeout, ct);
                 var purgedSucceeded = await _storage.Jobs.PurgeAsync(

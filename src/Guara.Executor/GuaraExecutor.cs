@@ -7,14 +7,17 @@ namespace Guara.Executor;
 
 /// <summary>
 /// Implementação default de <see cref="IExecutor"/>: obtém o job, roda o
-/// pipeline (retry no slot canônico + middlewares custom + invocação) e persiste o
-/// estado final com token <b>não-cancelável</b> — efeito já ocorrido nunca é revertido
-/// por cancelamento tardio. <c>JobContext</c> é pooled (alocação amortizada ~zero).
+/// pipeline (middlewares custom + invocação) e persiste o desfecho com token
+/// <b>não-cancelável</b> — efeito já ocorrido nunca é revertido por cancelamento
+/// tardio. A retentativa é <b>persistente</b>: falha com tentativas restantes grava
+/// <c>Retrying</c> reagendado com back-off (sobrevive a restart do nó); esgotou,
+/// grava <c>Failed</c>. <c>JobContext</c> é pooled (alocação amortizada ~zero).
 /// </summary>
 public sealed class GuaraExecutor : IExecutor
 {
     private readonly IStorage _storage;
     private readonly IEventPublisher _events;
+    private readonly RetryOptions _retryOptions;
     private readonly TimeProvider _time;
     private readonly ObjectPool<JobContext> _contextPool;
     private readonly JobDelegate _pipeline;
@@ -23,7 +26,7 @@ public sealed class GuaraExecutor : IExecutor
     /// <param name="storage">Storage de jobs.</param>
     /// <param name="events">Publicador de eventos.</param>
     /// <param name="invoker">Invocador do método do job (sem reflection).</param>
-    /// <param name="retryOptions">Política de retentativa (slot Retry).</param>
+    /// <param name="retryOptions">Política de retentativa persistente.</param>
     /// <param name="time">Relógio (testável).</param>
     /// <param name="middlewares">Middlewares custom (slot Custom).</param>
     public GuaraExecutor(
@@ -42,11 +45,11 @@ public sealed class GuaraExecutor : IExecutor
 
         _storage = storage;
         _events = events;
+        _retryOptions = retryOptions;
         _time = time;
         _contextPool = new DefaultObjectPool<JobContext>(new JobContextPoolPolicy());
 
-        var builder = new JobPipelineBuilder()
-            .Use(PipelineSlot.Retry, new RetryMiddleware(retryOptions, time));
+        var builder = new JobPipelineBuilder();
         foreach (var middleware in middlewares)
         {
             builder.Use(PipelineSlot.Custom, middleware);
@@ -65,7 +68,7 @@ public sealed class GuaraExecutor : IExecutor
         }
 
         var context = _contextPool.Get();
-        context.Initialize(record.Id, record.Descriptor);
+        context.Initialize(record.Id, record.Descriptor, record.Attempt);
         context.State = JobState.Processing;
 
         try
@@ -78,13 +81,25 @@ public sealed class GuaraExecutor : IExecutor
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            // Shutdown ou posse perdida: estado permanece Processing; o lease expira
-            // e o job volta a ser elegível. Nunca marca Failed aqui.
+            // Shutdown ou posse perdida: estado permanece Processing e a tentativa não
+            // conta; o lease expira e o job volta a ser elegível. Nunca marca Failed aqui.
         }
         catch (Exception ex)
         {
-            await _storage.Jobs.UpdateStateAsync(id, JobState.Failed, ex.Message, CancellationToken.None);
-            await _events.PublishAsync(new JobFailed(id, _time.GetUtcNow(), ex.Message), CancellationToken.None);
+            if (record.Attempt < _retryOptions.MaxAttempts)
+            {
+                // Retentativa persistente: o reagendamento sobrevive a restart e a
+                // contagem real de tentativas fica visível no storage.
+                var retryAt = _time.GetUtcNow() + _retryOptions.Backoff(record.Attempt);
+                await _storage.Jobs.ScheduleRetryAsync(id, ex.Message, retryAt, CancellationToken.None);
+                await _events.PublishAsync(
+                    new JobRetryScheduled(id, _time.GetUtcNow(), record.Attempt + 1, retryAt), CancellationToken.None);
+            }
+            else
+            {
+                await _storage.Jobs.UpdateStateAsync(id, JobState.Failed, ex.Message, CancellationToken.None);
+                await _events.PublishAsync(new JobFailed(id, _time.GetUtcNow(), ex.Message), CancellationToken.None);
+            }
         }
         finally
         {

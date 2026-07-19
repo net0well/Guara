@@ -26,6 +26,9 @@ public interface IStorage
     /// <summary>Definições recorrentes e calendários.</summary>
     IRecurringStorage Recurring { get; }
 
+    /// <summary>Vínculos de continuação (pai→filho).</summary>
+    IContinuationStorage Continuations { get; }
+
     /// <summary>
     /// Inicia uma transação, quando <see cref="StorageCapabilities.SupportsTransactions"/>.
     /// </summary>

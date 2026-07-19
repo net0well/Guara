@@ -24,10 +24,19 @@ public static class SchedulerServiceCollectionExtensions
         builder.Services.TryAddSingleton<ICronParser, GuaraCronParser>();
         builder.Services.TryAddSingleton<IScheduler, GuaraScheduler>();
         builder.Services.TryAddSingleton<RecurrenceCalculator>();
+        builder.Services.TryAddSingleton(sp => new ContinuationPromoter(
+            sp.GetRequiredService<IStorage>(),
+            sp.GetRequiredService<TimeProvider>(),
+            sp.GetService<ILogger<ContinuationPromoter>>() ?? NullLogger<ContinuationPromoter>.Instance));
+        builder.Services.TryAddEnumerable(
+            ServiceDescriptor.Singleton<IEventHandler<JobCompleted>, ContinuationOnParentCompleted>());
+        builder.Services.TryAddEnumerable(
+            ServiceDescriptor.Singleton<IEventHandler<JobFailed>, ContinuationOnParentFailed>());
         builder.Services.TryAddSingleton<IGuaraClient>(sp => new GuaraClient(
             sp.GetRequiredService<IStorage>(),
             sp.GetRequiredService<IEventPublisher>(),
             sp.GetRequiredService<RecurrenceCalculator>(),
+            sp.GetRequiredService<ContinuationPromoter>(),
             sp.GetRequiredService<TimeProvider>(),
             sp.GetService<ILogger<GuaraClient>>() ?? NullLogger<GuaraClient>.Instance));
         return builder;

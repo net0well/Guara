@@ -32,12 +32,13 @@ public sealed class JobContext : IJobContext
     /// <summary>Prepara o contexto para executar um job.</summary>
     /// <param name="id">Identificador do job.</param>
     /// <param name="descriptor">Descrição do job.</param>
-    public void Initialize(JobId id, JobDescriptor descriptor)
+    /// <param name="attempt">Número da tentativa em execução (0 = primeira).</param>
+    public void Initialize(JobId id, JobDescriptor descriptor, int attempt = 0)
     {
         Id = id;
         Descriptor = descriptor;
         State = JobState.Created;
-        Attempt = 0;
+        Attempt = attempt;
         User = null;
         _items?.Clear();
     }

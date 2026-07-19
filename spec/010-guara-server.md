@@ -92,6 +92,8 @@ Coordena os motores via seus contratos; persiste heartbeat e roda manutenção v
 
 > **Implementação (2026-07-18) — laço de recorrentes:** terceiro laço do servidor entregue (`RecurringLoopAsync`), no mesmo padrão do de manutenção: poll por `ServerOptions.RecurringPollInterval` (novo, default 15s) sob lock distribuído `guara:recurring` com TTL de um ciclo — entre N nós só um promove por vez. Cada ciclo consulta `Recurring.ListDueAsync(now)` e, por definição vencida: com `SkipIfPreviousRunning` e o job de `LastRunJobId` ainda não-terminal, registra `LastSkippedAt` e reagenda; caso contrário enfileira a ocorrência via `IGuaraClient` (descriptor da definição com a fila dela e `guara-recorrente: <id>` no metadata) e grava `LastRunAt`/`LastRunJobId`/`NextRunAt` recomputado a partir de agora (misfire = uma compensação; sobreposição por padrão). Definição que fica sem próxima ocorrência gera aviso no log. Falha em um ciclo não derruba o laço.
 
+> **Implementação (2026-07-18) — varredura de continuações na manutenção:** o ciclo de manutenção (já sob o lock `guara:maintenance`) ganhou, **antes** das purgas, a chamada a `ContinuationPromoter.SweepAsync` (spec 030): resolve vínculos pendentes cujo pai já finalizou sem promover (queda entre persistir o final e o evento) ou cujo pai não existe mais — a ordem garante o disparo antes de a retenção poder purgar o pai.
+
 ## Open Questions
 
 _(vazio)_
