@@ -18,7 +18,7 @@ public sealed class GuaraServer : IGuaraServer
 {
     private const string MaintenanceLockKey = "guara:maintenance";
     private const string RecurringLockKey = "guara:recurring";
-    private const string RecurringMetadataKey = "guara-recorrente";
+    private const string RecurringMetadataKey = JobMetadataKeys.RecurringId;
 
     private readonly IStorage _storage;
     private readonly IDispatcher _dispatcher;

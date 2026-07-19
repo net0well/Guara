@@ -295,11 +295,15 @@ public static class JobEmitter
                 ? $"{job.SafeName}Args.Write({string.Join(", ", args.Select(a => $"@{a.Name}"))})"
                 : "default";
             var queue = Literal(job.Queue ?? "default");
+            var metadata = job.SkipIfPreviousRunning
+                ? " { Metadata = new global::System.Collections.Generic.Dictionary<string, string> " +
+                  "{ [\"guara-pular-se-anterior\"] = \"true\" } }"
+                : "";
 
             builder.AppendLine($"""
                     /// <summary>Descritor de <c>{job.MethodName}</c>, com fila e argumentos resolvidos em compilação.</summary>
                     public static global::Guara.Abstractions.JobDescriptor {job.MethodName}({parameters})
-                        => new("{job.TypeName}", "{job.MethodName}", {arguments}, {queue});
+                        => new("{job.TypeName}", "{job.MethodName}", {arguments}, {queue}){metadata};
             """);
         }
 

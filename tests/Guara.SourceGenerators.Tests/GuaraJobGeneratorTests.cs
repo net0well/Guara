@@ -159,6 +159,32 @@ public class GuaraJobGeneratorTests
     }
 
     [Fact]
+    public void SkipIfPreviousRunning_IsStampedOnTypedDescriptor()
+    {
+        var source = """
+            using System.Threading.Tasks;
+            using Guara.Abstractions;
+
+            namespace Demo.Jobs;
+
+            public sealed class Sincronizacao
+            {
+                [GuaraJob]
+                [GuaraPularSeAnteriorEmExecucao]
+                public Task RodarAsync() => Task.CompletedTask;
+            }
+            """;
+
+        var (result, output) = Run(source);
+
+        Assert.Empty(result.Diagnostics);
+        var generated = Assert.Single(result.GeneratedTrees).ToString();
+        Assert.Contains("guara-pular-se-anterior", generated); // a factory marca o descriptor
+        Assert.Contains("SkipIfPreviousRunning = true", generated);
+        Assert.Empty(output.GetDiagnostics(TestContext.Current.CancellationToken).Where(d => d.Severity == DiagnosticSeverity.Error));
+    }
+
+    [Fact]
     public void StaticJob_InvokesWithoutServiceResolution()
     {
         var source = """

@@ -458,6 +458,27 @@ public abstract class StorageConformanceTests : IAsyncDisposable
         Assert.Equal(new JobId("j2"), falhas[0].Id);
     }
 
+    // --- Contadores agregados ---
+
+    [Fact]
+    public async Task CountByState_GroupsAndFiltersByQueue()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Jobs.CreateAsync(NewJob("e1"), CancellationToken.None);
+        await storage.Jobs.CreateAsync(NewJob("e2"), CancellationToken.None);
+        await storage.Jobs.CreateAsync(NewJob("alta-1", queue: "alta"), CancellationToken.None);
+        await storage.Jobs.CreateAsync(NewJob("f1"), CancellationToken.None);
+        await storage.Jobs.UpdateStateAsync(new JobId("f1"), JobState.Failed, "erro", CancellationToken.None);
+
+        var all = await storage.Jobs.CountByStateAsync(null, CancellationToken.None);
+        Assert.Equal(3, all[JobState.Enqueued]);
+        Assert.Equal(1, all[JobState.Failed]);
+
+        var alta = await storage.Jobs.CountByStateAsync("alta", CancellationToken.None);
+        Assert.Equal(1, alta[JobState.Enqueued]);
+        Assert.False(alta.ContainsKey(JobState.Failed));
+    }
+
     // --- Filas ---
 
     [Fact]

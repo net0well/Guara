@@ -167,6 +167,30 @@ internal sealed class PostgreSqlJobStorage(
         return await command.ExecuteNonQueryAsync(ct);
     }
 
+    public async ValueTask<IReadOnlyDictionary<JobState, long>> CountByStateAsync(string? queue, CancellationToken ct)
+    {
+        await schema.EnsureAsync(ct);
+        await using var command = dataSource.CreateCommand();
+        if (queue is null)
+        {
+            command.CommandText = $"SELECT state, count(*) FROM {s}.jobs GROUP BY state";
+        }
+        else
+        {
+            command.CommandText = $"SELECT state, count(*) FROM {s}.jobs WHERE queue = @queue GROUP BY state";
+            command.Parameters.AddWithValue("queue", queue);
+        }
+
+        var counts = new Dictionary<JobState, long>();
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            counts[(JobState)reader.GetInt32(0)] = reader.GetInt64(1);
+        }
+
+        return counts;
+    }
+
     public async ValueTask<IReadOnlyList<JobRecord>> ListAsync(JobQuery query, CancellationToken ct)
     {
         await schema.EnsureAsync(ct);

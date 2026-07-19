@@ -100,6 +100,8 @@ public interface ILockProvider
 
 > **Implementação (2026-07-18, junto com as Specs 005/038):** família ganhou, extend-only: `IStorage.Recurring` (**`IRecurringStorage`**) com as estruturas **`Recurring`** (`RecurringJobRecord`: agenda cron **ou** intervalo + janela diária, fuso, vigência, fila, calendário, pausa, e o histórico `LastRunAt`/`LastRunJobId`/`NextRunAt`/`LastSkippedAt` — upsert pela chave `Id`) e **`Calendars`** (`CalendarRecord`: datas, intervalos de datas, dias-da-semana e janelas cron excluídos, com `SchemaVersion` no payload — upsert pela chave `Name`). `ListDueAsync(now)` devolve definições ativas com `NextRunAt <= now` em ordem de vencimento (a consulta do laço de promoção da spec 010). Conformance kit cobre round-trip/upsert/delete de ambos e o filtro/ordenação do `ListDueAsync` (pausado e sem-próximo ficam fora).
 
+> **Implementação (2026-07-19, junto com a Spec 022):** família ganhou, extend-only: **`IJobStorage.CountByStateAsync(queue?)`** — contadores agregados por estado (opcionalmente por fila) para o painel; estados sem jobs podem ficar ausentes. Memory agrupa o snapshot; PostgreSQL usa `GROUP BY state`. Conformance kit cobre agrupamento e filtro por fila.
+
 > **Implementação (2026-07-19, junto com a Spec 036):** família ganhou, extend-only: **`IJobStorage.RescheduleAsync(id, scheduledFor)`** — devolve um job `Processing` à fila (`Scheduled` + posse liberada) **sem consumir tentativa**; é o caminho do gate de exclusão mútua quando a chave está ocupada (não é falha nem retentativa). Máquina de estados ganhou `Processing → Scheduled`. Conformance kit cobre (estado/tentativa/lease e reelegibilidade só no vencimento).
 
 > **Implementação (2026-07-18, junto com as Specs 008/030):** família ganhou, extend-only:

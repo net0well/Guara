@@ -58,6 +58,22 @@ public class RecurringClientTests
     }
 
     [Fact]
+    public async Task Upsert_DescriptorMarcadoPelaFactory_LigaPularSeAnterior()
+    {
+        var (client, storage) = NewClient();
+        var descriptor = Descriptor() with
+        {
+            // Marca emitida pela factory gerada quando o job declara [GuaraPularSeAnteriorEmExecucao].
+            Metadata = new Dictionary<string, string> { [JobMetadataKeys.SkipIfPreviousRunning] = "true" },
+        };
+
+        await client.AdicionarOuAtualizarRecorrenteAsync(
+            job => job.ComId("sincronia").Executa(descriptor).ACada(TimeSpan.FromMinutes(5)), Ct);
+
+        Assert.True((await storage.Recurring.GetAsync("sincronia", Ct))!.SkipIfPreviousRunning);
+    }
+
+    [Fact]
     public async Task Upsert_NaFila_DefineFilaDasOcorrencias()
     {
         var (client, storage) = NewClient();

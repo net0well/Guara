@@ -173,6 +173,18 @@ internal sealed class MemoryJobStorage(TimeProvider time) : IJobStorage
         }
     }
 
+    public ValueTask<IReadOnlyDictionary<JobState, long>> CountByStateAsync(string? queue, CancellationToken ct)
+    {
+        lock (_sync)
+        {
+            IReadOnlyDictionary<JobState, long> counts = _jobs.Values
+                .Where(j => queue is null || j.Queue == queue)
+                .GroupBy(j => j.State)
+                .ToDictionary(g => g.Key, g => g.LongCount());
+            return ValueTask.FromResult(counts);
+        }
+    }
+
     public ValueTask<IReadOnlyList<JobRecord>> ListAsync(JobQuery query, CancellationToken ct)
     {
         var page = Math.Max(1, query.Page);
