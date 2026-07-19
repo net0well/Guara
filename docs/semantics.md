@@ -33,7 +33,8 @@ Delayed/recorrentes disparam **na primeira varredura elegível após vencer** �
 
 - Default: **3 retentativas** com back-off exponencial (`2^tentativa` segundos); por job: `[GuaraRetentativas(n)]`; `0` = nunca retenta.
 - Esgotou → `Failed` com o motivo da **última** falha.
-- **Alvo (semântica final): retentativa persistente** — falha grava `Retrying` + reagendamento com back-off e `Attempt` incrementado **no storage**; sobrevive a restart e o dashboard mostra a contagem real. *Estado atual: retentativa in-process (não sobrevive a restart do nó; nesse caso o lease expira e a contagem recomeça) — interim documentado, ver spec 008.*
+- **Retentativa persistente** *(implementada 2026-07-18)*: falha grava `Retrying` + reagendamento com back-off e `Attempt` incrementado **no storage** — sobrevive a restart do nó, a reexecução é adquirida como qualquer job vencido e o dashboard mostra a contagem real. O evento `JobRetryScheduled` sinaliza cada reagendamento; `JobFailed` só dispara na falha definitiva.
+- Retentativa **em processo** (sem tocar o storage) continua disponível como middleware opcional (`RetryMiddleware`) para oscilações rápidas dentro de uma mesma tentativa.
 - Cancelamento (shutdown/posse perdida) **não conta como tentativa**.
 
 ## Cancelamento, tempo limite e efeitos colaterais

@@ -15,15 +15,21 @@ var host = builder.Build();
 
 var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Guara.Host.Demo");
 
-host.Services.GetRequiredService<JobHandlerRegistry>()
-    .Register("Demo", "Saudacao", (contexto, _) =>
-    {
-        logger.LogInformation("Olá do Guará! Job {JobId} executado", contexto.Id.Value);
-        return ValueTask.CompletedTask;
-    });
+var registry = host.Services.GetRequiredService<JobHandlerRegistry>();
+registry.Register("Demo", "Saudacao", (contexto, _) =>
+{
+    logger.LogInformation("Olá do Guará! Job {JobId} executado", contexto.Id.Value);
+    return ValueTask.CompletedTask;
+});
+registry.Register("Demo", "Despedida", (contexto, _) =>
+{
+    logger.LogInformation("Até logo! Continuação {JobId} executada depois do pai", contexto.Id.Value);
+    return ValueTask.CompletedTask;
+});
 
 var jobs = host.Services.GetRequiredService<IGuaraClient>();
-await jobs.EnfileirarAsync(new JobDescriptor("Demo", "Saudacao", default));
+var saudacaoId = await jobs.EnfileirarAsync(new JobDescriptor("Demo", "Saudacao", default));
+await jobs.ContinuarComAsync(saudacaoId, new JobDescriptor("Demo", "Despedida", default));
 await jobs.AgendarAsync(new JobDescriptor("Demo", "Saudacao", default), TimeSpan.FromSeconds(5));
 await jobs.AdicionarOuAtualizarRecorrenteAsync(job => job
     .ComId("saudacao-recorrente")
@@ -31,6 +37,6 @@ await jobs.AdicionarOuAtualizarRecorrenteAsync(job => job
     .ACada(TimeSpan.FromSeconds(15))
     .ComDescricao("Saudação recorrente de demonstração"));
 logger.LogInformation(
-    "Jobs de demonstração criados: um imediato, um agendado para daqui a 5s e um recorrente a cada 15s");
+    "Jobs de demonstração criados: um imediato com continuação, um agendado para daqui a 5s e um recorrente a cada 15s");
 
 await host.RunAsync();
