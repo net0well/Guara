@@ -7,6 +7,6 @@ namespace Guara.Storage.Memory.Tests;
 /// <summary>O provider in-memory passa 100% do kit de conformidade.</summary>
 public sealed class MemoryStorageConformanceTests : StorageConformanceTests
 {
-    protected override ValueTask<IStorage> CreateStorageAsync(TimeProvider timeProvider)
+    protected override ValueTask<IStorage> CreateStorageCoreAsync(TimeProvider timeProvider)
         => ValueTask.FromResult<IStorage>(new MemoryStorage(timeProvider));
 }

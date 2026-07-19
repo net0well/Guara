@@ -9,9 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Guara.Diagnostics\Guara.Diagnostics.csproj" />
     <ProjectReference Include="..\..\src\Guara.Hosting\Guara.Hosting.csproj" />
     <ProjectReference Include="..\..\src\Guara.Server\Guara.Server.csproj" />
     <ProjectReference Include="..\..\src\Guara.Storage.Memory\Guara.Storage.Memory.csproj" />
+    <ProjectReference Include="..\..\src\Guara.Storage.PostgreSql\Guara.Storage.PostgreSql.csproj" />
   </ItemGroup>
 
   <ItemGroup>

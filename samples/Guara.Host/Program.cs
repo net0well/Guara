@@ -4,12 +4,32 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-var builder = Host.CreateApplicationBuilder(args);
+// Content root fixo no diretório do binário: o appsettings.json do sample é achado
+// mesmo com `dotnet run` disparado da raiz do repositório.
+var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
+{
+    Args = args,
+    ContentRootPath = AppContext.BaseDirectory,
+});
 
-builder.Services
-    .AddGuara(options => options.ApplicationName = "guara-host")
-    .UseMemoryStorage()
-    .AddGuaraServer(server => server.RecurringPollInterval = TimeSpan.FromSeconds(5));
+// As opções (filas, polling, retenção...) vêm da seção "Guara" do appsettings;
+// storage: PostgreSQL quando a connection string está preenchida, memória caso contrário.
+var guara = builder.Services
+    .AddGuara()
+    .UseConfiguration(builder.Configuration)
+    .UseGuaraDiagnostics();
+
+var postgres = builder.Configuration["Guara:Storage:PostgreSql:ConnectionString"];
+if (string.IsNullOrWhiteSpace(postgres))
+{
+    guara.UseMemoryStorage();
+}
+else
+{
+    guara.UsePostgreSqlStorage();
+}
+
+guara.AddGuaraServer();
 
 var host = builder.Build();
 

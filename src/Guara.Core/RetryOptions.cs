@@ -2,7 +2,8 @@ namespace Guara.Core;
 
 /// <summary>
 /// Política de retentativa após falha — usada pela retentativa persistente do executor
-/// e pelo <see cref="RetryMiddleware"/> opcional em processo.
+/// e pelo <see cref="RetryMiddleware"/> opcional em processo. <see cref="MaxAttempts"/>
+/// é configurável pela seção <c>Guara:Retry</c>; <see cref="Backoff"/> só por código.
 /// </summary>
 public sealed class RetryOptions
 {

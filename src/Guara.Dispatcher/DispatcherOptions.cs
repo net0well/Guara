@@ -1,6 +1,6 @@
 namespace Guara.Dispatcher;
 
-/// <summary>Opções do dispatcher.</summary>
+/// <summary>Opções do dispatcher. Configuráveis pela seção <c>Guara:Dispatcher</c>.</summary>
 public sealed class DispatcherOptions
 {
     /// <summary>Intervalo de polling quando não há jobs elegíveis.</summary>
@@ -14,4 +14,31 @@ public sealed class DispatcherOptions
 
     /// <summary>Teto do back-off exponencial quando o storage está indisponível.</summary>
     public TimeSpan MaxBackoff { get; set; } = TimeSpan.FromMinutes(1);
+
+    internal void Validate()
+    {
+        if (PollingInterval <= TimeSpan.Zero)
+        {
+            throw new InvalidOperationException(
+                $"DispatcherOptions.PollingInterval precisa ser positivo (recebido: {PollingInterval}).");
+        }
+
+        if (Queues is not { Length: > 0 } || Queues.Any(string.IsNullOrWhiteSpace))
+        {
+            throw new InvalidOperationException(
+                "DispatcherOptions.Queues precisa de pelo menos uma fila com nome não vazio.");
+        }
+
+        if (LeaseDuration <= TimeSpan.Zero)
+        {
+            throw new InvalidOperationException(
+                $"DispatcherOptions.LeaseDuration precisa ser positivo (recebido: {LeaseDuration}).");
+        }
+
+        if (MaxBackoff < PollingInterval)
+        {
+            throw new InvalidOperationException(
+                $"DispatcherOptions.MaxBackoff ({MaxBackoff}) não pode ser menor que PollingInterval ({PollingInterval}).");
+        }
+    }
 }

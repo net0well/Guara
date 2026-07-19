@@ -7,16 +7,41 @@ namespace Guara.Storage.Conformance;
 /// <summary>
 /// Kit de conformidade de storage: TODO provider — inclusive de terceiros — deve
 /// herdar esta classe e passar 100%. Cobre aquisição atômica sob concorrência,
-/// lease/visibility, idempotência de estado, retenção/purga, registro de servidores,
-/// locks com TTL e paginação limitada.
-/// O provider deve usar o <see cref="TimeProvider"/> recebido para lease/TTL.
+/// lease/visibility, retentativa persistente, idempotência de estado, retenção/purga,
+/// registro de servidores, recorrentes/calendários, continuações, locks com TTL e
+/// paginação limitada. O provider deve usar o <see cref="TimeProvider"/> recebido
+/// para lease/TTL; storages descartáveis são liberados ao fim de cada teste.
 /// </summary>
-public abstract class StorageConformanceTests
+public abstract class StorageConformanceTests : IAsyncDisposable
 {
     private static readonly DateTimeOffset T0 = new(2026, 7, 16, 12, 0, 0, TimeSpan.Zero);
 
+    private readonly List<IStorage> _createdStorages = [];
+
     /// <summary>Cria o storage sob teste usando o relógio fornecido.</summary>
-    protected abstract ValueTask<IStorage> CreateStorageAsync(TimeProvider timeProvider);
+    protected abstract ValueTask<IStorage> CreateStorageCoreAsync(TimeProvider timeProvider);
+
+    /// <summary>Cria e registra o storage para descarte ao fim do teste.</summary>
+    protected async ValueTask<IStorage> CreateStorageAsync(TimeProvider timeProvider)
+    {
+        var storage = await CreateStorageCoreAsync(timeProvider);
+        _createdStorages.Add(storage);
+        return storage;
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        foreach (var storage in _createdStorages)
+        {
+            if (storage is IAsyncDisposable disposable)
+            {
+                await disposable.DisposeAsync();
+            }
+        }
+
+        GC.SuppressFinalize(this);
+    }
 
     private static JobRecord NewJob(string id, string queue = "default", JobState state = JobState.Enqueued,
         DateTimeOffset? createdAt = null, DateTimeOffset? scheduledFor = null) => new()
