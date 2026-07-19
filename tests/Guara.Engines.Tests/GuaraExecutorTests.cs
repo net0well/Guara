@@ -3,6 +3,8 @@ using Guara.Core;
 using Guara.Executor;
 using Guara.Storage;
 using Guara.Storage.Memory;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Guara.Engines.Tests;
@@ -37,9 +39,11 @@ public class GuaraExecutorTests
     {
         var storage = new MemoryStorage();
         var events = new RecordingPublisher();
+        var services = new ServiceCollection().BuildServiceProvider();
         var executor = new GuaraExecutor(
-            storage, events, new RegistryJobInvoker(registry),
-            retry ?? NoBackoffRetry, new FixedTimeProvider(T0), []);
+            storage, events, new RegistryJobInvoker(registry, services), registry,
+            retry ?? NoBackoffRetry, new FixedTimeProvider(T0), [],
+            NullLogger<GuaraExecutor>.Instance);
 
         var id = new JobId("j1");
         await storage.Jobs.CreateAsync(new JobRecord

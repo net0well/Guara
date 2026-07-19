@@ -85,6 +85,24 @@ internal sealed class MemoryJobStorage(TimeProvider time) : IJobStorage
         return ValueTask.CompletedTask;
     }
 
+    public ValueTask RescheduleAsync(JobId id, DateTimeOffset scheduledFor, CancellationToken ct)
+    {
+        lock (_sync)
+        {
+            if (_jobs.TryGetValue(id, out var job))
+            {
+                _jobs[id] = job with
+                {
+                    State = JobState.Scheduled,
+                    ScheduledFor = scheduledFor,
+                    LeaseUntil = null, // devolução sem consumo de tentativa: posse liberada
+                };
+            }
+        }
+
+        return ValueTask.CompletedTask;
+    }
+
     public ValueTask UpdateStateAsync(JobId id, JobState state, string? resultOrError, CancellationToken ct)
     {
         lock (_sync)

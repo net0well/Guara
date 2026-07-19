@@ -99,6 +99,19 @@ internal sealed class PostgreSqlJobStorage(
         await command.ExecuteNonQueryAsync(ct);
     }
 
+    public async ValueTask RescheduleAsync(JobId id, DateTimeOffset scheduledFor, CancellationToken ct)
+    {
+        await schema.EnsureAsync(ct);
+        await using var command = dataSource.CreateCommand($"""
+            UPDATE {s}.jobs
+            SET state = {(int)JobState.Scheduled}, scheduled_for = @scheduledFor, lease_until = NULL
+            WHERE id = @id
+            """);
+        command.Parameters.AddWithValue("id", id.Value);
+        command.Parameters.AddWithValue("scheduledFor", scheduledFor);
+        await command.ExecuteNonQueryAsync(ct);
+    }
+
     public async ValueTask UpdateStateAsync(JobId id, JobState state, string? resultOrError, CancellationToken ct)
     {
         await schema.EnsureAsync(ct);

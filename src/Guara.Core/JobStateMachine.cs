@@ -10,7 +10,8 @@ public sealed class JobStateMachine
         [JobState.Created] = [JobState.Enqueued, JobState.Scheduled],
         [JobState.Scheduled] = [JobState.Enqueued],
         [JobState.Enqueued] = [JobState.Processing],
-        [JobState.Processing] = [JobState.Succeeded, JobState.Failed, JobState.Retrying],
+        // Processing → Scheduled: devolução à fila sem consumir tentativa (ex.: mutex ocupado).
+        [JobState.Processing] = [JobState.Succeeded, JobState.Failed, JobState.Retrying, JobState.Scheduled],
         [JobState.Retrying] = [JobState.Enqueued, JobState.Scheduled],
         [JobState.Failed] = [JobState.Enqueued],
         [JobState.Succeeded] = [],
