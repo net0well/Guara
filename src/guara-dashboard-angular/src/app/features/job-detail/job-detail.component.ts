@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, resource, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, resource, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
 import { GuaraApi } from '../../core/guara-api';
@@ -81,9 +81,17 @@ export class JobDetailComponent {
   protected readonly acao = signal<string | null>(null);
 
   protected readonly job = resource({
-    request: () => ({ id: this.id(), tick: this.sse.refresh() }),
-    loader: ({ request }) => this.api.job(request.id),
+    request: () => this.id(),
+    loader: ({ request }) => this.api.job(request),
   });
+
+  constructor() {
+    // Pulso do SSE recarrega o detalhe sem piscar (reload preserva o value).
+    effect(() => {
+      this.sse.refresh();
+      this.job.reload();
+    });
+  }
 
   protected readonly metadados = computed(() => {
     const meta = this.job.value()?.metadata;

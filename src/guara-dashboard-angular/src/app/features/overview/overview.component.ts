@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, resource } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, resource } from '@angular/core';
 
 import { GuaraApi } from '../../core/guara-api';
 import { I18nService } from '../../core/i18n.service';
@@ -87,6 +87,8 @@ interface Slice {
     .total strong { font-size: 2.6rem; line-height: 1; }
     .rotulo { text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.04em; }
     .grafico { display: flex; align-items: center; gap: 1.25rem; flex: 1; min-width: 280px; }
+    .grafico circle { transition: stroke-dasharray .5s ease, stroke-dashoffset .5s ease; }
+    .total strong, .numero { transition: color .3s ease; }
     .legenda { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem; }
     .legenda li { display: flex; align-items: center; gap: 0.5rem; }
     .legenda .ponto { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
@@ -100,16 +102,18 @@ export class OverviewComponent {
   protected readonly i18n = inject(I18nService);
   protected readonly describe = describeError;
 
-  // request atrelado ao pulso do SSE → recarrega ao vivo (coalescido no serviço).
-  protected readonly stats = resource({
-    request: () => this.sse.refresh(),
-    loader: () => this.api.stats(),
-  });
+  protected readonly stats = resource({ loader: () => this.api.stats() });
+  protected readonly queues = resource({ loader: () => this.api.queues() });
 
-  protected readonly queues = resource({
-    request: () => this.sse.refresh(),
-    loader: () => this.api.queues(),
-  });
+  constructor() {
+    // Atualização ao vivo suave: no pulso do SSE recarrega mantendo os dados na tela
+    // (reload preserva o value; recriar o request piscaria a UI).
+    effect(() => {
+      this.sse.refresh();
+      this.stats.reload();
+      this.queues.reload();
+    });
+  }
 
   protected readonly estados = computed(() => {
     const value = this.stats.value();

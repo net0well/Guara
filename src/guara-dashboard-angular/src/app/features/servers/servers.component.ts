@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, resource } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, resource } from '@angular/core';
 
 import { GuaraApi } from '../../core/guara-api';
 import { I18nService } from '../../core/i18n.service';
@@ -52,8 +52,12 @@ export class ServersComponent {
   protected readonly i18n = inject(I18nService);
   protected readonly describe = describeError;
 
-  protected readonly servers = resource({
-    request: () => this.sse.refresh(),
-    loader: () => this.api.servers(),
-  });
+  protected readonly servers = resource({ loader: () => this.api.servers() });
+
+  constructor() {
+    effect(() => {
+      this.sse.refresh();
+      this.servers.reload();
+    });
+  }
 }
