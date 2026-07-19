@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Guara.Dashboard</PackageId>
+    <Description>Composição do dashboard do Guará: AddGuaraDashboard()/MapGuaraDashboard() montam a API sob a rota base, servem a UI embutida e aplicam as regras de acesso fluentes (papéis, claims, IPs, login fixo com página própria) — seguro por padrão.</Description>
+    <!-- Mesma exceção justificada do Guara.Dashboard.Api (docs/checklist.md item 6):
+         host web opcional; o núcleo do Guará permanece AOT. -->
+    <IsAotCompatible>false</IsAotCompatible>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Guara.Abstractions\Guara.Abstractions.csproj" />
+    <ProjectReference Include="..\Guara.Configuration\Guara.Configuration.csproj" />
+    <ProjectReference Include="..\Guara.Dashboard.Api\Guara.Dashboard.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\assets\logo.png" Link="Assets\logo.png" />
+  </ItemGroup>
+
+</Project>
