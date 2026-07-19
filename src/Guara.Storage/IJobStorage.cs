@@ -104,6 +104,15 @@ public interface IJobStorage
     ValueTask<int> PurgeAsync(JobState state, DateTimeOffset finishedBefore, CancellationToken ct);
 
     /// <summary>
+    /// Contadores de jobs por estado (visão agregada do dashboard), opcionalmente
+    /// restritos a uma fila. Estados sem jobs podem ficar ausentes do dicionário.
+    /// </summary>
+    /// <param name="queue">Fila a filtrar, ou <c>null</c> para todas.</param>
+    /// <param name="ct">Token de cancelamento.</param>
+    /// <returns>Contagem por estado.</returns>
+    ValueTask<IReadOnlyDictionary<JobState, long>> CountByStateAsync(string? queue, CancellationToken ct);
+
+    /// <summary>
     /// Lista jobs para o dashboard. Sempre paginada; providers aplicam o teto
     /// <see cref="JobQuery.MaxPageSize"/>.
     /// </summary>
