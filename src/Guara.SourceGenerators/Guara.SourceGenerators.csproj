@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Guara.SourceGenerators</PackageId>
+    <Description>Source generator do Guará: descobre métodos [GuaraJob] em compilação e gera o registro em DI, a invocação sem reflection, os metadados dos atributos e as factories tipadas de descritor — zero reflection em runtime, AOT garantido.</Description>
+    <!-- Generators rodam dentro do compilador: netstandard2.0 obrigatório. -->
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <IsAotCompatible>false</IsAotCompatible>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <!-- Empacotamento como analyzer (lib/ vazio) é detalhado na spec 033. -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+    <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+  </ItemGroup>
+
+</Project>
