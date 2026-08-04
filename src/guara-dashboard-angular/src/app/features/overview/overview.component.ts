@@ -1,9 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, resource } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, resource, signal } from '@angular/core';
 
 import { GuaraApi } from '../../core/guara-api';
 import { I18nService } from '../../core/i18n.service';
+import { SERIES_WINDOWS, SeriesWindow } from '../../core/models';
 import { SseService } from '../../core/sse.service';
 import { describeError } from '../../core/problem-details.interceptor';
+import { LatencyChartComponent, ThroughputChartComponent } from '../../shared/series-charts.component';
 import { stateColorVar } from '../../shared/state';
 
 interface Slice {
@@ -18,6 +20,7 @@ interface Slice {
 @Component({
   selector: 'app-overview',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ThroughputChartComponent, LatencyChartComponent],
   template: `
     @if (stats.value(); as s) {
       <section class="topo">
@@ -47,6 +50,33 @@ interface Slice {
           </ul>
         </div>
       </section>
+
+      <div class="cabecalho-graficos">
+        <h2>{{ i18n.t('charts') }}</h2>
+        <div class="janelas" role="group" [attr.aria-label]="i18n.t('window')">
+          @for (j of janelas; track j) {
+            <button
+              type="button"
+              [class.ativo]="janela() === j"
+              [attr.aria-pressed]="janela() === j"
+              (click)="janela.set(j)">
+              {{ j }}
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (series.error()) {
+        <p class="erro-box">{{ describe(series.error()) }}</p>
+      } @else {
+        <div class="graficos">
+          <div class="card"><app-throughput-chart [series]="series.value()" /></div>
+          <div class="card"><app-latency-chart [series]="series.value()" /></div>
+        </div>
+        @if (janela() === '7d') {
+          <p class="suave aviso-retencao">{{ i18n.t('seriesTruncated') }}</p>
+        }
+      }
 
       <h2>{{ i18n.t('byState') }}</h2>
       <div class="grid">
@@ -94,6 +124,14 @@ interface Slice {
     .legenda .ponto { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
     h2 { font-size: 1rem; color: var(--suave); text-transform: uppercase; letter-spacing: 0.04em; margin: 1.5rem 0 0.75rem; }
     .numero { display: block; font-size: 1.8rem; margin-top: 0.4rem; }
+    .cabecalho-graficos { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+    .cabecalho-graficos h2 { flex: 1; }
+    .janelas { display: flex; gap: 0.25rem; }
+    .janelas button { padding: 0.25rem 0.6rem; font-size: 0.85rem; }
+    .janelas button.ativo { border-color: var(--marca); color: var(--marca); }
+    /* Um gráfico por linha até caber lado a lado: comprimir demais achata o eixo. */
+    .graficos { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+    .aviso-retencao { margin: 0.5rem 0 0; font-size: 0.85rem; }
   `],
 })
 export class OverviewComponent {
@@ -102,8 +140,17 @@ export class OverviewComponent {
   protected readonly i18n = inject(I18nService);
   protected readonly describe = describeError;
 
+  protected readonly janelas = SERIES_WINDOWS;
+  protected readonly janela = signal<SeriesWindow>('24h');
+
   protected readonly stats = resource({ loader: () => this.api.stats() });
   protected readonly queues = resource({ loader: () => this.api.queues() });
+
+  // A janela entra no request: trocá-la é uma consulta nova, e não um recarregamento.
+  protected readonly series = resource({
+    request: () => this.janela(),
+    loader: ({ request }) => this.api.series(request),
+  });
 
   constructor() {
     // Atualização ao vivo suave: no pulso do SSE recarrega mantendo os dados na tela
@@ -112,6 +159,7 @@ export class OverviewComponent {
       this.sse.refresh();
       this.stats.reload();
       this.queues.reload();
+      this.series.reload();
     });
   }
 

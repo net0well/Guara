@@ -55,6 +55,7 @@ public sealed record RecurringDto(
     string? CronExpression,
     string? Interval,
     string? TimeZoneId,
+    string? CalendarName,
     bool Paused,
     bool SkipIfPreviousRunning,
     DateTimeOffset? NextRunAt,

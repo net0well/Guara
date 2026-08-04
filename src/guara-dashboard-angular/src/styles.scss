@@ -137,3 +137,28 @@ tbody tr:hover { background: var(--cartao-2); }
 
 .toolbar { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-bottom: 1rem; }
 .espaco { flex: 1; }
+
+input {
+  font: inherit;
+  background: var(--cartao);
+  color: inherit;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  padding: 0.35rem 0.5rem;
+}
+input:focus-visible { outline: 2px solid var(--marca); outline-offset: 2px; }
+input[type='checkbox'] { accent-color: var(--marca); width: 1rem; height: 1rem; }
+
+/* Botões de linha da tabela: quebram para a linha de baixo em tela estreita. */
+.acoes { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+/* Formulário que se abre sob a linha editada, sem tirar a tabela do lugar. */
+.linha-edicao > td { background: var(--cartao-2); }
+.form-agenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: end;
+}
+.form-agenda label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: var(--suave); }
+.form-agenda input, .form-agenda select { min-width: 9rem; }
