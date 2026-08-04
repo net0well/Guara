@@ -187,14 +187,14 @@ internal sealed class MemoryJobStorage(TimeProvider time) : IJobStorage
 
     public ValueTask<IReadOnlyList<JobRecord>> ListAsync(JobQuery query, CancellationToken ct)
     {
-        var page = Math.Max(1, query.Page);
-        var pageSize = Math.Clamp(query.PageSize, 1, JobQuery.MaxPageSize);
+        ArgumentNullException.ThrowIfNull(query);
+        var page = query.EffectivePage;
+        var pageSize = query.EffectivePageSize;
 
         lock (_sync)
         {
             IReadOnlyList<JobRecord> result = _jobs.Values
-                .Where(j => (query.State is null || j.State == query.State)
-                         && (query.Queue is null || j.Queue == query.Queue))
+                .Where(query.Matches)
                 .OrderByDescending(j => j.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -203,6 +203,65 @@ internal sealed class MemoryJobStorage(TimeProvider time) : IJobStorage
             return ValueTask.FromResult(result);
         }
     }
+
+    public ValueTask<long> CountAsync(JobQuery query, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        lock (_sync)
+        {
+            return ValueTask.FromResult(_jobs.Values.LongCount(query.Matches));
+        }
+    }
+
+    public ValueTask<IReadOnlyList<JobSeriesPoint>> GetSeriesAsync(JobSeriesQuery query, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        query.Validate();
+
+        List<JobRecord> finished;
+        lock (_sync)
+        {
+            finished = _jobs.Values
+                .Where(j => j.State is JobState.Succeeded or JobState.Failed
+                         && j.FinishedAt is { } at && at >= query.From && at < query.To
+                         && (query.Queue is null || j.Queue == query.Queue))
+                .ToList();
+        }
+
+        // Um balde por posição fixa na janela: o gráfico precisa da série contínua, então
+        // períodos sem job finalizado aparecem zerados em vez de sumirem do eixo.
+        var byBucket = finished
+            .GroupBy(j => Floor(j.FinishedAt!.Value, query))
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var points = new List<JobSeriesPoint>();
+        foreach (var start in query.Buckets())
+        {
+            if (!byBucket.TryGetValue(start, out var jobs))
+            {
+                points.Add(new JobSeriesPoint(start, 0, 0, null, null));
+                continue;
+            }
+
+            var latencies = jobs
+                .Select(j => j.FinishedAt!.Value - j.CreatedAt)
+                .Order()
+                .ToList();
+
+            points.Add(new JobSeriesPoint(
+                start,
+                jobs.LongCount(j => j.State == JobState.Succeeded),
+                jobs.LongCount(j => j.State == JobState.Failed),
+                JobLatency.Percentile(latencies, 0.50),
+                JobLatency.Percentile(latencies, 0.95)));
+        }
+
+        return ValueTask.FromResult<IReadOnlyList<JobSeriesPoint>>(points);
+    }
+
+    private static DateTimeOffset Floor(DateTimeOffset instant, JobSeriesQuery query)
+        => query.From + TimeSpan.FromTicks((instant - query.From).Ticks / query.Bucket.Ticks * query.Bucket.Ticks);
 
     /// <summary>Snapshot para introspecção de filas (usado por <see cref="MemoryQueueStorage"/>).</summary>
     internal List<JobRecord> Snapshot()

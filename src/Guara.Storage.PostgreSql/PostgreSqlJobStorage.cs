@@ -193,25 +193,13 @@ internal sealed class PostgreSqlJobStorage(
 
     public async ValueTask<IReadOnlyList<JobRecord>> ListAsync(JobQuery query, CancellationToken ct)
     {
+        ArgumentNullException.ThrowIfNull(query);
         await schema.EnsureAsync(ct);
-        var page = Math.Max(1, query.Page);
-        var pageSize = Math.Clamp(query.PageSize, 1, JobQuery.MaxPageSize);
+        var page = query.EffectivePage;
+        var pageSize = query.EffectivePageSize;
 
-        var filters = new List<string>();
         await using var command = dataSource.CreateCommand();
-        if (query.State is { } state)
-        {
-            filters.Add("state = @state");
-            command.Parameters.AddWithValue("state", (int)state);
-        }
-
-        if (query.Queue is { } queue)
-        {
-            filters.Add("queue = @queue");
-            command.Parameters.AddWithValue("queue", queue);
-        }
-
-        var where = filters.Count > 0 ? $"WHERE {string.Join(" AND ", filters)}" : "";
+        var where = BuildWhere(query, command);
         command.CommandText = $"""
             SELECT {Columns} FROM {s}.jobs {where}
             ORDER BY created_at DESC
@@ -229,6 +217,133 @@ internal sealed class PostgreSqlJobStorage(
 
         return results;
     }
+
+    public async ValueTask<long> CountAsync(JobQuery query, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        await schema.EnsureAsync(ct);
+
+        await using var command = dataSource.CreateCommand();
+        var where = BuildWhere(query, command);
+        command.CommandText = $"SELECT count(*) FROM {s}.jobs {where}";
+        return (long)(await command.ExecuteScalarAsync(ct))!;
+    }
+
+    public async ValueTask<IReadOnlyList<JobSeriesPoint>> GetSeriesAsync(
+        JobSeriesQuery query, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        query.Validate();
+        await schema.EnsureAsync(ct);
+
+        // O índice do balde sai de aritmética inteira em microssegundos (a resolução do
+        // timestamp no PostgreSQL): dividir o epoch em ponto flutuante colocaria jobs de
+        // fronteira no balde errado. percentile_disc devolve uma latência realmente
+        // observada — a mesma definição que os demais providers aplicam.
+        // O filtro de fila é concatenado, e não um parâmetro sempre presente comparado a
+        // NULL: o servidor não consegue inferir o tipo de um parâmetro que só aparece em
+        // "IS NULL" e rejeita a consulta.
+        var queueFilter = query.Queue is null ? "" : " AND queue = @queue";
+        await using var command = dataSource.CreateCommand($"""
+            SELECT
+                (extract(epoch from (finished_at - @from)) * 1000000)::bigint / @bucket AS bucket,
+                count(*) FILTER (WHERE state = {(int)JobState.Succeeded}),
+                count(*) FILTER (WHERE state = {(int)JobState.Failed}),
+                percentile_disc(0.50) WITHIN GROUP (ORDER BY (finished_at - created_at)),
+                percentile_disc(0.95) WITHIN GROUP (ORDER BY (finished_at - created_at))
+            FROM {s}.jobs
+            WHERE state IN ({(int)JobState.Succeeded}, {(int)JobState.Failed})
+              AND finished_at >= @from AND finished_at < @to{queueFilter}
+            GROUP BY bucket
+            """);
+        command.Parameters.AddWithValue("from", query.From);
+        command.Parameters.AddWithValue("to", query.To);
+        command.Parameters.AddWithValue("bucket", query.Bucket.Ticks / TimeSpan.TicksPerMicrosecond);
+        if (query.Queue is { } queue)
+        {
+            command.Parameters.AddWithValue("queue", queue);
+        }
+
+        var buckets = new Dictionary<long, (long Succeeded, long Failed, TimeSpan? P50, TimeSpan? P95)>();
+        await using (var reader = await command.ExecuteReaderAsync(ct))
+        {
+            while (await reader.ReadAsync(ct))
+            {
+                buckets[reader.GetInt64(0)] = (
+                    reader.GetInt64(1),
+                    reader.GetInt64(2),
+                    reader.IsDBNull(3) ? null : reader.GetFieldValue<TimeSpan>(3),
+                    reader.IsDBNull(4) ? null : reader.GetFieldValue<TimeSpan>(4));
+            }
+        }
+
+        // A janela volta contínua: balde sem job finalizado é ponto zerado, não buraco.
+        var points = new List<JobSeriesPoint>();
+        var index = 0L;
+        foreach (var start in query.Buckets())
+        {
+            points.Add(buckets.TryGetValue(index, out var bucket)
+                ? new JobSeriesPoint(start, bucket.Succeeded, bucket.Failed, bucket.P50, bucket.P95)
+                : new JobSeriesPoint(start, 0, 0, null, null));
+            index++;
+        }
+
+        return points;
+    }
+
+    private static string BuildWhere(JobQuery query, NpgsqlCommand command)
+    {
+        var filters = new List<string>();
+
+        if (query.State is { } state)
+        {
+            filters.Add("state = @state");
+            command.Parameters.AddWithValue("state", (int)state);
+        }
+
+        if (query.Queue is { } queue)
+        {
+            filters.Add("queue = @queue");
+            command.Parameters.AddWithValue("queue", queue);
+        }
+
+        if (query.TypeName is { } typeName)
+        {
+            filters.Add("descriptor ->> 'typeName' = @typeName");
+            command.Parameters.AddWithValue("typeName", typeName);
+        }
+
+        if (query.From is { } from)
+        {
+            filters.Add("created_at >= @from");
+            command.Parameters.AddWithValue("from", from);
+        }
+
+        if (query.To is { } to)
+        {
+            filters.Add("created_at < @to");
+            command.Parameters.AddWithValue("to", to);
+        }
+
+        if (query.Text is { Length: > 0 } text)
+        {
+            // O mesmo trecho procurado no id e nos nomes do descritor, sem diferenciar caixa.
+            filters.Add("""
+                (id ILIKE @text
+                 OR descriptor ->> 'typeName' ILIKE @text
+                 OR descriptor ->> 'methodName' ILIKE @text)
+                """);
+            command.Parameters.AddWithValue("text", $"%{Escape(text)}%");
+        }
+
+        return filters.Count > 0 ? $"WHERE {string.Join(" AND ", filters)}" : "";
+    }
+
+    // ILIKE trata _ e % como curingas: o texto digitado pelo operador é literal.
+    private static string Escape(string text)
+        => text.Replace("\\", "\\\\", StringComparison.Ordinal)
+            .Replace("%", "\\%", StringComparison.Ordinal)
+            .Replace("_", "\\_", StringComparison.Ordinal);
 
     private static string Prefixed(string alias)
         => string.Join(", ", Columns.Split(", ").Select(column => $"{alias}.{column}"));

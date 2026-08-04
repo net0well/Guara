@@ -44,10 +44,11 @@ public abstract class StorageConformanceTests : IAsyncDisposable
     }
 
     private static JobRecord NewJob(string id, string queue = "default", JobState state = JobState.Enqueued,
-        DateTimeOffset? createdAt = null, DateTimeOffset? scheduledFor = null) => new()
+        DateTimeOffset? createdAt = null, DateTimeOffset? scheduledFor = null,
+        string typeName = "Tipo", string methodName = "Metodo") => new()
     {
         Id = new JobId(id),
-        Descriptor = new JobDescriptor("Tipo", "Metodo", default, queue),
+        Descriptor = new JobDescriptor(typeName, methodName, default, queue),
         State = state,
         Queue = queue,
         CreatedAt = createdAt ?? T0,
@@ -456,6 +457,177 @@ public abstract class StorageConformanceTests : IAsyncDisposable
         Assert.Equal(new JobId("j1"), altas[0].Id);
         Assert.Single(falhas);
         Assert.Equal(new JobId("j2"), falhas[0].Id);
+    }
+
+    // --- Busca ---
+
+    [Fact]
+    public async Task List_TextMatchesIdTypeAndMethod_IgnoringCase()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Jobs.CreateAsync(
+            NewJob("relatorio-mensal", typeName: "Financeiro", methodName: "Fechar"), CancellationToken.None);
+        await storage.Jobs.CreateAsync(
+            NewJob("j2", typeName: "RelatorioService", methodName: "Gerar"), CancellationToken.None);
+        await storage.Jobs.CreateAsync(
+            NewJob("j3", typeName: "Email", methodName: "EnviarRelatorio"), CancellationToken.None);
+        await storage.Jobs.CreateAsync(
+            NewJob("j4", typeName: "Email", methodName: "Enviar"), CancellationToken.None);
+
+        var achados = await storage.Jobs.ListAsync(new JobQuery(Text: "RELATORIO"), CancellationToken.None);
+
+        Assert.Equal(3, achados.Count);
+        Assert.DoesNotContain(achados, j => j.Id == new JobId("j4"));
+    }
+
+    [Fact]
+    public async Task List_TextTreatsWildcardsAsLiteral()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Jobs.CreateAsync(NewJob("com%porcento"), CancellationToken.None);
+        await storage.Jobs.CreateAsync(NewJob("sem"), CancellationToken.None);
+
+        var achados = await storage.Jobs.ListAsync(new JobQuery(Text: "m%p"), CancellationToken.None);
+
+        Assert.Single(achados);
+        Assert.Equal(new JobId("com%porcento"), achados[0].Id);
+    }
+
+    [Fact]
+    public async Task List_FiltersByTypeName_Exactly()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Jobs.CreateAsync(NewJob("j1", typeName: "Relatorio"), CancellationToken.None);
+        await storage.Jobs.CreateAsync(NewJob("j2", typeName: "RelatorioAvancado"), CancellationToken.None);
+
+        var achados = await storage.Jobs.ListAsync(new JobQuery(TypeName: "Relatorio"), CancellationToken.None);
+
+        Assert.Single(achados);
+        Assert.Equal(new JobId("j1"), achados[0].Id);
+    }
+
+    [Fact]
+    public async Task List_FiltersByCreatedRange_LowerInclusiveUpperExclusive()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Jobs.CreateAsync(NewJob("antes", createdAt: T0 - TimeSpan.FromSeconds(1)), CancellationToken.None);
+        await storage.Jobs.CreateAsync(NewJob("inicio", createdAt: T0), CancellationToken.None);
+        await storage.Jobs.CreateAsync(NewJob("meio", createdAt: T0 + TimeSpan.FromSeconds(30)), CancellationToken.None);
+        await storage.Jobs.CreateAsync(NewJob("fim", createdAt: T0 + TimeSpan.FromMinutes(1)), CancellationToken.None);
+
+        var achados = await storage.Jobs.ListAsync(
+            new JobQuery(From: T0, To: T0 + TimeSpan.FromMinutes(1)), CancellationToken.None);
+
+        Assert.Equal(2, achados.Count);
+        Assert.Contains(achados, j => j.Id == new JobId("inicio"));
+        Assert.Contains(achados, j => j.Id == new JobId("meio"));
+    }
+
+    [Fact]
+    public async Task Count_AppliesFiltersAndIgnoresPaging()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        for (var i = 0; i < 7; i++)
+        {
+            await storage.Jobs.CreateAsync(NewJob($"alta-{i}", queue: "alta"), CancellationToken.None);
+        }
+
+        await storage.Jobs.CreateAsync(NewJob("outra"), CancellationToken.None);
+
+        var total = await storage.Jobs.CountAsync(
+            new JobQuery(Queue: "alta", Page: 2, PageSize: 3), CancellationToken.None);
+
+        Assert.Equal(7, total);
+    }
+
+    // --- Série temporal ---
+
+    [Fact]
+    public async Task Series_CountsOutcomesPerBucketAndFillsGaps()
+    {
+        var time = new ManualTimeProvider(T0);
+        var storage = await CreateStorageAsync(time);
+        await storage.Jobs.CreateAsync(NewJob("ok"), CancellationToken.None);
+        await storage.Jobs.CreateAsync(NewJob("falho"), CancellationToken.None);
+        await storage.Jobs.CreateAsync(NewJob("tardio"), CancellationToken.None);
+
+        time.Advance(TimeSpan.FromSeconds(10));
+        await storage.Jobs.UpdateStateAsync(new JobId("ok"), JobState.Succeeded, "r", CancellationToken.None);
+        await storage.Jobs.UpdateStateAsync(new JobId("falho"), JobState.Failed, "e", CancellationToken.None);
+
+        time.Advance(TimeSpan.FromMinutes(2));
+        await storage.Jobs.UpdateStateAsync(new JobId("tardio"), JobState.Succeeded, "r", CancellationToken.None);
+
+        var serie = await storage.Jobs.GetSeriesAsync(
+            new JobSeriesQuery(T0, T0 + TimeSpan.FromMinutes(3), TimeSpan.FromMinutes(1)), CancellationToken.None);
+
+        Assert.Equal(3, serie.Count);
+        Assert.Equal(T0, serie[0].Timestamp);
+        Assert.Equal(1, serie[0].Succeeded);
+        Assert.Equal(1, serie[0].Failed);
+        Assert.Equal(2, serie[0].Total);
+
+        // Balde sem desfecho vira ponto zerado: o gráfico precisa da série contínua.
+        Assert.Equal(0, serie[1].Total);
+        Assert.Null(serie[1].LatencyP50);
+
+        Assert.Equal(1, serie[2].Succeeded);
+        Assert.Equal(0, serie[2].Failed);
+    }
+
+    [Fact]
+    public async Task Series_ReportsObservedLatencyPercentiles()
+    {
+        var time = new ManualTimeProvider(T0);
+        var storage = await CreateStorageAsync(time);
+        for (var i = 1; i <= 4; i++)
+        {
+            await storage.Jobs.CreateAsync(NewJob($"j{i}"), CancellationToken.None);
+        }
+
+        // Latências de 10s, 20s, 30s e 40s, todas no primeiro balde.
+        for (var i = 1; i <= 4; i++)
+        {
+            time.Advance(TimeSpan.FromSeconds(10));
+            await storage.Jobs.UpdateStateAsync(new JobId($"j{i}"), JobState.Succeeded, "r", CancellationToken.None);
+        }
+
+        var serie = await storage.Jobs.GetSeriesAsync(
+            new JobSeriesQuery(T0, T0 + TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(1)), CancellationToken.None);
+
+        // Rank discreto sobre a amostra ordenada: valores realmente observados.
+        Assert.Equal(TimeSpan.FromSeconds(20), serie[0].LatencyP50);
+        Assert.Equal(TimeSpan.FromSeconds(40), serie[0].LatencyP95);
+    }
+
+    [Fact]
+    public async Task Series_FiltersByQueue()
+    {
+        var time = new ManualTimeProvider(T0);
+        var storage = await CreateStorageAsync(time);
+        await storage.Jobs.CreateAsync(NewJob("a", queue: "alta"), CancellationToken.None);
+        await storage.Jobs.CreateAsync(NewJob("b", queue: "baixa"), CancellationToken.None);
+
+        time.Advance(TimeSpan.FromSeconds(5));
+        await storage.Jobs.UpdateStateAsync(new JobId("a"), JobState.Succeeded, "r", CancellationToken.None);
+        await storage.Jobs.UpdateStateAsync(new JobId("b"), JobState.Succeeded, "r", CancellationToken.None);
+
+        var serie = await storage.Jobs.GetSeriesAsync(
+            new JobSeriesQuery(T0, T0 + TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1), Queue: "alta"),
+            CancellationToken.None);
+
+        Assert.Equal(1, serie[0].Succeeded);
+    }
+
+    [Fact]
+    public async Task Series_RejectsWindowThatWouldExceedMaxPoints()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        var pedidoAbsurdo = new JobSeriesQuery(
+            T0, T0 + TimeSpan.FromDays(7), TimeSpan.FromSeconds(1));
+
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await storage.Jobs.GetSeriesAsync(pedidoAbsurdo, CancellationToken.None));
     }
 
     // --- Contadores agregados ---
