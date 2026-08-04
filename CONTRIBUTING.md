@@ -13,7 +13,7 @@ Requisitos: **.NET SDK 10** (fixado em `global.json`), **Node 20.19+** para a SP
 para os testes de conformidade do PostgreSQL.
 
 ```bash
-git clone https://github.com/net0well/guara.git
+git clone https://github.com/net0well/Guara.git
 cd guara
 dotnet build Guara.slnx
 dotnet test Guara.slnx

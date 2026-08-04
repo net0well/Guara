@@ -7,14 +7,45 @@
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <IsAotCompatible>false</IsAotCompatible>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-    <!-- Empacotamento como analyzer (lib/ vazio) é detalhado na spec 033. -->
+    <!--
+      Pacote de analyzer, não de biblioteca: o assembly vai para analyzers/dotnet/cs, onde o
+      compilador o carrega, e nada vai para lib/. Por isso o build output sai do pacote e o
+      grupo de dependências é suprimido — sem isso o NuGet acusa NU5128, que é exatamente a
+      contradição de declarar dependência para uma TFM que não tem assembly nenhum.
+
+      DevelopmentDependency impede que o gerador vire dependência transitiva de quem consome
+      um pacote que o usa: ele age em compilação e não existe em runtime.
+    -->
     <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <!--
+      Sem build output não há o que colocar num pacote de símbolos: ele sairia vazio e o pack
+      falha. O .pdb do gerador não serve para depurar aplicação nenhuma — ele roda dentro do
+      compilador, não em runtime.
+    -->
+    <IncludeSymbols>false</IncludeSymbols>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
   </ItemGroup>
+
+  <!--
+    O assembly entra pelo gancho de conteúdo por TFM do próprio pack, e não como item None no
+    corpo do projeto: na avaliação inicial $(OutputPath) ainda não tem a pasta da TFM, e o
+    caminho apontaria para arquivo inexistente. Aqui $(TargetPath) já está resolvido.
+  -->
+  <PropertyGroup>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);EmpacotaGeradorComoAnalyzer</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <Target Name="EmpacotaGeradorComoAnalyzer">
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(TargetPath)" PackagePath="analyzers/dotnet/cs" />
+    </ItemGroup>
+  </Target>
 
   <ItemGroup>
     <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />

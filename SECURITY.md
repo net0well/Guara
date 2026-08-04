@@ -8,7 +8,7 @@ de exploração até a versão corrigida sair é real.
 
 Use o canal privado do GitHub:
 
-**https://github.com/net0well/guara/security/advisories/new**
+**https://github.com/net0well/Guara/security/advisories/new**
 
 Ajuda muito ter no relatório:
 
