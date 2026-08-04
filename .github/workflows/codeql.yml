@@ -1,0 +1,53 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Semanal: consulta nova do CodeQL encontra falha em código que ninguém tocou, e
+    # sem agenda isso só apareceria no próximo PR — que pode demorar.
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  analisar:
+    name: Analisa ${{ matrix.language }}
+    runs-on: ubuntu-latest
+
+    permissions:
+      security-events: write
+      actions: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [csharp, javascript-typescript]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instala o .NET
+        if: matrix.language == 'csharp'
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Inicializa o CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+
+      # O C# precisa ser compilado para o CodeQL enxergar o fluxo de dados. A SPA é
+      # analisada como fonte, então o build .NET aqui pula a etapa do Angular.
+      - name: Build
+        if: matrix.language == 'csharp'
+        run: dotnet build Guara.slnx --configuration Release -p:SkipAngularBuild=true
+
+      - name: Analisa
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:${{ matrix.language }}

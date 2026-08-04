@@ -1,0 +1,103 @@
+name: Release
+
+# Publicar é sempre disparado por tag: a versão dos pacotes vem dela, via MinVer, e não
+# de número editado à mão. Tag `v0.1.0-preview.1` produz pacotes `0.1.0-preview.1`.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  CI: true
+
+jobs:
+  publicar:
+    name: Empacota e publica
+    runs-on: ubuntu-latest
+
+    # Ambiente protegido: exija aprovação e restrinja quem dispara em
+    # Settings > Environments. É a barreira entre uma tag e o NuGet.org, onde versão
+    # publicada não volta atrás.
+    environment: nuget
+
+    permissions:
+      contents: write
+      # Permite ao job pedir o token OIDC que o NuGet.org troca por uma chave temporária.
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Instala o .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Instala o Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/guara-dashboard-angular/package-lock.json
+
+      - name: Restore
+        run: dotnet restore Guara.slnx
+
+      - name: Build
+        run: dotnet build Guara.slnx --configuration Release --no-restore
+
+      # A suíte roda de novo aqui, e não só no CI do PR: a tag pode apontar para um
+      # commit que nunca passou pelo pipeline.
+      - name: Testes
+        run: dotnet test Guara.slnx --configuration Release --no-build
+
+      - name: Pack
+        run: dotnet pack Guara.slnx --configuration Release --no-build --output artefatos
+
+      - name: Confere que os pacotes saíram com a versão da tag
+        run: |
+          versao="${GITHUB_REF_NAME#v}"
+          if ! ls artefatos/Guara.Abstractions."$versao".nupkg >/dev/null 2>&1; then
+            echo "A tag é $GITHUB_REF_NAME mas nenhum pacote saiu com a versão $versao."
+            echo "Provável causa: histórico raso, tag não anotada ou MinVerTagPrefix divergente."
+            ls -1 artefatos
+            exit 1
+          fi
+
+      # Trusted Publishing: o GitHub emite um token OIDC assinado, o NuGet.org confere
+      # contra a policy (dono, repositório, arquivo de workflow e environment) e devolve
+      # uma chave válida por 1 hora. Não há chave de longa duração guardada em lugar
+      # nenhum — nada a rotacionar, nada a vazar.
+      #
+      # O login fica imediatamente antes do push de propósito: a chave expira em 1 hora,
+      # e pedi-la antes do build e dos testes arriscaria vencer no meio do caminho.
+      - name: Autentica no NuGet.org
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: net0well
+
+      # skip-duplicate deixa a etapa idempotente: reexecutar o job por causa de uma
+      # falha depois do push não tenta republicar o que já subiu.
+      - name: Publica no NuGet.org
+        run: >
+          dotnet nuget push "artefatos/*.nupkg"
+          --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}"
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      - name: Cria o release no GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          # Toda versão com hífen é pré-lançamento (preview, rc): não vira "latest".
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            artefatos/*.nupkg
+            artefatos/*.snupkg
