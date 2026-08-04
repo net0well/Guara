@@ -17,7 +17,7 @@ namespace Guara.Core;
 /// </remarks>
 /// <param name="services">Contêiner de onde os handlers do evento são resolvidos.</param>
 /// <param name="logger">Registro estruturado das falhas isoladas de handler.</param>
-public sealed class InProcessEventPublisher(
+internal sealed class InProcessEventPublisher(
     IServiceProvider services, ILogger<InProcessEventPublisher> logger) : IEventPublisher
 {
     /// <inheritdoc />

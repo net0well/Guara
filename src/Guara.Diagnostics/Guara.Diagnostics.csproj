@@ -13,4 +13,10 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
 
+  <!-- Os middlewares entram no pipeline por UseGuaraDiagnostics(); os testes de ponta a
+       ponta os montam à mão para verificar a ordem das etapas. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Guara.Engines.Tests" />
+  </ItemGroup>
+
 </Project>

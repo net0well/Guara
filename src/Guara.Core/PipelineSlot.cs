@@ -5,7 +5,7 @@ namespace Guara.Core;
 /// Cada componente contribui com o middleware do seu slot;
 /// slots ausentes simplesmente não têm etapa.
 /// </summary>
-public enum PipelineSlot
+internal enum PipelineSlot
 {
     /// <summary>Validação do job/args.</summary>
     Validation = 0,

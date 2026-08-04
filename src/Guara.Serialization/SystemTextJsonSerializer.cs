@@ -13,7 +13,7 @@ namespace Guara.Serialization;
 /// (<see cref="SerializerTypeRegistry"/>) — nunca por nome de tipo no payload.
 /// Tolerante a versão: campos desconhecidos são ignorados; ausentes assumem default.
 /// </summary>
-public sealed class SystemTextJsonSerializer : ISerializer
+internal sealed class SystemTextJsonSerializer : ISerializer
 {
     private const int EnvelopeVersion = 1;
 

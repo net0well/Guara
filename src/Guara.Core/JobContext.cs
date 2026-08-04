@@ -7,7 +7,7 @@ namespace Guara.Core;
 /// Implementação concreta de <see cref="IJobContext"/>, reutilizável (pooling):
 /// use <see cref="Initialize"/> ao adquirir e <see cref="Reset"/> ao devolver ao pool.
 /// </summary>
-public sealed class JobContext : IJobContext
+internal sealed class JobContext : IJobContext
 {
     private Dictionary<string, object?>? _items;
 

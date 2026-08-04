@@ -8,7 +8,7 @@ namespace Guara.Scheduler;
 /// (<c>America/Sao_Paulo</c>) e Windows nos dois sistemas — resolução nativa do .NET,
 /// sem pacotes de terceiros.
 /// </summary>
-public sealed class GuaraScheduler(ICronParser cronParser) : IScheduler
+internal sealed class GuaraScheduler(ICronParser cronParser) : IScheduler
 {
     /// <inheritdoc />
     public DateTimeOffset? GetNextOccurrence(ScheduleDescriptor schedule, DateTimeOffset after)

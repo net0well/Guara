@@ -7,7 +7,7 @@ namespace Guara.Core;
 /// ordenando pelos <see cref="PipelineSlot"/> canônicos (Validation → … → Notifications).
 /// Dentro de um mesmo slot, a ordem de registro é preservada (estável).
 /// </summary>
-public sealed class JobPipelineBuilder
+internal sealed class JobPipelineBuilder
 {
     private readonly List<Registration> _middlewares = [];
     private int _sequence;

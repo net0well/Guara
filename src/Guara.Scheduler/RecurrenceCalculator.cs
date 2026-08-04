@@ -9,7 +9,7 @@ namespace Guara.Scheduler;
 /// pelo calendário avança para o próximo candidato que a agenda gera — nunca para
 /// um instante que a agenda não geraria.
 /// </summary>
-public sealed class RecurrenceCalculator(ICronParser cronParser)
+internal sealed class RecurrenceCalculator(ICronParser cronParser)
 {
     private static readonly TimeSpan Horizon = TimeSpan.FromDays(5 * 366);
     private const int MaxIterations = 100_000;

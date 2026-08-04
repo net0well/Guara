@@ -14,4 +14,11 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
 
+  <!-- Cálculo de recorrência e varredura de continuações são detalhe do agendamento; o
+       servidor as aciona nos seus laços de fundo. Quem consome usa IGuaraClient. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Guara.Server" />
+    <InternalsVisibleTo Include="Guara.Scheduler.Tests" />
+  </ItemGroup>
+
 </Project>
