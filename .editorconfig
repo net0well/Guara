@@ -12,6 +12,25 @@ indent_size = 4
 dotnet_sort_system_directives_first = true
 csharp_style_namespace_declarations = file_scoped:suggestion
 
+# RS0026 proíbe duas sobrecargas públicas com parâmetro opcional, porque acrescentar um
+# parâmetro depois pode mudar em silêncio qual delas uma chamada existente resolve.
+#
+# A API fluente do Guará é feita de pares assim — a forma completa e a de conveniência, ambas
+# terminando em `CancellationToken ct = default` ou `Action<TOptions>? configure = null`, que é
+# a convenção do próprio .NET (`AddHttpClient`, `AddDbContext`). Em todos os pares daqui as
+# sobrecargas divergem no tipo do primeiro parâmetro, então nenhuma chamada pode migrar de uma
+# para a outra. Obedecer a regra significaria tirar o valor padrão do token e obrigar todo
+# chamador a passá-lo.
+#
+# O que a regra protege de verdade — remover ou alterar membro público — continua coberto pelo
+# RS0017, que segue ativo.
+dotnet_diagnostic.RS0026.severity = none
+
+# Saída de source generator não é código que alguém escreve nem revisa: analisadores que
+# cobram estilo ou anotação de nulidade só produzem ruído que ninguém pode corrigir.
+[*.{g,generated}.cs]
+generated_code = true
+
 [*.{csproj,props,targets,slnx,xml}]
 indent_size = 2
 

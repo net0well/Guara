@@ -1,0 +1,16 @@
+Guara.Serialization.GuaraSerializationException
+Guara.Serialization.GuaraSerializationException.GuaraSerializationException(string! message) -> void
+Guara.Serialization.GuaraSerializationException.GuaraSerializationException(string! message, System.Exception! innerException) -> void
+Guara.Serialization.SerializerTypeRegistry
+Guara.Serialization.SerializerTypeRegistry.Register(string! discriminator, System.Type! type) -> Guara.Serialization.SerializerTypeRegistry!
+Guara.Serialization.SerializerTypeRegistry.Register<T>(string! discriminator) -> Guara.Serialization.SerializerTypeRegistry!
+Guara.Serialization.SerializerTypeRegistry.SerializerTypeRegistry() -> void
+Guara.Serialization.SerializerTypeRegistry.TryGetDiscriminator(System.Type! type, out string! discriminator) -> bool
+Guara.Serialization.SerializerTypeRegistry.TryGetType(string! discriminator, out System.Type! type) -> bool
+Guara.Serialization.SystemTextJsonSerializer
+Guara.Serialization.SystemTextJsonSerializer.Deserialize<T>(System.ReadOnlySpan<byte> data) -> T?
+Guara.Serialization.SystemTextJsonSerializer.DeserializeArgs(System.ReadOnlySpan<byte> data) -> object?[]!
+Guara.Serialization.SystemTextJsonSerializer.Serialize<T>(T value) -> System.ReadOnlyMemory<byte>
+Guara.Serialization.SystemTextJsonSerializer.SerializeArgs(System.ReadOnlySpan<object?> args) -> System.ReadOnlyMemory<byte>
+Guara.Serialization.SystemTextJsonSerializer.SystemTextJsonSerializer(Guara.Serialization.SerializerTypeRegistry! registry, System.Text.Json.JsonSerializerOptions? options = null) -> void
+static Guara.Serialization.SerializerTypeRegistry.CreateDefault() -> Guara.Serialization.SerializerTypeRegistry!

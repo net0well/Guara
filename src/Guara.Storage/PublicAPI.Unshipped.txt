@@ -1,0 +1,312 @@
+const Guara.Storage.JobQuery.MaxPageSize = 100 -> int
+const Guara.Storage.JobSeriesQuery.MaxPoints = 500 -> int
+Guara.Storage.CalendarDateRange
+Guara.Storage.CalendarDateRange.<Clone>$() -> Guara.Storage.CalendarDateRange!
+Guara.Storage.CalendarDateRange.CalendarDateRange(System.DateOnly Start, System.DateOnly End) -> void
+Guara.Storage.CalendarDateRange.Deconstruct(out System.DateOnly Start, out System.DateOnly End) -> void
+Guara.Storage.CalendarDateRange.End.get -> System.DateOnly
+Guara.Storage.CalendarDateRange.End.init -> void
+Guara.Storage.CalendarDateRange.Equals(Guara.Storage.CalendarDateRange? other) -> bool
+Guara.Storage.CalendarDateRange.Start.get -> System.DateOnly
+Guara.Storage.CalendarDateRange.Start.init -> void
+Guara.Storage.CalendarRecord
+Guara.Storage.CalendarRecord.<Clone>$() -> Guara.Storage.CalendarRecord!
+Guara.Storage.CalendarRecord.CalendarRecord() -> void
+Guara.Storage.CalendarRecord.Equals(Guara.Storage.CalendarRecord? other) -> bool
+Guara.Storage.CalendarRecord.ExcludedCronWindows.get -> string![]!
+Guara.Storage.CalendarRecord.ExcludedCronWindows.init -> void
+Guara.Storage.CalendarRecord.ExcludedDates.get -> System.DateOnly[]!
+Guara.Storage.CalendarRecord.ExcludedDates.init -> void
+Guara.Storage.CalendarRecord.ExcludedDaysOfWeek.get -> System.DayOfWeek[]!
+Guara.Storage.CalendarRecord.ExcludedDaysOfWeek.init -> void
+Guara.Storage.CalendarRecord.ExcludedRanges.get -> Guara.Storage.CalendarDateRange![]!
+Guara.Storage.CalendarRecord.ExcludedRanges.init -> void
+Guara.Storage.CalendarRecord.Name.get -> string!
+Guara.Storage.CalendarRecord.Name.init -> void
+Guara.Storage.CalendarRecord.SchemaVersion.get -> int
+Guara.Storage.CalendarRecord.SchemaVersion.init -> void
+Guara.Storage.ContinuationRecord
+Guara.Storage.ContinuationRecord.<Clone>$() -> Guara.Storage.ContinuationRecord!
+Guara.Storage.ContinuationRecord.ChildId.get -> Guara.Abstractions.JobId
+Guara.Storage.ContinuationRecord.ChildId.init -> void
+Guara.Storage.ContinuationRecord.ContinuationRecord() -> void
+Guara.Storage.ContinuationRecord.CreatedAt.get -> System.DateTimeOffset
+Guara.Storage.ContinuationRecord.CreatedAt.init -> void
+Guara.Storage.ContinuationRecord.Depth.get -> int
+Guara.Storage.ContinuationRecord.Depth.init -> void
+Guara.Storage.ContinuationRecord.Equals(Guara.Storage.ContinuationRecord? other) -> bool
+Guara.Storage.ContinuationRecord.ParentId.get -> Guara.Abstractions.JobId
+Guara.Storage.ContinuationRecord.ParentId.init -> void
+Guara.Storage.ContinuationRecord.Reason.get -> string?
+Guara.Storage.ContinuationRecord.Reason.init -> void
+Guara.Storage.ContinuationRecord.ResolvedAt.get -> System.DateTimeOffset?
+Guara.Storage.ContinuationRecord.ResolvedAt.init -> void
+Guara.Storage.ContinuationRecord.Status.get -> Guara.Storage.ContinuationStatus
+Guara.Storage.ContinuationRecord.Status.init -> void
+Guara.Storage.ContinuationRecord.Trigger.get -> Guara.Abstractions.ContinuationTrigger
+Guara.Storage.ContinuationRecord.Trigger.init -> void
+Guara.Storage.ContinuationStatus
+Guara.Storage.ContinuationStatus.Discarded = 2 -> Guara.Storage.ContinuationStatus
+Guara.Storage.ContinuationStatus.Enqueued = 1 -> Guara.Storage.ContinuationStatus
+Guara.Storage.ContinuationStatus.Pending = 0 -> Guara.Storage.ContinuationStatus
+Guara.Storage.IContinuationStorage
+Guara.Storage.IContinuationStorage.AddAsync(Guara.Storage.ContinuationRecord! record, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Storage.IContinuationStorage.GetByChildAsync(Guara.Abstractions.JobId childId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Storage.ContinuationRecord?>
+Guara.Storage.IContinuationStorage.ListByParentAsync(Guara.Abstractions.JobId parentId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Guara.Storage.ContinuationRecord!>!>
+Guara.Storage.IContinuationStorage.ListPendingAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Guara.Storage.ContinuationRecord!>!>
+Guara.Storage.IContinuationStorage.TryResolveAsync(Guara.Abstractions.JobId childId, Guara.Storage.ContinuationStatus status, string? reason, System.DateTimeOffset resolvedAt, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<bool>
+Guara.Storage.IJobStorage
+Guara.Storage.IJobStorage.AcquireNextDueAsync(string! queue, System.TimeSpan lease, System.DateTimeOffset now, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Storage.JobRecord?>
+Guara.Storage.IJobStorage.CountAsync(Guara.Storage.JobQuery! query, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<long>
+Guara.Storage.IJobStorage.CountByStateAsync(string? queue, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyDictionary<Guara.Abstractions.JobState, long>!>
+Guara.Storage.IJobStorage.CreateAsync(Guara.Storage.JobRecord! record, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Abstractions.JobId>
+Guara.Storage.IJobStorage.DeleteAsync(Guara.Abstractions.JobId id, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<bool>
+Guara.Storage.IJobStorage.GetAsync(Guara.Abstractions.JobId id, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Storage.JobRecord?>
+Guara.Storage.IJobStorage.GetSeriesAsync(Guara.Storage.JobSeriesQuery! query, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Guara.Storage.JobSeriesPoint!>!>
+Guara.Storage.IJobStorage.ListAsync(Guara.Storage.JobQuery! query, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Guara.Storage.JobRecord!>!>
+Guara.Storage.IJobStorage.PurgeAsync(Guara.Abstractions.JobState state, System.DateTimeOffset finishedBefore, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<int>
+Guara.Storage.IJobStorage.RenewLeaseAsync(Guara.Abstractions.JobId id, System.TimeSpan lease, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<bool>
+Guara.Storage.IJobStorage.RescheduleAsync(Guara.Abstractions.JobId id, System.DateTimeOffset scheduledFor, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Storage.IJobStorage.ScheduleRetryAsync(Guara.Abstractions.JobId id, string! error, System.DateTimeOffset retryAt, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Storage.IJobStorage.UpdateStateAsync(Guara.Abstractions.JobId id, Guara.Abstractions.JobState state, string? resultOrError, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Storage.ILockHandle
+Guara.Storage.ILockHandle.Key.get -> string!
+Guara.Storage.ILockHandle.RenewAsync(System.TimeSpan ttl, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<bool>
+Guara.Storage.ILockProvider
+Guara.Storage.ILockProvider.TryAcquireAsync(string! key, System.TimeSpan ttl, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Storage.ILockHandle?>
+Guara.Storage.IQueueStorage
+Guara.Storage.IQueueStorage.GetLengthAsync(string! queue, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<long>
+Guara.Storage.IQueueStorage.GetQueuesAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Guara.Storage.IRecurringStorage
+Guara.Storage.IRecurringStorage.DeleteAsync(string! id, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<bool>
+Guara.Storage.IRecurringStorage.DeleteCalendarAsync(string! name, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<bool>
+Guara.Storage.IRecurringStorage.GetAsync(string! id, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Storage.RecurringJobRecord?>
+Guara.Storage.IRecurringStorage.GetCalendarAsync(string! name, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Storage.CalendarRecord?>
+Guara.Storage.IRecurringStorage.ListAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Guara.Storage.RecurringJobRecord!>!>
+Guara.Storage.IRecurringStorage.ListCalendarsAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Guara.Storage.CalendarRecord!>!>
+Guara.Storage.IRecurringStorage.ListDueAsync(System.DateTimeOffset now, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Guara.Storage.RecurringJobRecord!>!>
+Guara.Storage.IRecurringStorage.UpsertAsync(Guara.Storage.RecurringJobRecord! record, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Storage.IRecurringStorage.UpsertCalendarAsync(Guara.Storage.CalendarRecord! calendar, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Storage.IServerRegistry
+Guara.Storage.IServerRegistry.AnnounceAsync(Guara.Storage.ServerNode! node, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Storage.IServerRegistry.HeartbeatAsync(string! serverId, System.DateTimeOffset now, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<bool>
+Guara.Storage.IServerRegistry.ListAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Guara.Storage.ServerNode!>!>
+Guara.Storage.IServerRegistry.RemoveAsync(string! serverId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Storage.IServerRegistry.RemoveExpiredAsync(System.DateTimeOffset heartbeatBefore, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<int>
+Guara.Storage.IStorage
+Guara.Storage.IStorage.BeginTransactionAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Storage.ITransaction!>
+Guara.Storage.IStorage.Capabilities.get -> Guara.Storage.StorageCapabilities!
+Guara.Storage.IStorage.Continuations.get -> Guara.Storage.IContinuationStorage!
+Guara.Storage.IStorage.Jobs.get -> Guara.Storage.IJobStorage!
+Guara.Storage.IStorage.Locks.get -> Guara.Storage.ILockProvider!
+Guara.Storage.IStorage.Queues.get -> Guara.Storage.IQueueStorage!
+Guara.Storage.IStorage.Recurring.get -> Guara.Storage.IRecurringStorage!
+Guara.Storage.IStorage.Servers.get -> Guara.Storage.IServerRegistry!
+Guara.Storage.ITransaction
+Guara.Storage.ITransaction.CommitAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Storage.ITransaction.RollbackAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Storage.JobLatency
+Guara.Storage.JobQuery
+Guara.Storage.JobQuery.<Clone>$() -> Guara.Storage.JobQuery!
+Guara.Storage.JobQuery.Deconstruct(out Guara.Abstractions.JobState? State, out string? Queue, out int Page, out int PageSize, out string? Text, out string? TypeName, out System.DateTimeOffset? From, out System.DateTimeOffset? To) -> void
+Guara.Storage.JobQuery.EffectivePage.get -> int
+Guara.Storage.JobQuery.EffectivePageSize.get -> int
+Guara.Storage.JobQuery.Equals(Guara.Storage.JobQuery? other) -> bool
+Guara.Storage.JobQuery.From.get -> System.DateTimeOffset?
+Guara.Storage.JobQuery.From.init -> void
+Guara.Storage.JobQuery.JobQuery(Guara.Abstractions.JobState? State = null, string? Queue = null, int Page = 1, int PageSize = 50, string? Text = null, string? TypeName = null, System.DateTimeOffset? From = null, System.DateTimeOffset? To = null) -> void
+Guara.Storage.JobQuery.Matches(Guara.Storage.JobRecord! record) -> bool
+Guara.Storage.JobQuery.Page.get -> int
+Guara.Storage.JobQuery.Page.init -> void
+Guara.Storage.JobQuery.PageSize.get -> int
+Guara.Storage.JobQuery.PageSize.init -> void
+Guara.Storage.JobQuery.Queue.get -> string?
+Guara.Storage.JobQuery.Queue.init -> void
+Guara.Storage.JobQuery.State.get -> Guara.Abstractions.JobState?
+Guara.Storage.JobQuery.State.init -> void
+Guara.Storage.JobQuery.Text.get -> string?
+Guara.Storage.JobQuery.Text.init -> void
+Guara.Storage.JobQuery.To.get -> System.DateTimeOffset?
+Guara.Storage.JobQuery.To.init -> void
+Guara.Storage.JobQuery.TypeName.get -> string?
+Guara.Storage.JobQuery.TypeName.init -> void
+Guara.Storage.JobRecord
+Guara.Storage.JobRecord.<Clone>$() -> Guara.Storage.JobRecord!
+Guara.Storage.JobRecord.Attempt.get -> int
+Guara.Storage.JobRecord.Attempt.init -> void
+Guara.Storage.JobRecord.CreatedAt.get -> System.DateTimeOffset
+Guara.Storage.JobRecord.CreatedAt.init -> void
+Guara.Storage.JobRecord.Descriptor.get -> Guara.Abstractions.JobDescriptor!
+Guara.Storage.JobRecord.Descriptor.init -> void
+Guara.Storage.JobRecord.Equals(Guara.Storage.JobRecord? other) -> bool
+Guara.Storage.JobRecord.Error.get -> string?
+Guara.Storage.JobRecord.Error.init -> void
+Guara.Storage.JobRecord.FinishedAt.get -> System.DateTimeOffset?
+Guara.Storage.JobRecord.FinishedAt.init -> void
+Guara.Storage.JobRecord.Id.get -> Guara.Abstractions.JobId
+Guara.Storage.JobRecord.Id.init -> void
+Guara.Storage.JobRecord.JobRecord() -> void
+Guara.Storage.JobRecord.LeaseUntil.get -> System.DateTimeOffset?
+Guara.Storage.JobRecord.LeaseUntil.init -> void
+Guara.Storage.JobRecord.Queue.get -> string!
+Guara.Storage.JobRecord.Queue.init -> void
+Guara.Storage.JobRecord.Result.get -> string?
+Guara.Storage.JobRecord.Result.init -> void
+Guara.Storage.JobRecord.ScheduledFor.get -> System.DateTimeOffset?
+Guara.Storage.JobRecord.ScheduledFor.init -> void
+Guara.Storage.JobRecord.State.get -> Guara.Abstractions.JobState
+Guara.Storage.JobRecord.State.init -> void
+Guara.Storage.JobSeriesPoint
+Guara.Storage.JobSeriesPoint.<Clone>$() -> Guara.Storage.JobSeriesPoint!
+Guara.Storage.JobSeriesPoint.Deconstruct(out System.DateTimeOffset Timestamp, out long Succeeded, out long Failed, out System.TimeSpan? LatencyP50, out System.TimeSpan? LatencyP95) -> void
+Guara.Storage.JobSeriesPoint.Equals(Guara.Storage.JobSeriesPoint? other) -> bool
+Guara.Storage.JobSeriesPoint.Failed.get -> long
+Guara.Storage.JobSeriesPoint.Failed.init -> void
+Guara.Storage.JobSeriesPoint.JobSeriesPoint(System.DateTimeOffset Timestamp, long Succeeded, long Failed, System.TimeSpan? LatencyP50, System.TimeSpan? LatencyP95) -> void
+Guara.Storage.JobSeriesPoint.LatencyP50.get -> System.TimeSpan?
+Guara.Storage.JobSeriesPoint.LatencyP50.init -> void
+Guara.Storage.JobSeriesPoint.LatencyP95.get -> System.TimeSpan?
+Guara.Storage.JobSeriesPoint.LatencyP95.init -> void
+Guara.Storage.JobSeriesPoint.Succeeded.get -> long
+Guara.Storage.JobSeriesPoint.Succeeded.init -> void
+Guara.Storage.JobSeriesPoint.Timestamp.get -> System.DateTimeOffset
+Guara.Storage.JobSeriesPoint.Timestamp.init -> void
+Guara.Storage.JobSeriesPoint.Total.get -> long
+Guara.Storage.JobSeriesQuery
+Guara.Storage.JobSeriesQuery.<Clone>$() -> Guara.Storage.JobSeriesQuery!
+Guara.Storage.JobSeriesQuery.Bucket.get -> System.TimeSpan
+Guara.Storage.JobSeriesQuery.Bucket.init -> void
+Guara.Storage.JobSeriesQuery.Buckets() -> System.Collections.Generic.IEnumerable<System.DateTimeOffset>!
+Guara.Storage.JobSeriesQuery.Deconstruct(out System.DateTimeOffset From, out System.DateTimeOffset To, out System.TimeSpan Bucket, out string? Queue) -> void
+Guara.Storage.JobSeriesQuery.Equals(Guara.Storage.JobSeriesQuery? other) -> bool
+Guara.Storage.JobSeriesQuery.From.get -> System.DateTimeOffset
+Guara.Storage.JobSeriesQuery.From.init -> void
+Guara.Storage.JobSeriesQuery.JobSeriesQuery(System.DateTimeOffset From, System.DateTimeOffset To, System.TimeSpan Bucket, string? Queue = null) -> void
+Guara.Storage.JobSeriesQuery.Queue.get -> string?
+Guara.Storage.JobSeriesQuery.Queue.init -> void
+Guara.Storage.JobSeriesQuery.To.get -> System.DateTimeOffset
+Guara.Storage.JobSeriesQuery.To.init -> void
+Guara.Storage.JobSeriesQuery.Validate() -> void
+Guara.Storage.RecurringJobRecord
+Guara.Storage.RecurringJobRecord.<Clone>$() -> Guara.Storage.RecurringJobRecord!
+Guara.Storage.RecurringJobRecord.CalendarName.get -> string?
+Guara.Storage.RecurringJobRecord.CalendarName.init -> void
+Guara.Storage.RecurringJobRecord.CreatedAt.get -> System.DateTimeOffset
+Guara.Storage.RecurringJobRecord.CreatedAt.init -> void
+Guara.Storage.RecurringJobRecord.CronExpression.get -> string?
+Guara.Storage.RecurringJobRecord.CronExpression.init -> void
+Guara.Storage.RecurringJobRecord.Description.get -> string?
+Guara.Storage.RecurringJobRecord.Description.init -> void
+Guara.Storage.RecurringJobRecord.Descriptor.get -> Guara.Abstractions.JobDescriptor!
+Guara.Storage.RecurringJobRecord.Descriptor.init -> void
+Guara.Storage.RecurringJobRecord.Equals(Guara.Storage.RecurringJobRecord? other) -> bool
+Guara.Storage.RecurringJobRecord.Id.get -> string!
+Guara.Storage.RecurringJobRecord.Id.init -> void
+Guara.Storage.RecurringJobRecord.Interval.get -> System.TimeSpan?
+Guara.Storage.RecurringJobRecord.Interval.init -> void
+Guara.Storage.RecurringJobRecord.LastRunAt.get -> System.DateTimeOffset?
+Guara.Storage.RecurringJobRecord.LastRunAt.init -> void
+Guara.Storage.RecurringJobRecord.LastRunJobId.get -> Guara.Abstractions.JobId?
+Guara.Storage.RecurringJobRecord.LastRunJobId.init -> void
+Guara.Storage.RecurringJobRecord.LastSkippedAt.get -> System.DateTimeOffset?
+Guara.Storage.RecurringJobRecord.LastSkippedAt.init -> void
+Guara.Storage.RecurringJobRecord.NextRunAt.get -> System.DateTimeOffset?
+Guara.Storage.RecurringJobRecord.NextRunAt.init -> void
+Guara.Storage.RecurringJobRecord.NotAfter.get -> System.DateTimeOffset?
+Guara.Storage.RecurringJobRecord.NotAfter.init -> void
+Guara.Storage.RecurringJobRecord.NotBefore.get -> System.DateTimeOffset?
+Guara.Storage.RecurringJobRecord.NotBefore.init -> void
+Guara.Storage.RecurringJobRecord.Paused.get -> bool
+Guara.Storage.RecurringJobRecord.Paused.init -> void
+Guara.Storage.RecurringJobRecord.Queue.get -> string!
+Guara.Storage.RecurringJobRecord.Queue.init -> void
+Guara.Storage.RecurringJobRecord.RecurringJobRecord() -> void
+Guara.Storage.RecurringJobRecord.SkipIfPreviousRunning.get -> bool
+Guara.Storage.RecurringJobRecord.SkipIfPreviousRunning.init -> void
+Guara.Storage.RecurringJobRecord.TimeZoneId.get -> string?
+Guara.Storage.RecurringJobRecord.TimeZoneId.init -> void
+Guara.Storage.RecurringJobRecord.ToOccurrence() -> Guara.Abstractions.JobDescriptor!
+Guara.Storage.RecurringJobRecord.WindowEnd.get -> System.TimeOnly?
+Guara.Storage.RecurringJobRecord.WindowEnd.init -> void
+Guara.Storage.RecurringJobRecord.WindowStart.get -> System.TimeOnly?
+Guara.Storage.RecurringJobRecord.WindowStart.init -> void
+Guara.Storage.ServerNode
+Guara.Storage.ServerNode.<Clone>$() -> Guara.Storage.ServerNode!
+Guara.Storage.ServerNode.Equals(Guara.Storage.ServerNode? other) -> bool
+Guara.Storage.ServerNode.Id.get -> string!
+Guara.Storage.ServerNode.Id.init -> void
+Guara.Storage.ServerNode.LastHeartbeat.get -> System.DateTimeOffset
+Guara.Storage.ServerNode.LastHeartbeat.init -> void
+Guara.Storage.ServerNode.MachineName.get -> string!
+Guara.Storage.ServerNode.MachineName.init -> void
+Guara.Storage.ServerNode.MaxConcurrency.get -> int
+Guara.Storage.ServerNode.MaxConcurrency.init -> void
+Guara.Storage.ServerNode.Queues.get -> string![]!
+Guara.Storage.ServerNode.Queues.init -> void
+Guara.Storage.ServerNode.ServerNode() -> void
+Guara.Storage.ServerNode.StartedAt.get -> System.DateTimeOffset
+Guara.Storage.ServerNode.StartedAt.init -> void
+Guara.Storage.StorageCapabilities
+Guara.Storage.StorageCapabilities.<Clone>$() -> Guara.Storage.StorageCapabilities!
+Guara.Storage.StorageCapabilities.Deconstruct(out bool SupportsTransactions, out bool SupportsDistributedLock, out bool SupportsServerSideTimers, out bool SupportsServerSideFilter) -> void
+Guara.Storage.StorageCapabilities.Equals(Guara.Storage.StorageCapabilities? other) -> bool
+Guara.Storage.StorageCapabilities.StorageCapabilities(bool SupportsTransactions, bool SupportsDistributedLock, bool SupportsServerSideTimers, bool SupportsServerSideFilter) -> void
+Guara.Storage.StorageCapabilities.SupportsDistributedLock.get -> bool
+Guara.Storage.StorageCapabilities.SupportsDistributedLock.init -> void
+Guara.Storage.StorageCapabilities.SupportsServerSideFilter.get -> bool
+Guara.Storage.StorageCapabilities.SupportsServerSideFilter.init -> void
+Guara.Storage.StorageCapabilities.SupportsServerSideTimers.get -> bool
+Guara.Storage.StorageCapabilities.SupportsServerSideTimers.init -> void
+Guara.Storage.StorageCapabilities.SupportsTransactions.get -> bool
+Guara.Storage.StorageCapabilities.SupportsTransactions.init -> void
+override Guara.Storage.CalendarDateRange.Equals(object? obj) -> bool
+override Guara.Storage.CalendarDateRange.GetHashCode() -> int
+override Guara.Storage.CalendarDateRange.ToString() -> string!
+override Guara.Storage.CalendarRecord.Equals(object? obj) -> bool
+override Guara.Storage.CalendarRecord.GetHashCode() -> int
+override Guara.Storage.CalendarRecord.ToString() -> string!
+override Guara.Storage.ContinuationRecord.Equals(object? obj) -> bool
+override Guara.Storage.ContinuationRecord.GetHashCode() -> int
+override Guara.Storage.ContinuationRecord.ToString() -> string!
+override Guara.Storage.JobQuery.Equals(object? obj) -> bool
+override Guara.Storage.JobQuery.GetHashCode() -> int
+override Guara.Storage.JobQuery.ToString() -> string!
+override Guara.Storage.JobRecord.Equals(object? obj) -> bool
+override Guara.Storage.JobRecord.GetHashCode() -> int
+override Guara.Storage.JobRecord.ToString() -> string!
+override Guara.Storage.JobSeriesPoint.Equals(object? obj) -> bool
+override Guara.Storage.JobSeriesPoint.GetHashCode() -> int
+override Guara.Storage.JobSeriesPoint.ToString() -> string!
+override Guara.Storage.JobSeriesQuery.Equals(object? obj) -> bool
+override Guara.Storage.JobSeriesQuery.GetHashCode() -> int
+override Guara.Storage.JobSeriesQuery.ToString() -> string!
+override Guara.Storage.RecurringJobRecord.Equals(object? obj) -> bool
+override Guara.Storage.RecurringJobRecord.GetHashCode() -> int
+override Guara.Storage.RecurringJobRecord.ToString() -> string!
+override Guara.Storage.ServerNode.Equals(object? obj) -> bool
+override Guara.Storage.ServerNode.GetHashCode() -> int
+override Guara.Storage.ServerNode.ToString() -> string!
+override Guara.Storage.StorageCapabilities.Equals(object? obj) -> bool
+override Guara.Storage.StorageCapabilities.GetHashCode() -> int
+override Guara.Storage.StorageCapabilities.ToString() -> string!
+static Guara.Storage.CalendarDateRange.operator !=(Guara.Storage.CalendarDateRange? left, Guara.Storage.CalendarDateRange? right) -> bool
+static Guara.Storage.CalendarDateRange.operator ==(Guara.Storage.CalendarDateRange? left, Guara.Storage.CalendarDateRange? right) -> bool
+static Guara.Storage.CalendarRecord.operator !=(Guara.Storage.CalendarRecord? left, Guara.Storage.CalendarRecord? right) -> bool
+static Guara.Storage.CalendarRecord.operator ==(Guara.Storage.CalendarRecord? left, Guara.Storage.CalendarRecord? right) -> bool
+static Guara.Storage.ContinuationRecord.operator !=(Guara.Storage.ContinuationRecord? left, Guara.Storage.ContinuationRecord? right) -> bool
+static Guara.Storage.ContinuationRecord.operator ==(Guara.Storage.ContinuationRecord? left, Guara.Storage.ContinuationRecord? right) -> bool
+static Guara.Storage.JobLatency.Percentile(System.Collections.Generic.IReadOnlyList<System.TimeSpan>! ordered, double percentile) -> System.TimeSpan?
+static Guara.Storage.JobQuery.operator !=(Guara.Storage.JobQuery? left, Guara.Storage.JobQuery? right) -> bool
+static Guara.Storage.JobQuery.operator ==(Guara.Storage.JobQuery? left, Guara.Storage.JobQuery? right) -> bool
+static Guara.Storage.JobRecord.operator !=(Guara.Storage.JobRecord? left, Guara.Storage.JobRecord? right) -> bool
+static Guara.Storage.JobRecord.operator ==(Guara.Storage.JobRecord? left, Guara.Storage.JobRecord? right) -> bool
+static Guara.Storage.JobSeriesPoint.operator !=(Guara.Storage.JobSeriesPoint? left, Guara.Storage.JobSeriesPoint? right) -> bool
+static Guara.Storage.JobSeriesPoint.operator ==(Guara.Storage.JobSeriesPoint? left, Guara.Storage.JobSeriesPoint? right) -> bool
+static Guara.Storage.JobSeriesQuery.operator !=(Guara.Storage.JobSeriesQuery? left, Guara.Storage.JobSeriesQuery? right) -> bool
+static Guara.Storage.JobSeriesQuery.operator ==(Guara.Storage.JobSeriesQuery? left, Guara.Storage.JobSeriesQuery? right) -> bool
+static Guara.Storage.RecurringJobRecord.operator !=(Guara.Storage.RecurringJobRecord? left, Guara.Storage.RecurringJobRecord? right) -> bool
+static Guara.Storage.RecurringJobRecord.operator ==(Guara.Storage.RecurringJobRecord? left, Guara.Storage.RecurringJobRecord? right) -> bool
+static Guara.Storage.ServerNode.operator !=(Guara.Storage.ServerNode? left, Guara.Storage.ServerNode? right) -> bool
+static Guara.Storage.ServerNode.operator ==(Guara.Storage.ServerNode? left, Guara.Storage.ServerNode? right) -> bool
+static Guara.Storage.StorageCapabilities.operator !=(Guara.Storage.StorageCapabilities? left, Guara.Storage.StorageCapabilities? right) -> bool
+static Guara.Storage.StorageCapabilities.operator ==(Guara.Storage.StorageCapabilities? left, Guara.Storage.StorageCapabilities? right) -> bool

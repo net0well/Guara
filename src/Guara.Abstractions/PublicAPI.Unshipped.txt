@@ -1,0 +1,291 @@
+~override Guara.Abstractions.JobId.Equals(object obj) -> bool
+const Guara.Abstractions.GuaraActions.Calendars = "guara:calendars" -> string!
+const Guara.Abstractions.GuaraActions.Delete = "guara:delete" -> string!
+const Guara.Abstractions.GuaraActions.Retry = "guara:retry" -> string!
+const Guara.Abstractions.GuaraActions.Trigger = "guara:trigger" -> string!
+const Guara.Abstractions.GuaraActions.View = "guara:view" -> string!
+const Guara.Abstractions.GuaraActions.ViewPayload = "guara:view-payload" -> string!
+const Guara.Abstractions.GuaraClaimTypes.Permission = "guara:permission" -> string!
+const Guara.Abstractions.JobMetadataKeys.RecurringId = "guara-recorrente" -> string!
+const Guara.Abstractions.JobMetadataKeys.SkipIfPreviousRunning = "guara-pular-se-anterior" -> string!
+Guara.Abstractions.ContinuationOptions
+Guara.Abstractions.ContinuationOptions.<Clone>$() -> Guara.Abstractions.ContinuationOptions!
+Guara.Abstractions.ContinuationOptions.ContinuationOptions(Guara.Abstractions.ContinuationTrigger Trigger = Guara.Abstractions.ContinuationTrigger.OnSucceeded) -> void
+Guara.Abstractions.ContinuationOptions.Deconstruct(out Guara.Abstractions.ContinuationTrigger Trigger) -> void
+Guara.Abstractions.ContinuationOptions.Equals(Guara.Abstractions.ContinuationOptions? other) -> bool
+Guara.Abstractions.ContinuationOptions.Trigger.get -> Guara.Abstractions.ContinuationTrigger
+Guara.Abstractions.ContinuationOptions.Trigger.init -> void
+Guara.Abstractions.ContinuationTrigger
+Guara.Abstractions.ContinuationTrigger.OnAnyFinishedState = 1 -> Guara.Abstractions.ContinuationTrigger
+Guara.Abstractions.ContinuationTrigger.OnSucceeded = 0 -> Guara.Abstractions.ContinuationTrigger
+Guara.Abstractions.ExecutorStarted
+Guara.Abstractions.ExecutorStarted.<Clone>$() -> Guara.Abstractions.ExecutorStarted!
+Guara.Abstractions.ExecutorStarted.Deconstruct(out Guara.Abstractions.JobId Id, out System.DateTimeOffset OccurredAt) -> void
+Guara.Abstractions.ExecutorStarted.Equals(Guara.Abstractions.ExecutorStarted? other) -> bool
+Guara.Abstractions.ExecutorStarted.ExecutorStarted(Guara.Abstractions.JobId Id, System.DateTimeOffset OccurredAt) -> void
+Guara.Abstractions.ExecutorStarted.Id.get -> Guara.Abstractions.JobId
+Guara.Abstractions.ExecutorStarted.Id.init -> void
+Guara.Abstractions.ExecutorStarted.OccurredAt.get -> System.DateTimeOffset
+Guara.Abstractions.ExecutorStarted.OccurredAt.init -> void
+Guara.Abstractions.GuaraActions
+Guara.Abstractions.GuaraClaimTypes
+Guara.Abstractions.GuaraDesabilitarConcorrenciaAttribute
+Guara.Abstractions.GuaraDesabilitarConcorrenciaAttribute.Chave.get -> string?
+Guara.Abstractions.GuaraDesabilitarConcorrenciaAttribute.Chave.init -> void
+Guara.Abstractions.GuaraDesabilitarConcorrenciaAttribute.EsperaSegundos.get -> int
+Guara.Abstractions.GuaraDesabilitarConcorrenciaAttribute.EsperaSegundos.init -> void
+Guara.Abstractions.GuaraDesabilitarConcorrenciaAttribute.GuaraDesabilitarConcorrenciaAttribute() -> void
+Guara.Abstractions.GuaraFilaAttribute
+Guara.Abstractions.GuaraFilaAttribute.GuaraFilaAttribute(string! nome) -> void
+Guara.Abstractions.GuaraFilaAttribute.Nome.get -> string!
+Guara.Abstractions.GuaraJobAttribute
+Guara.Abstractions.GuaraJobAttribute.GuaraJobAttribute() -> void
+Guara.Abstractions.GuaraJobsAttribute
+Guara.Abstractions.GuaraJobsAttribute.GuaraJobsAttribute() -> void
+Guara.Abstractions.GuaraPularSeAnteriorEmExecucaoAttribute
+Guara.Abstractions.GuaraPularSeAnteriorEmExecucaoAttribute.GuaraPularSeAnteriorEmExecucaoAttribute() -> void
+Guara.Abstractions.GuaraRetentativasAttribute
+Guara.Abstractions.GuaraRetentativasAttribute.GuaraRetentativasAttribute(int maximo) -> void
+Guara.Abstractions.GuaraRetentativasAttribute.Maximo.get -> int
+Guara.Abstractions.GuaraTempoLimiteAttribute
+Guara.Abstractions.GuaraTempoLimiteAttribute.GuaraTempoLimiteAttribute(int segundos) -> void
+Guara.Abstractions.GuaraTempoLimiteAttribute.Segundos.get -> int
+Guara.Abstractions.ICalendarBuilder
+Guara.Abstractions.ICalendarBuilder.ExcluirCron(string! expressao) -> Guara.Abstractions.ICalendarBuilder!
+Guara.Abstractions.ICalendarBuilder.ExcluirData(System.DateOnly data) -> Guara.Abstractions.ICalendarBuilder!
+Guara.Abstractions.ICalendarBuilder.ExcluirDiasDaSemana(params System.DayOfWeek[]! dias) -> Guara.Abstractions.ICalendarBuilder!
+Guara.Abstractions.ICalendarBuilder.ExcluirIntervalo(System.DateOnly inicio, System.DateOnly fim) -> Guara.Abstractions.ICalendarBuilder!
+Guara.Abstractions.IDispatcher
+Guara.Abstractions.IDispatcher.StartAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Abstractions.IDispatcher.StopAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Abstractions.IEventHandler<TEvent>
+Guara.Abstractions.IEventHandler<TEvent>.HandleAsync(TEvent event, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Abstractions.IEventPublisher
+Guara.Abstractions.IEventPublisher.PublishAsync<TEvent>(TEvent event, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Abstractions.IExecutor
+Guara.Abstractions.IExecutor.ExecuteAsync(Guara.Abstractions.JobId id, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Abstractions.IGuaraAuthorizer
+Guara.Abstractions.IGuaraAuthorizer.AuthorizeAsync(System.Security.Claims.ClaimsPrincipal! user, string! action, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
+Guara.Abstractions.IGuaraBuilder
+Guara.Abstractions.IGuaraBuilder.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Guara.Abstractions.IGuaraClient
+Guara.Abstractions.IGuaraClient.AdicionarOuAtualizarCalendarioAsync(string! nome, System.Action<Guara.Abstractions.ICalendarBuilder!>! configurar, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Guara.Abstractions.IGuaraClient.AdicionarOuAtualizarRecorrenteAsync(string! id, Guara.Abstractions.JobDescriptor! job, string! cron, System.TimeZoneInfo! fuso, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Guara.Abstractions.IGuaraClient.AdicionarOuAtualizarRecorrenteAsync(System.Action<Guara.Abstractions.IRecurringJobBuilder!>! configurar, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Guara.Abstractions.IGuaraClient.AgendarAsync(Guara.Abstractions.JobDescriptor! job, System.TimeSpan atraso, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Guara.Abstractions.JobId>
+Guara.Abstractions.IGuaraClient.ContinuarComAsync(Guara.Abstractions.JobId paiId, Guara.Abstractions.JobDescriptor! filho, Guara.Abstractions.ContinuationOptions? opcoes = null, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Guara.Abstractions.JobId>
+Guara.Abstractions.IGuaraClient.DispararRecorrenteAgoraAsync(string! id, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Guara.Abstractions.JobId?>
+Guara.Abstractions.IGuaraClient.EnfileirarAsync(Guara.Abstractions.JobDescriptor! job, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Guara.Abstractions.JobId>
+Guara.Abstractions.IGuaraClient.ExcluirAsync(Guara.Abstractions.JobId id, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
+Guara.Abstractions.IGuaraClient.ExcluirCalendarioAsync(string! nome, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
+Guara.Abstractions.IGuaraClient.ExcluirRecorrenteAsync(string! id, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
+Guara.Abstractions.IGuaraClient.PausarRecorrenteAsync(string! id, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
+Guara.Abstractions.IGuaraClient.RetomarRecorrenteAsync(string! id, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
+Guara.Abstractions.IGuaraEvent
+Guara.Abstractions.IGuaraEvent.OccurredAt.get -> System.DateTimeOffset
+Guara.Abstractions.IGuaraServer
+Guara.Abstractions.IGuaraServer.StartAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Abstractions.IGuaraServer.StopAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Abstractions.IJobContext
+Guara.Abstractions.IJobContext.Attempt.get -> int
+Guara.Abstractions.IJobContext.Descriptor.get -> Guara.Abstractions.JobDescriptor!
+Guara.Abstractions.IJobContext.Id.get -> Guara.Abstractions.JobId
+Guara.Abstractions.IJobContext.Items.get -> System.Collections.Generic.IDictionary<string!, object?>!
+Guara.Abstractions.IJobContext.State.get -> Guara.Abstractions.JobState
+Guara.Abstractions.IJobContext.User.get -> System.Security.Claims.ClaimsPrincipal?
+Guara.Abstractions.IJobInvoker
+Guara.Abstractions.IJobInvoker.InvokeAsync(Guara.Abstractions.IJobContext! context, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Abstractions.IJobMiddleware
+Guara.Abstractions.IJobMiddleware.InvokeAsync(Guara.Abstractions.IJobContext! context, Guara.Abstractions.JobDelegate! next, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Abstractions.IRecurringJobBuilder
+Guara.Abstractions.IRecurringJobBuilder.ACada(System.TimeSpan intervalo) -> Guara.Abstractions.IRecurringJobBuilder!
+Guara.Abstractions.IRecurringJobBuilder.ComCalendario(string! nome) -> Guara.Abstractions.IRecurringJobBuilder!
+Guara.Abstractions.IRecurringJobBuilder.ComCron(string! expressao) -> Guara.Abstractions.IRecurringJobBuilder!
+Guara.Abstractions.IRecurringJobBuilder.ComDescricao(string! descricao) -> Guara.Abstractions.IRecurringJobBuilder!
+Guara.Abstractions.IRecurringJobBuilder.ComId(string! id) -> Guara.Abstractions.IRecurringJobBuilder!
+Guara.Abstractions.IRecurringJobBuilder.EntreHorarios(System.TimeOnly inicio, System.TimeOnly fim) -> Guara.Abstractions.IRecurringJobBuilder!
+Guara.Abstractions.IRecurringJobBuilder.Executa(Guara.Abstractions.JobDescriptor! job) -> Guara.Abstractions.IRecurringJobBuilder!
+Guara.Abstractions.IRecurringJobBuilder.IniciaEm(System.DateTimeOffset inicio) -> Guara.Abstractions.IRecurringJobBuilder!
+Guara.Abstractions.IRecurringJobBuilder.NaFila(string! fila) -> Guara.Abstractions.IRecurringJobBuilder!
+Guara.Abstractions.IRecurringJobBuilder.NoFusoHorario(string! fusoId) -> Guara.Abstractions.IRecurringJobBuilder!
+Guara.Abstractions.IRecurringJobBuilder.NoFusoHorario(System.TimeZoneInfo! fuso) -> Guara.Abstractions.IRecurringJobBuilder!
+Guara.Abstractions.IRecurringJobBuilder.PularSeAnteriorEmExecucao() -> Guara.Abstractions.IRecurringJobBuilder!
+Guara.Abstractions.IRecurringJobBuilder.TerminaEm(System.DateTimeOffset fim) -> Guara.Abstractions.IRecurringJobBuilder!
+Guara.Abstractions.IScheduler
+Guara.Abstractions.IScheduler.GetNextOccurrence(Guara.Abstractions.ScheduleDescriptor! schedule, System.DateTimeOffset after) -> System.DateTimeOffset?
+Guara.Abstractions.ISerializer
+Guara.Abstractions.ISerializer.Deserialize<T>(System.ReadOnlySpan<byte> data) -> T?
+Guara.Abstractions.ISerializer.DeserializeArgs(System.ReadOnlySpan<byte> data) -> object?[]!
+Guara.Abstractions.ISerializer.Serialize<T>(T value) -> System.ReadOnlyMemory<byte>
+Guara.Abstractions.ISerializer.SerializeArgs(System.ReadOnlySpan<object?> args) -> System.ReadOnlyMemory<byte>
+Guara.Abstractions.IWorker
+Guara.Abstractions.IWorker.StartAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Abstractions.IWorker.StopAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Abstractions.JobCompleted
+Guara.Abstractions.JobCompleted.<Clone>$() -> Guara.Abstractions.JobCompleted!
+Guara.Abstractions.JobCompleted.Deconstruct(out Guara.Abstractions.JobId Id, out System.DateTimeOffset OccurredAt) -> void
+Guara.Abstractions.JobCompleted.Equals(Guara.Abstractions.JobCompleted? other) -> bool
+Guara.Abstractions.JobCompleted.Id.get -> Guara.Abstractions.JobId
+Guara.Abstractions.JobCompleted.Id.init -> void
+Guara.Abstractions.JobCompleted.JobCompleted(Guara.Abstractions.JobId Id, System.DateTimeOffset OccurredAt) -> void
+Guara.Abstractions.JobCompleted.OccurredAt.get -> System.DateTimeOffset
+Guara.Abstractions.JobCompleted.OccurredAt.init -> void
+Guara.Abstractions.JobCreated
+Guara.Abstractions.JobCreated.<Clone>$() -> Guara.Abstractions.JobCreated!
+Guara.Abstractions.JobCreated.Deconstruct(out Guara.Abstractions.JobId Id, out System.DateTimeOffset OccurredAt) -> void
+Guara.Abstractions.JobCreated.Equals(Guara.Abstractions.JobCreated? other) -> bool
+Guara.Abstractions.JobCreated.Id.get -> Guara.Abstractions.JobId
+Guara.Abstractions.JobCreated.Id.init -> void
+Guara.Abstractions.JobCreated.JobCreated(Guara.Abstractions.JobId Id, System.DateTimeOffset OccurredAt) -> void
+Guara.Abstractions.JobCreated.OccurredAt.get -> System.DateTimeOffset
+Guara.Abstractions.JobCreated.OccurredAt.init -> void
+Guara.Abstractions.JobDelegate
+Guara.Abstractions.JobDescriptor
+Guara.Abstractions.JobDescriptor.<Clone>$() -> Guara.Abstractions.JobDescriptor!
+Guara.Abstractions.JobDescriptor.Arguments.get -> System.ReadOnlyMemory<byte>
+Guara.Abstractions.JobDescriptor.Arguments.init -> void
+Guara.Abstractions.JobDescriptor.Deconstruct(out string! TypeName, out string! MethodName, out System.ReadOnlyMemory<byte> Arguments, out string! Queue) -> void
+Guara.Abstractions.JobDescriptor.Equals(Guara.Abstractions.JobDescriptor? other) -> bool
+Guara.Abstractions.JobDescriptor.JobDescriptor(string! TypeName, string! MethodName, System.ReadOnlyMemory<byte> Arguments, string! Queue = "default") -> void
+Guara.Abstractions.JobDescriptor.Metadata.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>?
+Guara.Abstractions.JobDescriptor.Metadata.init -> void
+Guara.Abstractions.JobDescriptor.MethodName.get -> string!
+Guara.Abstractions.JobDescriptor.MethodName.init -> void
+Guara.Abstractions.JobDescriptor.Queue.get -> string!
+Guara.Abstractions.JobDescriptor.Queue.init -> void
+Guara.Abstractions.JobDescriptor.TypeName.get -> string!
+Guara.Abstractions.JobDescriptor.TypeName.init -> void
+Guara.Abstractions.JobFailed
+Guara.Abstractions.JobFailed.<Clone>$() -> Guara.Abstractions.JobFailed!
+Guara.Abstractions.JobFailed.Deconstruct(out Guara.Abstractions.JobId Id, out System.DateTimeOffset OccurredAt, out string? Reason) -> void
+Guara.Abstractions.JobFailed.Equals(Guara.Abstractions.JobFailed? other) -> bool
+Guara.Abstractions.JobFailed.Id.get -> Guara.Abstractions.JobId
+Guara.Abstractions.JobFailed.Id.init -> void
+Guara.Abstractions.JobFailed.JobFailed(Guara.Abstractions.JobId Id, System.DateTimeOffset OccurredAt, string? Reason = null) -> void
+Guara.Abstractions.JobFailed.OccurredAt.get -> System.DateTimeOffset
+Guara.Abstractions.JobFailed.OccurredAt.init -> void
+Guara.Abstractions.JobFailed.Reason.get -> string?
+Guara.Abstractions.JobFailed.Reason.init -> void
+Guara.Abstractions.JobId
+Guara.Abstractions.JobId.Deconstruct(out string! Value) -> void
+Guara.Abstractions.JobId.Equals(Guara.Abstractions.JobId other) -> bool
+Guara.Abstractions.JobId.IsEmpty.get -> bool
+Guara.Abstractions.JobId.JobId() -> void
+Guara.Abstractions.JobId.JobId(string! Value) -> void
+Guara.Abstractions.JobId.Value.get -> string!
+Guara.Abstractions.JobId.Value.init -> void
+Guara.Abstractions.JobMetadataKeys
+Guara.Abstractions.JobRetryScheduled
+Guara.Abstractions.JobRetryScheduled.<Clone>$() -> Guara.Abstractions.JobRetryScheduled!
+Guara.Abstractions.JobRetryScheduled.Attempt.get -> int
+Guara.Abstractions.JobRetryScheduled.Attempt.init -> void
+Guara.Abstractions.JobRetryScheduled.Deconstruct(out Guara.Abstractions.JobId Id, out System.DateTimeOffset OccurredAt, out int Attempt, out System.DateTimeOffset RetryAt) -> void
+Guara.Abstractions.JobRetryScheduled.Equals(Guara.Abstractions.JobRetryScheduled? other) -> bool
+Guara.Abstractions.JobRetryScheduled.Id.get -> Guara.Abstractions.JobId
+Guara.Abstractions.JobRetryScheduled.Id.init -> void
+Guara.Abstractions.JobRetryScheduled.JobRetryScheduled(Guara.Abstractions.JobId Id, System.DateTimeOffset OccurredAt, int Attempt, System.DateTimeOffset RetryAt) -> void
+Guara.Abstractions.JobRetryScheduled.OccurredAt.get -> System.DateTimeOffset
+Guara.Abstractions.JobRetryScheduled.OccurredAt.init -> void
+Guara.Abstractions.JobRetryScheduled.RetryAt.get -> System.DateTimeOffset
+Guara.Abstractions.JobRetryScheduled.RetryAt.init -> void
+Guara.Abstractions.JobScheduled
+Guara.Abstractions.JobScheduled.<Clone>$() -> Guara.Abstractions.JobScheduled!
+Guara.Abstractions.JobScheduled.Deconstruct(out Guara.Abstractions.JobId Id, out System.DateTimeOffset OccurredAt) -> void
+Guara.Abstractions.JobScheduled.Equals(Guara.Abstractions.JobScheduled? other) -> bool
+Guara.Abstractions.JobScheduled.Id.get -> Guara.Abstractions.JobId
+Guara.Abstractions.JobScheduled.Id.init -> void
+Guara.Abstractions.JobScheduled.JobScheduled(Guara.Abstractions.JobId Id, System.DateTimeOffset OccurredAt) -> void
+Guara.Abstractions.JobScheduled.OccurredAt.get -> System.DateTimeOffset
+Guara.Abstractions.JobScheduled.OccurredAt.init -> void
+Guara.Abstractions.JobState
+Guara.Abstractions.JobState.Created = 0 -> Guara.Abstractions.JobState
+Guara.Abstractions.JobState.Enqueued = 1 -> Guara.Abstractions.JobState
+Guara.Abstractions.JobState.Failed = 5 -> Guara.Abstractions.JobState
+Guara.Abstractions.JobState.Processing = 3 -> Guara.Abstractions.JobState
+Guara.Abstractions.JobState.Retrying = 6 -> Guara.Abstractions.JobState
+Guara.Abstractions.JobState.Scheduled = 2 -> Guara.Abstractions.JobState
+Guara.Abstractions.JobState.Succeeded = 4 -> Guara.Abstractions.JobState
+Guara.Abstractions.ScheduleDescriptor
+Guara.Abstractions.ScheduleDescriptor.<Clone>$() -> Guara.Abstractions.ScheduleDescriptor!
+Guara.Abstractions.ScheduleDescriptor.CronExpression.get -> string?
+Guara.Abstractions.ScheduleDescriptor.Delay.get -> System.TimeSpan?
+Guara.Abstractions.ScheduleDescriptor.Equals(Guara.Abstractions.ScheduleDescriptor? other) -> bool
+Guara.Abstractions.ScheduleDescriptor.Kind.get -> Guara.Abstractions.ScheduleKind
+Guara.Abstractions.ScheduleDescriptor.RecurringId.get -> string?
+Guara.Abstractions.ScheduleDescriptor.TimeZoneId.get -> string?
+Guara.Abstractions.ScheduleKind
+Guara.Abstractions.ScheduleKind.Cron = 2 -> Guara.Abstractions.ScheduleKind
+Guara.Abstractions.ScheduleKind.Delay = 1 -> Guara.Abstractions.ScheduleKind
+Guara.Abstractions.ScheduleKind.Immediate = 0 -> Guara.Abstractions.ScheduleKind
+Guara.Abstractions.ScheduleKind.Recurring = 3 -> Guara.Abstractions.ScheduleKind
+Guara.Abstractions.WorkerRequested
+Guara.Abstractions.WorkerRequested.<Clone>$() -> Guara.Abstractions.WorkerRequested!
+Guara.Abstractions.WorkerRequested.Deconstruct(out Guara.Abstractions.JobId Id, out System.DateTimeOffset OccurredAt) -> void
+Guara.Abstractions.WorkerRequested.Equals(Guara.Abstractions.WorkerRequested? other) -> bool
+Guara.Abstractions.WorkerRequested.Id.get -> Guara.Abstractions.JobId
+Guara.Abstractions.WorkerRequested.Id.init -> void
+Guara.Abstractions.WorkerRequested.OccurredAt.get -> System.DateTimeOffset
+Guara.Abstractions.WorkerRequested.OccurredAt.init -> void
+Guara.Abstractions.WorkerRequested.WorkerRequested(Guara.Abstractions.JobId Id, System.DateTimeOffset OccurredAt) -> void
+override Guara.Abstractions.ContinuationOptions.Equals(object? obj) -> bool
+override Guara.Abstractions.ContinuationOptions.GetHashCode() -> int
+override Guara.Abstractions.ContinuationOptions.ToString() -> string!
+override Guara.Abstractions.ExecutorStarted.Equals(object? obj) -> bool
+override Guara.Abstractions.ExecutorStarted.GetHashCode() -> int
+override Guara.Abstractions.ExecutorStarted.ToString() -> string!
+override Guara.Abstractions.JobCompleted.Equals(object? obj) -> bool
+override Guara.Abstractions.JobCompleted.GetHashCode() -> int
+override Guara.Abstractions.JobCompleted.ToString() -> string!
+override Guara.Abstractions.JobCreated.Equals(object? obj) -> bool
+override Guara.Abstractions.JobCreated.GetHashCode() -> int
+override Guara.Abstractions.JobCreated.ToString() -> string!
+override Guara.Abstractions.JobDescriptor.Equals(object? obj) -> bool
+override Guara.Abstractions.JobDescriptor.GetHashCode() -> int
+override Guara.Abstractions.JobDescriptor.ToString() -> string!
+override Guara.Abstractions.JobFailed.Equals(object? obj) -> bool
+override Guara.Abstractions.JobFailed.GetHashCode() -> int
+override Guara.Abstractions.JobFailed.ToString() -> string!
+override Guara.Abstractions.JobId.GetHashCode() -> int
+override Guara.Abstractions.JobId.ToString() -> string!
+override Guara.Abstractions.JobRetryScheduled.Equals(object? obj) -> bool
+override Guara.Abstractions.JobRetryScheduled.GetHashCode() -> int
+override Guara.Abstractions.JobRetryScheduled.ToString() -> string!
+override Guara.Abstractions.JobScheduled.Equals(object? obj) -> bool
+override Guara.Abstractions.JobScheduled.GetHashCode() -> int
+override Guara.Abstractions.JobScheduled.ToString() -> string!
+override Guara.Abstractions.ScheduleDescriptor.Equals(object? obj) -> bool
+override Guara.Abstractions.ScheduleDescriptor.GetHashCode() -> int
+override Guara.Abstractions.ScheduleDescriptor.ToString() -> string!
+override Guara.Abstractions.WorkerRequested.Equals(object? obj) -> bool
+override Guara.Abstractions.WorkerRequested.GetHashCode() -> int
+override Guara.Abstractions.WorkerRequested.ToString() -> string!
+static Guara.Abstractions.ContinuationOptions.operator !=(Guara.Abstractions.ContinuationOptions? left, Guara.Abstractions.ContinuationOptions? right) -> bool
+static Guara.Abstractions.ContinuationOptions.operator ==(Guara.Abstractions.ContinuationOptions? left, Guara.Abstractions.ContinuationOptions? right) -> bool
+static Guara.Abstractions.ExecutorStarted.operator !=(Guara.Abstractions.ExecutorStarted? left, Guara.Abstractions.ExecutorStarted? right) -> bool
+static Guara.Abstractions.ExecutorStarted.operator ==(Guara.Abstractions.ExecutorStarted? left, Guara.Abstractions.ExecutorStarted? right) -> bool
+static Guara.Abstractions.GuaraActions.All.get -> System.Collections.Generic.IReadOnlyList<string!>!
+static Guara.Abstractions.GuaraActions.IsKnown(string! action) -> bool
+static Guara.Abstractions.JobCompleted.operator !=(Guara.Abstractions.JobCompleted? left, Guara.Abstractions.JobCompleted? right) -> bool
+static Guara.Abstractions.JobCompleted.operator ==(Guara.Abstractions.JobCompleted? left, Guara.Abstractions.JobCompleted? right) -> bool
+static Guara.Abstractions.JobCreated.operator !=(Guara.Abstractions.JobCreated? left, Guara.Abstractions.JobCreated? right) -> bool
+static Guara.Abstractions.JobCreated.operator ==(Guara.Abstractions.JobCreated? left, Guara.Abstractions.JobCreated? right) -> bool
+static Guara.Abstractions.JobDescriptor.operator !=(Guara.Abstractions.JobDescriptor? left, Guara.Abstractions.JobDescriptor? right) -> bool
+static Guara.Abstractions.JobDescriptor.operator ==(Guara.Abstractions.JobDescriptor? left, Guara.Abstractions.JobDescriptor? right) -> bool
+static Guara.Abstractions.JobFailed.operator !=(Guara.Abstractions.JobFailed? left, Guara.Abstractions.JobFailed? right) -> bool
+static Guara.Abstractions.JobFailed.operator ==(Guara.Abstractions.JobFailed? left, Guara.Abstractions.JobFailed? right) -> bool
+static Guara.Abstractions.JobId.None.get -> Guara.Abstractions.JobId
+static Guara.Abstractions.JobId.operator !=(Guara.Abstractions.JobId left, Guara.Abstractions.JobId right) -> bool
+static Guara.Abstractions.JobId.operator ==(Guara.Abstractions.JobId left, Guara.Abstractions.JobId right) -> bool
+static Guara.Abstractions.JobRetryScheduled.operator !=(Guara.Abstractions.JobRetryScheduled? left, Guara.Abstractions.JobRetryScheduled? right) -> bool
+static Guara.Abstractions.JobRetryScheduled.operator ==(Guara.Abstractions.JobRetryScheduled? left, Guara.Abstractions.JobRetryScheduled? right) -> bool
+static Guara.Abstractions.JobScheduled.operator !=(Guara.Abstractions.JobScheduled? left, Guara.Abstractions.JobScheduled? right) -> bool
+static Guara.Abstractions.JobScheduled.operator ==(Guara.Abstractions.JobScheduled? left, Guara.Abstractions.JobScheduled? right) -> bool
+static Guara.Abstractions.ScheduleDescriptor.After(System.TimeSpan delay) -> Guara.Abstractions.ScheduleDescriptor!
+static Guara.Abstractions.ScheduleDescriptor.Cron(string! expression, string? timeZoneId = null) -> Guara.Abstractions.ScheduleDescriptor!
+static Guara.Abstractions.ScheduleDescriptor.Immediate() -> Guara.Abstractions.ScheduleDescriptor!
+static Guara.Abstractions.ScheduleDescriptor.operator !=(Guara.Abstractions.ScheduleDescriptor? left, Guara.Abstractions.ScheduleDescriptor? right) -> bool
+static Guara.Abstractions.ScheduleDescriptor.operator ==(Guara.Abstractions.ScheduleDescriptor? left, Guara.Abstractions.ScheduleDescriptor? right) -> bool
+static Guara.Abstractions.ScheduleDescriptor.Recurring(string! id, string! cronExpression, string? timeZoneId = null) -> Guara.Abstractions.ScheduleDescriptor!
+static Guara.Abstractions.WorkerRequested.operator !=(Guara.Abstractions.WorkerRequested? left, Guara.Abstractions.WorkerRequested? right) -> bool
+static Guara.Abstractions.WorkerRequested.operator ==(Guara.Abstractions.WorkerRequested? left, Guara.Abstractions.WorkerRequested? right) -> bool
+virtual Guara.Abstractions.JobDelegate.Invoke(Guara.Abstractions.IJobContext! context, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask

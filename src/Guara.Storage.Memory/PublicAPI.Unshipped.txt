@@ -1,0 +1,12 @@
+Guara.Storage.Memory.MemoryStorage
+Guara.Storage.Memory.MemoryStorage.BeginTransactionAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Storage.ITransaction!>
+Guara.Storage.Memory.MemoryStorage.Capabilities.get -> Guara.Storage.StorageCapabilities!
+Guara.Storage.Memory.MemoryStorage.Continuations.get -> Guara.Storage.IContinuationStorage!
+Guara.Storage.Memory.MemoryStorage.Jobs.get -> Guara.Storage.IJobStorage!
+Guara.Storage.Memory.MemoryStorage.Locks.get -> Guara.Storage.ILockProvider!
+Guara.Storage.Memory.MemoryStorage.MemoryStorage(System.TimeProvider? timeProvider = null) -> void
+Guara.Storage.Memory.MemoryStorage.Queues.get -> Guara.Storage.IQueueStorage!
+Guara.Storage.Memory.MemoryStorage.Recurring.get -> Guara.Storage.IRecurringStorage!
+Guara.Storage.Memory.MemoryStorage.Servers.get -> Guara.Storage.IServerRegistry!
+Microsoft.Extensions.DependencyInjection.MemoryStorageExtensions
+static Microsoft.Extensions.DependencyInjection.MemoryStorageExtensions.UseMemoryStorage(this Guara.Abstractions.IGuaraBuilder! builder) -> Guara.Abstractions.IGuaraBuilder!

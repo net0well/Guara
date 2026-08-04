@@ -1,0 +1,10 @@
+Guara.Authorization.GuaraAuthorizationOptions
+Guara.Authorization.GuaraAuthorizationOptions.ActionPolicies.get -> System.Collections.Generic.IDictionary<string!, string!>!
+Guara.Authorization.GuaraAuthorizationOptions.AdminRoles.get -> System.Collections.Generic.IList<string!>!
+Guara.Authorization.GuaraAuthorizationOptions.AllowAll(string! policy) -> Guara.Authorization.GuaraAuthorizationOptions!
+Guara.Authorization.GuaraAuthorizationOptions.DefaultPolicy.get -> string?
+Guara.Authorization.GuaraAuthorizationOptions.DefaultPolicy.set -> void
+Guara.Authorization.GuaraAuthorizationOptions.GuaraAuthorizationOptions() -> void
+Guara.Authorization.GuaraAuthorizationOptions.Require(string! action, string! policy) -> Guara.Authorization.GuaraAuthorizationOptions!
+Microsoft.Extensions.DependencyInjection.GuaraAuthorizationExtensions
+static Microsoft.Extensions.DependencyInjection.GuaraAuthorizationExtensions.AddGuaraAuthorization(this Guara.Abstractions.IGuaraBuilder! builder, System.Action<Guara.Authorization.GuaraAuthorizationOptions!>? configure = null) -> Guara.Abstractions.IGuaraBuilder!

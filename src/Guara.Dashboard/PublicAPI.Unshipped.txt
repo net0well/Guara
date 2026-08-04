@@ -1,0 +1,33 @@
+Guara.Dashboard.DashboardAccessBuilder
+Guara.Dashboard.DashboardAccessBuilder.ComLoginFixo(string! usuario, string! senha) -> Guara.Dashboard.DashboardAccessBuilder!
+Guara.Dashboard.DashboardAccessBuilder.ComRegra(Guara.Dashboard.IDashboardAccessRule! regra) -> Guara.Dashboard.DashboardAccessBuilder!
+Guara.Dashboard.DashboardAccessBuilder.ComRegra<TRegra>() -> Guara.Dashboard.DashboardAccessBuilder!
+Guara.Dashboard.DashboardAccessBuilder.ExigirClaim(string! tipo, string? valor = null) -> Guara.Dashboard.DashboardAccessBuilder!
+Guara.Dashboard.DashboardAccessBuilder.ExigirPapel(params string![]! papeis) -> Guara.Dashboard.DashboardAccessBuilder!
+Guara.Dashboard.DashboardAccessBuilder.PermitirApenasIpsInternos() -> Guara.Dashboard.DashboardAccessBuilder!
+Guara.Dashboard.DashboardAccessBuilder.PermitirApenasLogados() -> Guara.Dashboard.DashboardAccessBuilder!
+Guara.Dashboard.DashboardAccessBuilder.PermitirIps(params string![]! faixas) -> Guara.Dashboard.DashboardAccessBuilder!
+Guara.Dashboard.DashboardAccessBuilder.QualquerUma(System.Action<Guara.Dashboard.DashboardAccessBuilder!>! grupo) -> Guara.Dashboard.DashboardAccessBuilder!
+Guara.Dashboard.DashboardContext
+Guara.Dashboard.DashboardContext.DashboardContext(Microsoft.AspNetCore.Http.HttpContext! httpContext) -> void
+Guara.Dashboard.DashboardContext.HttpContext.get -> Microsoft.AspNetCore.Http.HttpContext!
+Guara.Dashboard.DashboardContext.Path.get -> Microsoft.AspNetCore.Http.PathString
+Guara.Dashboard.DashboardContext.RemoteIp.get -> System.Net.IPAddress?
+Guara.Dashboard.DashboardContext.User.get -> System.Security.Claims.ClaimsPrincipal!
+Guara.Dashboard.DashboardOptions
+Guara.Dashboard.DashboardOptions.BasePath.get -> string!
+Guara.Dashboard.DashboardOptions.BasePath.set -> void
+Guara.Dashboard.DashboardOptions.CookieSecret.get -> string?
+Guara.Dashboard.DashboardOptions.CookieSecret.set -> void
+Guara.Dashboard.DashboardOptions.DashboardOptions() -> void
+Guara.Dashboard.DashboardOptions.RequireAuthorization.get -> bool
+Guara.Dashboard.DashboardOptions.RequireAuthorization.set -> void
+Guara.Dashboard.DashboardOptions.SessionTtl.get -> System.TimeSpan
+Guara.Dashboard.DashboardOptions.SessionTtl.set -> void
+Guara.Dashboard.DashboardOptions.UseGuaraAuthentication(System.Action<Guara.Dashboard.DashboardAccessBuilder!>! configure) -> Guara.Dashboard.DashboardOptions!
+Guara.Dashboard.IDashboardAccessRule
+Guara.Dashboard.IDashboardAccessRule.AutorizarAsync(Guara.Dashboard.DashboardContext! contexto, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<bool>
+Microsoft.AspNetCore.Builder.DashboardEndpointExtensions
+Microsoft.Extensions.DependencyInjection.DashboardServiceCollectionExtensions
+static Microsoft.AspNetCore.Builder.DashboardEndpointExtensions.MapGuaraDashboard(this Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string? basePath = null) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder!
+static Microsoft.Extensions.DependencyInjection.DashboardServiceCollectionExtensions.AddGuaraDashboard(this Guara.Abstractions.IGuaraBuilder! builder, System.Action<Guara.Dashboard.DashboardOptions!>? configure = null) -> Guara.Abstractions.IGuaraBuilder!

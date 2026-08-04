@@ -1,0 +1,12 @@
+Guara.Dispatcher.DispatcherOptions
+Guara.Dispatcher.DispatcherOptions.DispatcherOptions() -> void
+Guara.Dispatcher.DispatcherOptions.LeaseDuration.get -> System.TimeSpan
+Guara.Dispatcher.DispatcherOptions.LeaseDuration.set -> void
+Guara.Dispatcher.DispatcherOptions.MaxBackoff.get -> System.TimeSpan
+Guara.Dispatcher.DispatcherOptions.MaxBackoff.set -> void
+Guara.Dispatcher.DispatcherOptions.PollingInterval.get -> System.TimeSpan
+Guara.Dispatcher.DispatcherOptions.PollingInterval.set -> void
+Guara.Dispatcher.DispatcherOptions.Queues.get -> string![]!
+Guara.Dispatcher.DispatcherOptions.Queues.set -> void
+Microsoft.Extensions.DependencyInjection.DispatcherServiceCollectionExtensions
+static Microsoft.Extensions.DependencyInjection.DispatcherServiceCollectionExtensions.AddGuaraDispatcher(this Guara.Abstractions.IGuaraBuilder! builder, System.Action<Guara.Dispatcher.DispatcherOptions!>? configure = null) -> Guara.Abstractions.IGuaraBuilder!
