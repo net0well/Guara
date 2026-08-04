@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <!--
+    Cobertura de execução da suíte:
+      dotnet test Guara.slnx (opções) collect:"XPlat Code Coverage" e settings:coverage.runsettings
+
+    Código emitido por source generator sai da conta (carrega GeneratedCodeAttribute): ele é
+    coberto indiretamente pelos testes do gerador e infla a métrica se contado como código
+    escrito à mão. Auto-properties também saem — getter/setter triviais não são caminho testável.
+  -->
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+          <SkipAutoProps>true</SkipAutoProps>
+          <UseSourceLink>true</UseSourceLink>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
