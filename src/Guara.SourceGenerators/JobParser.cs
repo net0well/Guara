@@ -8,7 +8,7 @@ namespace Guara.SourceGenerators;
 /// Parser do pipeline: transforma o método <c>[GuaraJob]</c> em um <see cref="JobModel"/>
 /// equatable — nenhum símbolo do Roslyn escapa daqui (disciplina incremental).
 /// </summary>
-public static class JobParser
+internal static class JobParser
 {
     private static readonly Regex Placeholder = new(@"\{(\d+)\}", RegexOptions.Compiled);
 
