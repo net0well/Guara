@@ -1,0 +1,101 @@
+// Estilo comum aos gráficos da série. Grade e eixos recessivos: o dado é o que
+// deve saltar, não a moldura.
+
+.gr {
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+figcaption {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.titulo {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--suave);
+  font-weight: 600;
+}
+
+.legenda {
+  display: flex;
+  gap: 0.75rem;
+  margin-left: auto;
+  font-size: 0.82rem;
+  color: var(--suave);
+}
+
+.chave {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+// A cor identifica a série; o texto ao lado é que a nomeia.
+.marca {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+}
+.marca.ok { background: var(--ok); }
+.marca.erro { background: var(--erro); }
+.marca.p50 { background: var(--marca); }
+.marca.p95 { background: var(--roxo); }
+
+svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  touch-action: none;
+}
+
+.eixo line {
+  stroke: var(--borda);
+  stroke-width: 1;
+}
+
+.eixo text,
+.rotulos-x text {
+  fill: var(--suave);
+  font-size: 9px;
+}
+
+rect.ok { fill: var(--ok); }
+rect.erro { fill: var(--erro); }
+
+// O balde sob o ponteiro ganha contraste sem mudar de cor: identidade da série
+// continua sendo a cor, o destaque é opacidade.
+g:not(.focada) rect { opacity: 0.82; }
+g.focada rect { opacity: 1; }
+
+.linha {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.linha.p50 { stroke: var(--marca); }
+.linha.p95 { stroke: var(--roxo); }
+
+.cursor {
+  stroke: var(--suave);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.dica {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--suave);
+  min-height: 1.3rem;
+}
+
+.vazio {
+  padding: 2rem 1rem;
+}
