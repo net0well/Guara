@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Guara.Host": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:61327;http://localhost:61328"
+    }
+  }
+}
