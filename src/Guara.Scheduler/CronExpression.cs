@@ -15,7 +15,7 @@ namespace Guara.Scheduler;
 /// horários <b>ambíguos</b> (fim do horário de verão) usam a primeira ocorrência.
 /// Um campo é considerado "restrito" quando seu texto não é exatamente <c>*</c>.
 /// </remarks>
-public sealed class CronExpression
+internal sealed class CronExpression
 {
     private const int HorizonYears = 5;
 

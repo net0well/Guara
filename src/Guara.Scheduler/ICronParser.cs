@@ -22,7 +22,7 @@ public interface ICronParser
 /// Implementação default de <see cref="ICronParser"/> sobre <see cref="CronExpression"/>,
 /// com cache de expressões interpretadas (expressões vêm de configuração — conjunto pequeno e estável).
 /// </summary>
-public sealed class GuaraCronParser : ICronParser
+internal sealed class GuaraCronParser : ICronParser
 {
     private readonly ConcurrentDictionary<string, CronExpression> _cache = new(StringComparer.Ordinal);
 

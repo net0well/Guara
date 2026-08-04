@@ -9,7 +9,7 @@ namespace Guara.Diagnostics;
 /// (histograma em ms, por fila). Tags de baixa cardinalidade — nada de id de job
 /// em métrica agregada (id vive nos traces).
 /// </summary>
-public sealed class MetricsMiddleware : IJobMiddleware
+internal sealed class MetricsMiddleware : IJobMiddleware
 {
     private static readonly Counter<long> Processed = GuaraDiagnostics.Meter.CreateCounter<long>(
         "guara.jobs.processed", unit: "{job}", description: "Execuções de job concluídas, por fila e desfecho.");

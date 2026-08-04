@@ -68,7 +68,7 @@ public sealed class JobHandlerRegistry : IJobMetadataProvider
 /// <see cref="IJobInvoker"/> baseado no <see cref="JobHandlerRegistry"/> — sem reflection.
 /// Job sem handler registrado falha explicitamente (vira <c>Failed</c> com motivo).
 /// </summary>
-public sealed class RegistryJobInvoker(JobHandlerRegistry registry, IServiceProvider services) : IJobInvoker
+internal sealed class RegistryJobInvoker(JobHandlerRegistry registry, IServiceProvider services) : IJobInvoker
 {
     /// <inheritdoc />
     public ValueTask InvokeAsync(IJobContext context, CancellationToken ct)

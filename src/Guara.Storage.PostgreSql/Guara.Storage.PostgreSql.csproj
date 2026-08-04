@@ -14,4 +14,9 @@
     <PackageReference Include="Npgsql" />
   </ItemGroup>
 
+  <!-- A implementação é alcançada por IStorage; o kit de conformidade a constrói direto. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Guara.Storage.PostgreSql.Tests" />
+  </ItemGroup>
+
 </Project>

@@ -10,7 +10,7 @@ namespace Guara.Core;
 /// retentativa entre tentativas é a persistente, feita pelo executor. Usa
 /// <see cref="TimeProvider"/> para os atrasos (testável).
 /// </summary>
-public sealed class RetryMiddleware(RetryOptions options, TimeProvider? timeProvider = null) : IJobMiddleware
+internal sealed class RetryMiddleware(RetryOptions options, TimeProvider? timeProvider = null) : IJobMiddleware
 {
     private readonly TimeProvider _time = timeProvider ?? TimeProvider.System;
 

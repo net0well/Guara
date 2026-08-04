@@ -10,7 +10,7 @@ namespace Guara.Diagnostics;
 /// logada e <b>relançada</b> — quem decide retentativa/estado é o executor. Argumentos
 /// do job nunca são logados (dados sensíveis).
 /// </summary>
-public sealed class LoggingMiddleware(ILogger<LoggingMiddleware>? logger = null) : IJobMiddleware
+internal sealed class LoggingMiddleware(ILogger<LoggingMiddleware>? logger = null) : IJobMiddleware
 {
     private readonly ILogger _logger = logger ?? NullLogger<LoggingMiddleware>.Instance;
 

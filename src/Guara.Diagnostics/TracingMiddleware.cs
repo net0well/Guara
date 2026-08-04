@@ -8,7 +8,7 @@ namespace Guara.Diagnostics;
 /// <c>job.id</c>/<c>job.queue</c>/<c>job.type</c>/<c>job.attempt</c>. Sem listener
 /// registrado, o custo é ~zero (nenhuma atividade é criada).
 /// </summary>
-public sealed class TracingMiddleware : IJobMiddleware
+internal sealed class TracingMiddleware : IJobMiddleware
 {
     /// <inheritdoc />
     public async ValueTask InvokeAsync(IJobContext context, JobDelegate next, CancellationToken ct)

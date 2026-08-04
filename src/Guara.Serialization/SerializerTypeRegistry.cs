@@ -7,7 +7,7 @@ namespace Guara.Serialization;
 /// Registre durante o bootstrap; leituras posteriores são thread-safe.
 /// No futuro, o registro será preenchido em compilação pelo <c>Guara.SourceGenerators</c>.
 /// </summary>
-public sealed class SerializerTypeRegistry
+internal sealed class SerializerTypeRegistry
 {
     private readonly Dictionary<string, Type> _byDiscriminator = new(StringComparer.Ordinal);
     private readonly Dictionary<Type, string> _byType = [];

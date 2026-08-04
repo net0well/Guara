@@ -1,14 +1,3 @@
-Guara.Storage.PostgreSql.PostgreSqlStorage
-Guara.Storage.PostgreSql.PostgreSqlStorage.BeginTransactionAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Storage.ITransaction!>
-Guara.Storage.PostgreSql.PostgreSqlStorage.Capabilities.get -> Guara.Storage.StorageCapabilities!
-Guara.Storage.PostgreSql.PostgreSqlStorage.Continuations.get -> Guara.Storage.IContinuationStorage!
-Guara.Storage.PostgreSql.PostgreSqlStorage.DisposeAsync() -> System.Threading.Tasks.ValueTask
-Guara.Storage.PostgreSql.PostgreSqlStorage.Jobs.get -> Guara.Storage.IJobStorage!
-Guara.Storage.PostgreSql.PostgreSqlStorage.Locks.get -> Guara.Storage.ILockProvider!
-Guara.Storage.PostgreSql.PostgreSqlStorage.PostgreSqlStorage(Guara.Storage.PostgreSql.PostgreSqlStorageOptions! options, System.TimeProvider? timeProvider = null) -> void
-Guara.Storage.PostgreSql.PostgreSqlStorage.Queues.get -> Guara.Storage.IQueueStorage!
-Guara.Storage.PostgreSql.PostgreSqlStorage.Recurring.get -> Guara.Storage.IRecurringStorage!
-Guara.Storage.PostgreSql.PostgreSqlStorage.Servers.get -> Guara.Storage.IServerRegistry!
 Guara.Storage.PostgreSql.PostgreSqlStorageOptions
 Guara.Storage.PostgreSql.PostgreSqlStorageOptions.AutoMigrate.get -> bool
 Guara.Storage.PostgreSql.PostgreSqlStorageOptions.AutoMigrate.set -> void

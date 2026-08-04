@@ -8,7 +8,7 @@ namespace Guara.SourceGenerators;
 /// generators não enxergam a saída uns dos outros). Tipos fora do mapa geram erro de
 /// compilação, nunca falha em produção.
 /// </summary>
-public static class ArgTypeMap
+internal static class ArgTypeMap
 {
     private const string Invariant = "global::System.Globalization.CultureInfo.InvariantCulture";
 

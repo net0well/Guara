@@ -10,7 +10,7 @@ namespace Guara.Storage.PostgreSql;
 /// <c>FOR UPDATE SKIP LOCKED</c>. Comparações temporais usam o relógio injetado do
 /// nó chamador — semântica idêntica à dos demais providers (mesmo conformance kit).
 /// </summary>
-public sealed class PostgreSqlStorage : IStorage, IAsyncDisposable
+internal sealed class PostgreSqlStorage : IStorage, IAsyncDisposable
 {
     private readonly NpgsqlDataSource _dataSource;
 

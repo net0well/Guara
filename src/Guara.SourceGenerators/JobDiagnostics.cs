@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.Text;
 namespace Guara.SourceGenerators;
 
 /// <summary>Descriptors dos diagnósticos do generator (erros em build, nunca em runtime).</summary>
-public static class JobDiagnostics
+internal static class JobDiagnostics
 {
     private const string Category = "Guara.SourceGenerators";
 

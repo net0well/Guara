@@ -1,15 +1,6 @@
 const Guara.Diagnostics.GuaraDiagnostics.ActivitySourceName = "Guara" -> string!
 const Guara.Diagnostics.GuaraDiagnostics.MeterName = "Guara" -> string!
 Guara.Diagnostics.GuaraDiagnostics
-Guara.Diagnostics.LoggingMiddleware
-Guara.Diagnostics.LoggingMiddleware.InvokeAsync(Guara.Abstractions.IJobContext! context, Guara.Abstractions.JobDelegate! next, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
-Guara.Diagnostics.LoggingMiddleware.LoggingMiddleware(Microsoft.Extensions.Logging.ILogger<Guara.Diagnostics.LoggingMiddleware!>? logger = null) -> void
-Guara.Diagnostics.MetricsMiddleware
-Guara.Diagnostics.MetricsMiddleware.InvokeAsync(Guara.Abstractions.IJobContext! context, Guara.Abstractions.JobDelegate! next, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
-Guara.Diagnostics.MetricsMiddleware.MetricsMiddleware() -> void
-Guara.Diagnostics.TracingMiddleware
-Guara.Diagnostics.TracingMiddleware.InvokeAsync(Guara.Abstractions.IJobContext! context, Guara.Abstractions.JobDelegate! next, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
-Guara.Diagnostics.TracingMiddleware.TracingMiddleware() -> void
 Microsoft.Extensions.DependencyInjection.DiagnosticsServiceCollectionExtensions
 static Guara.Diagnostics.GuaraDiagnostics.ActivitySource.get -> System.Diagnostics.ActivitySource!
 static Guara.Diagnostics.GuaraDiagnostics.Meter.get -> System.Diagnostics.Metrics.Meter!

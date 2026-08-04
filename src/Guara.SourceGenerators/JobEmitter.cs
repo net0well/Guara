@@ -11,7 +11,7 @@ namespace Guara.SourceGenerators;
 /// metadados dos atributos, structs de argumentos (JSON direto) e factories tipadas
 /// de descritor. Saída determinística: mesma entrada → mesmo texto.
 /// </summary>
-public static class JobEmitter
+internal static class JobEmitter
 {
     /// <summary>Gera o código do assembly a partir dos jobs descobertos.</summary>
     /// <param name="jobs">Modelos coletados (podem conter diagnósticos).</param>

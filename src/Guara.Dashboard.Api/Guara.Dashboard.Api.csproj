@@ -19,4 +19,9 @@
     <ProjectReference Include="..\Guara.Storage\Guara.Storage.csproj" />
   </ItemGroup>
 
+  <!-- Os DTOs são o formato do JSON, não um contrato C#: os testes os desserializam. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Guara.Dashboard.Api.Tests" />
+  </ItemGroup>
+
 </Project>

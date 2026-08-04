@@ -11,7 +11,7 @@ namespace Guara.SourceGenerators;
 /// incremental para o cache funcionar (ImmutableArray compara por referência).
 /// </summary>
 /// <typeparam name="T">Tipo do item (equatable).</typeparam>
-public readonly struct EquatableArray<T>(ImmutableArray<T> items) : IEquatable<EquatableArray<T>>, IEnumerable<T>
+internal readonly struct EquatableArray<T>(ImmutableArray<T> items) : IEquatable<EquatableArray<T>>, IEnumerable<T>
     where T : IEquatable<T>
 {
     private readonly ImmutableArray<T> _items = items;
@@ -56,7 +56,7 @@ public readonly struct EquatableArray<T>(ImmutableArray<T> items) : IEquatable<E
 /// <param name="IsCancellationToken">É o <c>CancellationToken</c> final (não serializado).</param>
 /// <param name="WriterStatement">Statement completo que escreve <c>@nome</c> no <c>writer</c>.</param>
 /// <param name="ReaderExpression">Expressão completa que lê o valor do <c>reader</c>.</param>
-public sealed record ParameterModel(
+internal sealed record ParameterModel(
     string Name,
     string FullTypeName,
     ArgKind Kind,
@@ -65,7 +65,7 @@ public sealed record ParameterModel(
     string ReaderExpression = "");
 
 /// <summary>Categorias de serialização suportadas para argumentos de job.</summary>
-public enum ArgKind
+internal enum ArgKind
 {
     /// <summary>Tipo fora do conjunto suportado (gera diagnóstico).</summary>
     Unsupported,
@@ -115,17 +115,17 @@ public enum ArgKind
 /// <param name="StartCharacter">Coluna inicial (0-based).</param>
 /// <param name="EndLine">Linha final (0-based).</param>
 /// <param name="EndCharacter">Coluna final (0-based).</param>
-public sealed record LocationModel(
+internal sealed record LocationModel(
     string FilePath, int Start, int Length, int StartLine, int StartCharacter, int EndLine, int EndCharacter);
 
 /// <summary>Diagnóstico coletado pelo parser, com os argumentos da mensagem.</summary>
 /// <param name="Id">Id do descriptor (<c>GUARA01xx</c>).</param>
 /// <param name="Location">Onde reportar.</param>
 /// <param name="MessageArgs">Argumentos da mensagem.</param>
-public sealed record DiagnosticModel(string Id, LocationModel? Location, EquatableArray<string> MessageArgs);
+internal sealed record DiagnosticModel(string Id, LocationModel? Location, EquatableArray<string> MessageArgs);
 
 /// <summary>Um método <c>[GuaraJob]</c> descoberto, já com os atributos resolvidos.</summary>
-public sealed record JobModel
+internal sealed record JobModel
 {
     /// <summary>Discriminador estável persistido no descriptor (namespace + tipo, sem assembly).</summary>
     public required string TypeName { get; init; }
@@ -184,7 +184,7 @@ public sealed record JobModel
 }
 
 /// <summary>Forma de retorno do método de job.</summary>
-public enum ReturnKind
+internal enum ReturnKind
 {
     /// <summary><c>Task</c>.</summary>
     Task,

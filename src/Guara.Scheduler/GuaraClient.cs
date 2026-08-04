@@ -9,7 +9,7 @@ namespace Guara.Scheduler;
 /// storage ("o storage é a fila") e emite os eventos do fluxo (<see cref="JobCreated"/>,
 /// <see cref="JobScheduled"/>) — nunca chama outro componente diretamente.
 /// </summary>
-public sealed class GuaraClient(
+internal sealed class GuaraClient(
     IStorage storage,
     IEventPublisher events,
     RecurrenceCalculator calculator,

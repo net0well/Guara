@@ -10,7 +10,7 @@ namespace Guara.Scheduler;
 /// A resolução do vínculo é única entre nós (<see cref="IContinuationStorage.TryResolveAsync"/>);
 /// a varredura cobre quedas entre persistir o final do pai e promover.
 /// </summary>
-public sealed class ContinuationPromoter(IStorage storage, TimeProvider time, ILogger<ContinuationPromoter> logger)
+internal sealed class ContinuationPromoter(IStorage storage, TimeProvider time, ILogger<ContinuationPromoter> logger)
 {
     /// <summary>Avalia todas as continuações de um pai que atingiu um estado final.</summary>
     /// <param name="parentId">Id do job pai.</param>

@@ -9,11 +9,15 @@
     <ProjectReference Include="..\Guara.Abstractions\Guara.Abstractions.csproj" />
   </ItemGroup>
 
-  <!-- JobContextPoolPolicy é detalhe de implementação: só o executor (que monta o pool) e
-       os testes do próprio pacote enxergam. Fora do produto, vale o contrato público. -->
+  <!-- Pipeline, contexto e publicador de eventos são detalhe de implementação: quem consome
+       depende dos contratos em Abstractions. Só o executor (que monta o pool de contexto), o
+       hosting (que registra o publicador) e os testes enxergam por dentro. -->
   <ItemGroup>
     <InternalsVisibleTo Include="Guara.Executor" />
+    <InternalsVisibleTo Include="Guara.Hosting" />
     <InternalsVisibleTo Include="Guara.Core.Tests" />
+    <InternalsVisibleTo Include="Guara.Hosting.Tests" />
+    <InternalsVisibleTo Include="Guara.Engines.Tests" />
   </ItemGroup>
 
   <ItemGroup>

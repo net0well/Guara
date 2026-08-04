@@ -23,9 +23,6 @@ Guara.Executor.JobHandlerRegistry.GetMetadata(string! typeName, string! methodNa
 Guara.Executor.JobHandlerRegistry.JobHandlerRegistry() -> void
 Guara.Executor.JobHandlerRegistry.Register(string! typeName, string! methodName, Guara.Executor.JobExecutionMetadata? metadata, System.Func<System.IServiceProvider!, Guara.Abstractions.IJobContext!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! handler) -> Guara.Executor.JobHandlerRegistry!
 Guara.Executor.JobHandlerRegistry.Register(string! typeName, string! methodName, System.Func<Guara.Abstractions.IJobContext!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! handler) -> Guara.Executor.JobHandlerRegistry!
-Guara.Executor.RegistryJobInvoker
-Guara.Executor.RegistryJobInvoker.InvokeAsync(Guara.Abstractions.IJobContext! context, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
-Guara.Executor.RegistryJobInvoker.RegistryJobInvoker(Guara.Executor.JobHandlerRegistry! registry, System.IServiceProvider! services) -> void
 Microsoft.Extensions.DependencyInjection.ExecutorServiceCollectionExtensions
 override Guara.Executor.JobExecutionMetadata.Equals(object? obj) -> bool
 override Guara.Executor.JobExecutionMetadata.GetHashCode() -> int
