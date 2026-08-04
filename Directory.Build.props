@@ -18,10 +18,36 @@
     <Product>Guará</Product>
     <Copyright>Copyright © Guará</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/net0well/guara</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/net0well/guara</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/net0well/Guara</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/net0well/Guara</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>jobs;scheduler;background-jobs;hangfire;cron;queue;dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>logo.png</PackageIcon>
+  </PropertyGroup>
+
+  <!--
+    Versionamento e rastreabilidade do binário publicado.
+
+    MinVer deriva a versão da tag git, então `v1.2.3` produz pacotes 1.2.3 sem ninguém editar
+    número em arquivo nenhum. Commits depois da tag viram pré-release da PRÓXIMA versão, o que
+    impede um build de trabalho de se passar por release.
+
+    SourceLink vem no SDK desde o .NET 8 — basta publicar a URL do repositório. Com os
+    símbolos em .snupkg e as fontes não rastreadas embutidas, um stack trace de produção abre
+    no código exato do commit que gerou o pacote.
+
+    Determinismo só liga no CI: no build local, ContinuousIntegrationBuild reescreve caminhos
+    de fonte e atrapalha o depurador.
+  -->
+  <PropertyGroup>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true' or '$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
   <!--

@@ -13,7 +13,7 @@ Requisitos: **.NET SDK 10** (fixado em `global.json`), **Node 20.19+** para a SP
 para os testes de conformidade do PostgreSQL.
 
 ```bash
-git clone https://github.com/net0well/guara.git
+git clone https://github.com/net0well/Guara.git
 cd guara
 dotnet build Guara.slnx
 dotnet test Guara.slnx
@@ -76,7 +76,33 @@ A lista completa do que **não** fazer está em [`docs/anti-patterns.md`](docs/a
 4. **Rode o [checklist](docs/checklist.md)** e garanta `dotnet build` e `dotnet test` verdes.
    O build trata **warning como erro** e exige doc XML em toda API pública: um símbolo
    público sem `<summary>` quebra a compilação.
-5. **Abra o PR** descrevendo o comportamento que muda e como você verificou.
+5. **Atualize o README na mesma mudança** (ver abaixo).
+6. **Abra o PR** descrevendo o comportamento que muda e como você verificou.
+
+## O README acompanha o código
+
+O `README.md` (e o `README.en.md`) é a primeira coisa que alguém lê sobre o projeto. README
+desatualizado não é documentação incompleta: é **documentação errada** — promete pacote que
+não existe, marca como planejado o que já está pronto, e faz quem chega perder tempo
+procurando algo que nunca foi implementado.
+
+Por isso a atualização vai **na mesma mudança**, nunca "depois". Se o seu PR mexe em algo da
+lista abaixo, ele também mexe no README:
+
+| Se você… | Atualize |
+|---|---|
+| Criou um pacote `Guara.*` | Tabela de pacotes, marcando o estado |
+| Concluiu um item do roadmap | Tabela de roadmap, nos dois idiomas |
+| Adicionou capacidade visível ao usuário | Tabela de recursos |
+| Implementou um provider de storage | Tabela de providers |
+| Mudou a API pública mostrada nos exemplos | O trecho de código correspondente |
+| Adicionou ação, permissão ou tela do painel | Seção do dashboard |
+
+**Os dois idiomas andam juntos.** Alterar só o português deixa o `README.en.md` mentindo para
+quem lê em inglês, e a divergência só cresce.
+
+Marque o que ainda não existe com 🕓 e o que está pronto com ✅. Um recurso descrito sem marca
+é lido como disponível hoje.
 
 ## Comentários de código
 

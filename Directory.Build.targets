@@ -17,4 +17,27 @@
     </PackageReference>
   </ItemGroup>
 
+  <!--
+    Versão derivada da tag git mais recente, em todo projeto empacotável. Sem tag, o MinVer
+    produz 0.0.0-alpha.0.N — versão de trabalho, que não se confunde com release.
+
+    PrivateAssets=all: é ferramenta de build, não vai como dependência do pacote.
+  -->
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <PackageReference Include="MinVer">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!--
+    README e ícone dentro de cada .nupkg. O NuGet exige que o arquivo esteja empacotado, não
+    referenciado por caminho: um pacote que aponta para fora de si mesmo mostra a página vazia
+    na galeria.
+  -->
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)assets\logo.png" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
 </Project>
