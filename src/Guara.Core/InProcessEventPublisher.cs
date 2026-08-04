@@ -1,5 +1,6 @@
 using Guara.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Guara.Core;
 
@@ -14,7 +15,10 @@ namespace Guara.Core;
 /// entrega) é fornecida pelo <c>Guara.Server</c>, que roda o laço de fundo — este publicador
 /// é o padrão em processo, consumindo o mesmo contrato <see cref="IEventHandler{TEvent}"/>.
 /// </remarks>
-public sealed class InProcessEventPublisher(IServiceProvider services) : IEventPublisher
+/// <param name="services">Contêiner de onde os handlers do evento são resolvidos.</param>
+/// <param name="logger">Registro estruturado das falhas isoladas de handler.</param>
+public sealed class InProcessEventPublisher(
+    IServiceProvider services, ILogger<InProcessEventPublisher> logger) : IEventPublisher
 {
     /// <inheritdoc />
     public async ValueTask PublishAsync<TEvent>(TEvent @event, CancellationToken ct)
@@ -30,10 +34,15 @@ public sealed class InProcessEventPublisher(IServiceProvider services) : IEventP
             {
                 throw;
             }
-            catch
+            catch (Exception ex)
             {
-                // Best-effort: isola a falha de um handler para não afetar os demais.
-                // O logging estruturado da falha é adicionado quando o Guara.Diagnostics envolve o pipeline.
+                // Best-effort: isola a falha de um handler para não afetar os demais — mas
+                // engolir sem registrar tornaria um handler quebrado invisível em produção.
+                logger.LogError(
+                    ex,
+                    "Handler {HandlerType} falhou ao tratar {EventType}; os demais handlers seguem",
+                    handler.GetType(),
+                    typeof(TEvent));
             }
         }
     }

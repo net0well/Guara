@@ -2,6 +2,8 @@ using Guara.Abstractions;
 using Guara.Core;
 using Guara.Hosting;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Microsoft.Extensions.DependencyInjection; // extensões neste namespace aparecem no IntelliSense de builder.Services
 
@@ -31,7 +33,9 @@ public static class GuaraServiceCollectionExtensions
         });
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<JobStateMachine>();
-        services.TryAddSingleton<IEventPublisher, InProcessEventPublisher>();
+        services.TryAddSingleton<IEventPublisher>(sp => new InProcessEventPublisher(
+            sp,
+            sp.GetService<ILogger<InProcessEventPublisher>>() ?? NullLogger<InProcessEventPublisher>.Instance));
 
         return new GuaraBuilder(services);
     }

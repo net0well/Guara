@@ -16,4 +16,10 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
 
+  <!-- GuaraExecutor é internal: os testes o instanciam direto para exercitar o pipeline
+       sem passar pelo contêiner. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Guara.Engines.Tests" />
+  </ItemGroup>
+
 </Project>

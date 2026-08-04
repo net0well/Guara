@@ -14,7 +14,7 @@ namespace Guara.Server;
 /// periódica — os laços coordenados rodam sob lock, então em múltiplos nós apenas
 /// um executa cada ciclo.
 /// </summary>
-public sealed class GuaraServer : IGuaraServer
+internal sealed class GuaraServer : IGuaraServer
 {
     private const string MaintenanceLockKey = "guara:maintenance";
     private const string RecurringLockKey = "guara:recurring";

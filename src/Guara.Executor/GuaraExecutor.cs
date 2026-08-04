@@ -15,7 +15,7 @@ namespace Guara.Executor;
 /// <c>Retrying</c> reagendado com back-off (o máximo por job vem dos metadados);
 /// esgotou, grava <c>Failed</c>. <c>JobContext</c> é pooled.
 /// </summary>
-public sealed class GuaraExecutor : IExecutor
+internal sealed class GuaraExecutor : IExecutor
 {
     // TTL generoso do mutex: crash do nó libera a chave por expiração; execuções mais
     // longas que isto perdem a garantia de exclusão (documentado).

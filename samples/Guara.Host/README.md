@@ -13,7 +13,15 @@ dotnet run --project samples/Guara.Host
 No primeiro build a SPA do dashboard é construída automaticamente (requer Node 20.19+/22;
 sem Node, o dashboard cai numa página placeholder). Depois abra:
 
-- **Dashboard:** http://localhost:5080/guara — login de exemplo **admin / guara**
+- **Dashboard:** http://localhost:5080/guara — usuário **admin**
+
+A senha **não** vem versionada. Se `Guara:Dashboard:Password` não estiver configurada, o
+exemplo sorteia uma senha por execução e a imprime no log do boot (`Senha do dashboard não
+configurada; gerada para esta execução: ...`). Para fixar uma:
+
+```bash
+dotnet user-secrets --project samples/Guara.Host set "Guara:Dashboard:Password" "<senha>"
+```
 
 O painel abre com dados já semeados e atualiza **ao vivo** (SSE): relatórios sendo
 gerados a cada poucos segundos, um recorrente a cada 10s, pagamentos que às vezes
@@ -36,5 +44,6 @@ Tudo pela seção `Guara` do `appsettings.json` (filas, polling, retenção, das
 
 - **PostgreSQL:** preencha `Guara:Storage:PostgreSql:ConnectionString` para usar o banco
   em vez da memória (ex.: o Postgres do `Infra/`).
-- **Login do dashboard:** `Guara:Dashboard:User` / `Guara:Dashboard:Password` (em produção,
-  venha de variável de ambiente ou user-secrets — nunca literal).
+- **Login do dashboard:** `Guara:Dashboard:User` no `appsettings.json`; a senha
+  (`Guara:Dashboard:Password`) só por user-secrets ou variável de ambiente — o
+  `appsettings.json` versionado carrega a chave vazia, nunca o valor.

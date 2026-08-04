@@ -53,3 +53,19 @@ Execute antes de commitar qualquer componente novo ou alteração estrutural. Es
 - [ ] Docs relevantes atualizados ([components.md](components.md), [naming-conventions.md](naming-conventions.md), etc.).
 - [ ] `Guara.Analyzers` passa sem warnings `GUARA*`.
 - [ ] `dotnet build` limpo; testes verdes; benchmark sem regressão acima do baseline.
+
+## 8. Cobertura
+
+A suíte é orientada a comportamento (um teste exercita vários tipos), então contar "classe de
+teste por tipo" não mede nada. Use a cobertura de execução:
+
+```bash
+dotnet test Guara.slnx --collect:"XPlat Code Coverage" --settings coverage.runsettings
+```
+
+Sai um `coverage.cobertura.xml` por assembly em `tests/*/TestResults/<guid>/`. Os testes de
+`Guara.Storage.PostgreSql.Tests` exigem Docker no ar (Testcontainers); sem ele, falham por
+ambiente e a cobertura do provider fica de fora.
+
+- [ ] Caminhos novos cobertos por teste que exercita o comportamento, não a assinatura.
+- [ ] Nenhuma queda de cobertura nas linhas tocadas pela alteração.
