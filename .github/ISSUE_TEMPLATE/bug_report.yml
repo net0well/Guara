@@ -1,0 +1,68 @@
+name: Reportar um bug
+description: Algo do Guará não se comporta como documentado.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Vulnerabilidade de segurança não vai aqui.** Use o canal privado descrito em
+        [SECURITY.md](https://github.com/net0well/guara/blob/main/SECURITY.md).
+
+  - type: textarea
+    id: comportamento
+    attributes:
+      label: O que aconteceu
+      description: O comportamento observado e o que você esperava no lugar.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproducao
+    attributes:
+      label: Como reproduzir
+      description: |
+        Passos, ou o menor projeto possível que mostra o problema. Inclua a composição
+        (`AddGuara()...`) e o job envolvido.
+      render: csharp
+    validations:
+      required: true
+
+  - type: input
+    id: versao
+    attributes:
+      label: Versão do Guará
+      placeholder: "0.1.0-preview.3"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: tfm
+    attributes:
+      label: Target framework
+      options: ["net8.0", "net10.0", "ambos"]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: storage
+    attributes:
+      label: Provider de storage
+      options: ["Memory", "PostgreSQL", "outro"]
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: ambiente
+    attributes:
+      label: Condições que costumam importar
+      options:
+        - label: Rodando com mais de um nó (servidor) apontando para o mesmo storage
+        - label: Publicado com Native AOT ou trimming
+        - label: O job estava em execução quando o problema apareceu
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log ou stack trace
+      description: Cole o trecho relevante. **Remova connection strings e segredos.**
+      render: text

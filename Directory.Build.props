@@ -11,18 +11,41 @@
     <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
-  <!-- Metadados comuns de pacote NuGet (LGPL-3.0 — ADR-0009/spec 035). -->
+  <!-- Metadados comuns de pacote NuGet. -->
   <PropertyGroup>
     <Authors>Guará</Authors>
     <Company>Guará</Company>
     <Product>Guará</Product>
     <Copyright>Copyright © Guará</Copyright>
-    <PackageLicenseExpression>LGPL-3.0-only</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/guara/guara</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/guara/guara</RepositoryUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/net0well/guara</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/net0well/guara</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>jobs;scheduler;background-jobs;hangfire;cron;queue;dotnet</PackageTags>
   </PropertyGroup>
+
+  <!--
+    Assinatura de nome forte em todos os assemblies. Não é mecanismo de segurança (a
+    chave viaja no repositório e qualquer um consegue reassinar): é identidade de
+    binding. Entra agora porque o token da chave faz parte da identidade da assembly —
+    adicionar ou remover depois de publicado quebra quem já referencia.
+
+    A mesma chave em todos os projetos é o que faz o InternalsVisibleTo continuar
+    valendo, já que assembly assinada só enxerga amiga assinada com a mesma chave.
+  -->
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)guara.snk</AssemblyOriginatorKeyFile>
+    <!-- Chave pública de guara.snk. O compilador exige que todo InternalsVisibleTo de
+         uma assembly assinada nomeie a chave da amiga; sem isto, CS1726. -->
+    <GuaraPublicKey>0024000004800000140100000602000000240000525341310008000001000100d5a07844fcdd0bc819994248a349c3c27a1aa1c5c839d8249e62c3b499f7cc4374f9486a110dc1f1fa94044a0f416ecf84db9c7eba6dfebda8a4a81ffb065d8c01bc138b3498b72ca032403ea0b7fc42a65b8b895a5dfe07a33ba76331e67c8f07d823c2cf12f26fc4255fc42a53fef3ebcf8b577f5385ab1c4006a57c92731435bd247bb14c28362776270addb48e662ccc3b625f795677ad23f1b9b91c76fa2d8754498a604228bedb16db1b501975fb7d2abd2e32eaf34d54ee87a22af1e8747e390423f48c5f211711ce17983cb77de0afb3f1444647e20afdee54160088dca8aaeee89770a8e514fde0f4997231a2b88d5b953b90699ee62c2977cec1e3</GuaraPublicKey>
+  </PropertyGroup>
+
+  <!-- Todo InternalsVisibleTo herda a chave: os projetos amigos são todos do produto,
+       assinados com a mesma chave, então declará-la em cada csproj só duplicaria. -->
+  <ItemDefinitionGroup>
+    <InternalsVisibleTo Key="$(GuaraPublicKey)" />
+  </ItemDefinitionGroup>
 
   <!-- Projetos de código (não testes): geram doc XML e são empacotáveis. -->
   <PropertyGroup Condition="!$(MSBuildProjectName.EndsWith('.Tests'))">

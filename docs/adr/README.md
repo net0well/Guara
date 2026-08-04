@@ -34,7 +34,8 @@ Cada ADR usa o template mínimo:
 | [0008](0008-native-aot-e-trimming.md) | Compatibilidade com Native AOT e Trimming | Aceito |
 | [0009](0009-politica-de-dependencias.md) | Política de dependências (núcleo sem terceiros; drivers isolados; cron próprio) | Aceito |
 | [0010](0010-api-do-usuario-em-portugues.md) | API voltada ao usuário em português (métodos do `IGuaraClient`) | Aceito |
+| [0011](0011-licenca-apache-e-assinatura-de-assembly.md) | Core sob Apache-2.0 e assemblies com nome forte | Aceito |
 
 ## Próximo número
 
-O próximo ADR é **0011**. Numeração sequencial, sem lacunas.
+O próximo ADR é **0012**. Numeração sequencial, sem lacunas.

@@ -3,7 +3,7 @@
 **Status:** Approved (2026-07-16)
 **Date:** 2026-07-16
 **Componente:** `Guara.Pro.Batches`
-**Licença:** **Comercial ("Pro")** — não LGPL. Ver [Spec 035](035-governanca-licenciamento-docs.md).
+**Licença:** **Comercial ("Pro")** — não Apache-2.0. Ver [Spec 035](035-governanca-licenciamento-docs.md).
 **Depende de:** [Spec 001](001-guara-abstractions.md), [Spec 004](004-guara-storage.md), [Spec 008](008-guara-executor.md), [Spec 030](030-continuations.md)
 
 ## Problem
@@ -21,7 +21,7 @@ Cenários avançados agrupam muitos jobs e reagem à **conclusão do grupo como 
 
 ### Out
 
-- Faz parte do tier **Pro** — não entra nos pacotes LGPL.
+- Faz parte do tier **Pro** — não entra nos pacotes Apache-2.0.
 - Orquestração de workflow complexa (DAG completo) → futuro.
 
 ## Domain Model

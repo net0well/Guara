@@ -15,7 +15,8 @@ Alvo é o **produto completo 1.0** (não um MVP) — construído passo a passo. 
 | Decisão | Valor |
 |---|---|
 | **Target Frameworks** | Multi-target `net8.0` (LTS) + `net10.0`. AOT/trimming plenos no net10; funcional no net8. |
-| **Licença** | **LGPL-3.0 (core aberto) + comercial ("Pro")** — modelo Hangfire. |
+| **Licença** | **Apache-2.0 (core aberto) + comercial ("Pro")**. Revisada em 2026-08-04: LGPL-3.0 conflitava com publicação Native AOT e barrava adoção corporativa — ver [ADR-0011](../docs/adr/0011-licenca-apache-e-assinatura-de-assembly.md). |
+| **Assinatura** | Todos os assemblies com **nome forte** (`guara.snk`), decidido antes do primeiro pacote porque o token entra na identidade. |
 | **Recursos 1.0** | Continuations (OSS) · Batches (**Pro/comercial**) · Dashboard avançado (OSS). Multi-tenancy **fora do 1.0**. |
 | **Split OSS × Pro** | OSS: todo o runtime, providers, dashboard (tempo real + avançado), continuations, cluster, CLI, analyzers, source gen. **Pro (comercial):** `Guara.Pro.Batches` (e futuros extras). *Proposta — me avise se quiser mover a fronteira.* |
 | **Logs** | Estruturados via `ILogger` (sink-agnóstico, ADR-0009); `Guara.Host` usa o JSON console formatter **nativo** do .NET (sem Serilog); sinks/painéis de terceiros são opção do usuário. |

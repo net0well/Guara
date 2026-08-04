@@ -1,0 +1,46 @@
+name: Propor uma funcionalidade
+description: Sugerir algo novo ou uma mudança de comportamento.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Funcionalidade que atravessa componentes vira uma **spec** aprovada antes do código.
+        Esta issue é o começo dessa conversa, não o fim dela.
+
+  - type: textarea
+    id: problema
+    attributes:
+      label: Que problema isso resolve
+      description: Descreva a situação real, não a solução. Ajuda a chegar num desenho melhor.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposta
+    attributes:
+      label: Como você imagina a API
+      description: Se tiver uma ideia da chamada, escreva. Métodos voltados ao usuário são em português.
+      render: csharp
+
+  - type: dropdown
+    id: componente
+    attributes:
+      label: Componente afetado
+      options:
+        - Abstractions / Core
+        - Scheduler (cron, recorrentes, calendários)
+        - Dispatcher / Worker / Executor
+        - Storage (contratos ou providers)
+        - Dashboard (API ou SPA)
+        - Hosting / Server
+        - Diagnostics / OpenTelemetry
+        - Outro / não sei
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternativas
+    attributes:
+      label: O que você já tentou
+      description: Contornos existentes e por que não bastam.
