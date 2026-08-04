@@ -21,6 +21,7 @@ import { ThemeService } from './core/theme.service';
         <a routerLink="/" routerLinkActive="ativo" [routerLinkActiveOptions]="{ exact: true }">{{ i18n.t('overview') }}</a>
         <a routerLink="/jobs" routerLinkActive="ativo">{{ i18n.t('jobs') }}</a>
         <a routerLink="/recurring" routerLinkActive="ativo">{{ i18n.t('recurring') }}</a>
+        <a routerLink="/calendars" routerLinkActive="ativo">{{ i18n.t('calendars') }}</a>
         <a routerLink="/servers" routerLinkActive="ativo">{{ i18n.t('servers') }}</a>
       </nav>
 

@@ -20,6 +20,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/recurring/recurring.component').then((m) => m.RecurringComponent),
   },
   {
+    path: 'calendars',
+    loadComponent: () => import('./features/calendars/calendars.component').then((m) => m.CalendarsComponent),
+  },
+  {
     path: 'servers',
     loadComponent: () => import('./features/servers/servers.component').then((m) => m.ServersComponent),
   },
