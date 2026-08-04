@@ -18,7 +18,6 @@ internal sealed class GuaraServer : IGuaraServer
 {
     private const string MaintenanceLockKey = "guara:maintenance";
     private const string RecurringLockKey = "guara:recurring";
-    private const string RecurringMetadataKey = JobMetadataKeys.RecurringId;
 
     private readonly IStorage _storage;
     private readonly IDispatcher _dispatcher;
@@ -240,20 +239,7 @@ internal sealed class GuaraServer : IGuaraServer
 
         // N disparos perdidos viram UMA compensação: enfileira agora e reagenda a
         // partir de agora — nunca backfill, nunca pular sem executar.
-        var metadata = new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            [RecurringMetadataKey] = recurring.Id,
-        };
-        if (recurring.Descriptor.Metadata is { } original)
-        {
-            foreach (var pair in original)
-            {
-                metadata.TryAdd(pair.Key, pair.Value);
-            }
-        }
-
-        var occurrence = recurring.Descriptor with { Queue = recurring.Queue, Metadata = metadata };
-        var jobId = await _client.EnfileirarAsync(occurrence, ct);
+        var jobId = await _client.EnfileirarAsync(recurring.ToOccurrence(), ct);
 
         var next = _calculator.GetNextOccurrence(recurring, calendar, now);
         await _storage.Recurring.UpsertAsync(recurring with

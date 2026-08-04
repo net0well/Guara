@@ -199,6 +199,91 @@ public sealed class GuaraClient(
     }
 
     /// <inheritdoc />
+    public async ValueTask<bool> PausarRecorrenteAsync(string id, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+
+        if (await storage.Recurring.GetAsync(id, ct) is not { } record)
+        {
+            return false;
+        }
+
+        if (!record.Paused)
+        {
+            // NextRunAt fica como está: o painel continua mostrando quando teria rodado, e
+            // a busca de vencidos já ignora pausados, então um instante no passado é inócuo.
+            await storage.Recurring.UpsertAsync(record with { Paused = true }, ct);
+            logger.LogInformation("Recorrente {RecurringId} pausado", id);
+        }
+
+        return true;
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<bool> RetomarRecorrenteAsync(string id, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+
+        if (await storage.Recurring.GetAsync(id, ct) is not { } record)
+        {
+            return false;
+        }
+
+        if (!record.Paused)
+        {
+            return true;
+        }
+
+        // O próximo disparo é recalculado a partir de agora, e não retomado de onde parou:
+        // um NextRunAt vencido durante a pausa faria a definição disparar assim que
+        // voltasse, recuperando um período que deliberadamente ficou de fora.
+        var now = time.GetUtcNow();
+        var calendar = record.CalendarName is null
+            ? null
+            : await storage.Recurring.GetCalendarAsync(record.CalendarName, ct);
+        var resumed = record with { Paused = false };
+        resumed = resumed with { NextRunAt = calculator.GetNextOccurrence(resumed, calendar, now) };
+
+        await storage.Recurring.UpsertAsync(resumed, ct);
+
+        if (resumed.NextRunAt is null)
+        {
+            logger.LogWarning(
+                "Recorrente {RecurringId} retomado sem próxima ocorrência (vigência encerrada ou calendário exclui tudo)",
+                id);
+        }
+        else
+        {
+            logger.LogInformation(
+                "Recorrente {RecurringId} retomado; próximo disparo em {NextRunAt}", id, resumed.NextRunAt);
+        }
+
+        return true;
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<JobId?> DispararRecorrenteAgoraAsync(string id, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+
+        if (await storage.Recurring.GetAsync(id, ct) is not { } record)
+        {
+            return null;
+        }
+
+        var jobId = await EnfileirarAsync(record.ToOccurrence(), ct);
+
+        // A agenda não se move: só o histórico da última execução, que é a base da
+        // checagem de sobreposição — um disparo manual conta como ocorrência anterior.
+        await storage.Recurring.UpsertAsync(
+            record with { LastRunAt = time.GetUtcNow(), LastRunJobId = jobId }, ct);
+
+        logger.LogInformation(
+            "Recorrente {RecurringId} disparado manualmente como o job {JobId}", id, jobId.Value);
+        return jobId;
+    }
+
+    /// <inheritdoc />
     public async ValueTask AdicionarOuAtualizarCalendarioAsync(
         string nome, Action<ICalendarBuilder> configurar, CancellationToken ct = default)
     {
