@@ -18,31 +18,34 @@
 
 ---
 
-> **Status do projeto.** O Guará está em desenvolvimento ativo e ainda não foi publicado no NuGet. A API mostrada abaixo reflete as especificações aprovadas (ver [`spec/`](spec/)) e pode mudar até a primeira versão estável. Dê star e acompanhe o repositório para seguir o progresso.
+> **Status do projeto.** O Guará está em desenvolvimento ativo e **ainda não foi publicado no NuGet**. O runtime, o storage PostgreSQL e o painel completo já estão implementados e cobertos por testes; o que ainda não existe está marcado como _planejado_ ao longo deste documento e no [roadmap](#roadmap). Dê star e acompanhe o repositório para seguir o progresso.
 
-## Instalação (pacotes NuGet)
+## Pacotes
 
-Instale só o que usar — o núcleo roda sozinho e todo o resto é opcional (nomes finais; publicação pendente):
+Instale só o que usar — o núcleo roda sozinho e todo o resto é opcional. **Nada foi publicado ainda**: a coluna de estado diz o que já existe no repositório e sairá na primeira publicação.
 
-```bash
-dotnet add package Guara                        # núcleo: cliente, servidor, hosting
-dotnet add package Guara.Storage.PostgreSql     # provider de storage (escolha um)
-dotnet add package Guara.Dashboard              # opcional: painel web em tempo real
-```
-
-| Pacote | Para quê |
-|---|---|
-| `Guara` | Núcleo: `AddGuara()`, `IGuaraClient`, servidor (workers/scheduler), pipeline |
-| `Guara.Storage.PostgreSql` | Storage PostgreSQL — recomendado para produção |
-| `Guara.Storage.SqlServer` | Storage SQL Server |
-| `Guara.Storage.Redis` | Storage Redis (alta vazão) |
-| `Guara.Storage.Mongo` | Storage MongoDB |
-| `Guara.Storage.Memory` | Storage em memória — dev, testes e demos |
-| `Guara.Dashboard` | Painel web opcional (API + SPA Angular embutida, tempo real) |
-| `Guara.OpenTelemetry` | Exporters OpenTelemetry opcionais |
-| `Guara.Cli` | Ferramenta de linha de comando (`dotnet tool`): migrations, jobs, diagnóstico |
-| `Guara.Abstractions` / `Guara.Storage` | Contratos — para autores de providers e extensões |
-| `Guara.Pro.Batches` | Comercial: grupos de jobs com callback de conclusão |
+| Pacote | Para quê | Estado |
+|---|---|---|
+| `Guara.Hosting` | Ponto de entrada: `AddGuara()` e o builder fluente | ✅ implementado |
+| `Guara.Server` | Lifecycle: workers, scheduler, heartbeat, manutenção | ✅ implementado |
+| `Guara.Scheduler` | Cron próprio, recorrentes, calendários, `IGuaraClient` | ✅ implementado |
+| `Guara.Storage.PostgreSql` | Storage PostgreSQL — recomendado para produção | ✅ implementado |
+| `Guara.Storage.Memory` | Storage em memória — dev, testes e demos | ✅ implementado |
+| `Guara.Dashboard` | Painel web (API + SPA Angular embutida, tempo real) | ✅ implementado |
+| `Guara.Authorization` | Permissões por ação do painel | ✅ implementado |
+| `Guara.Diagnostics` | Logs estruturados, métricas e traces | ✅ implementado |
+| `Guara.SourceGenerators` | Registro e invocação de jobs sem reflection | ✅ implementado |
+| `Guara.Abstractions` / `Guara.Storage` | Contratos — para autores de providers e extensões | ✅ implementado |
+| `Guara.Storage.SqlServer` | Storage SQL Server | 🕓 planejado |
+| `Guara.Storage.MySql` | Storage MySQL 8+ | 🕓 planejado |
+| `Guara.Storage.Mongo` | Storage MongoDB | 🕓 planejado |
+| `Guara.Storage.Redis` | Storage Redis | 🕓 planejado |
+| `Guara.Authentication` | Esquemas de autenticação (JWT, OIDC, cookie) | 🕓 planejado |
+| `Guara.Cluster` / `Guara.Distributed` | Eleição de líder, failover, coordenação distribuída | 🕓 planejado |
+| `Guara.OpenTelemetry` | Exporters OpenTelemetry | 🕓 planejado |
+| `Guara.Cli` | Ferramenta de linha de comando (`dotnet tool`) | 🕓 planejado |
+| `Guara.Analyzers` | Analisadores Roslyn que enforçam as regras de dependência | 🕓 planejado |
+| `Guara.Pro.Batches` | Comercial: grupos de jobs com callback de conclusão | 🕓 planejado |
 
 ## O que é o Guará
 
@@ -72,15 +75,17 @@ O nome vem do **lobo-guará**, animal veloz e resiliente nativo do Brasil. Made 
 | Retentativas automáticas | Back-off exponencial, configurável por job, com opt-out para trabalho não idempotente |
 | Atributos declarativos | `[GuaraFila]`, `[GuaraRetentativas]`, `[GuaraDesabilitarConcorrencia]`, `[GuaraTempoLimite]`... — comportamento declarado no próprio job |
 | Dashboard em tempo real | SPA Angular alimentada por Server-Sent Events — mudanças de estado aparecem em cerca de um segundo. **Opcional**: pacote separado |
+| Painel operável | Busca por texto/tipo/fila/estado/período, gráficos ao vivo de vazão e latência (p50/p95), gestão de recorrentes (pausar, retomar, disparar, editar agenda), edição de calendários em visão mensal e ações em massa |
 | Autenticação do dashboard | Regras fluentes (logados, papéis, claims, IPs internos, combináveis), regra customizada com `HttpContext`, login fixo e **página de login própria** com a identidade do Guará |
-| Processamento distribuído | Múltiplos nós, eleição de líder, failover, locks distribuídos — coordenados pelo próprio storage |
-| Storage plugável | PostgreSQL, SQL Server, Redis, MongoDB, In-Memory — troque com uma linha |
-| Observabilidade | Logs estruturados, métricas (`System.Diagnostics.Metrics`), traces (`ActivitySource`), health checks, exporters OpenTelemetry opcionais |
-| Seguro por padrão | O dashboard nega acesso anônimo a menos que configurado explicitamente |
+| Permissões granulares | Cada ação do painel exige sua concessão (`guara:view`, `guara:retry`, `guara:trigger`, `guara:delete`, `guara:calendars`, `guara:view-payload`), sobre as policies do ASP.NET Core |
+| Storage plugável | Contratos comuns com kit de conformidade que todo provider herda. Hoje: PostgreSQL e In-Memory — troque com uma linha |
+| Observabilidade | Logs estruturados, métricas (`System.Diagnostics.Metrics`), traces (`ActivitySource`) |
+| Seguro por padrão | O dashboard nega acesso anônimo a menos que configurado explicitamente; o que não foi concedido é negado |
+| _Planejado_ | Processamento distribuído (eleição de líder, failover), demais providers de storage, exporters OpenTelemetry, CLI e analisadores Roslyn |
 
-## Começando (API planejada)
+## Começando
 
-Com os pacotes instalados (ver [Instalação](#instalação-pacotes-nuget)), configure tudo com uma API fluente, no estilo do ASP.NET Core:
+Com os pacotes instalados (ver [Pacotes](#pacotes)), configure tudo com uma API fluente, no estilo do ASP.NET Core:
 
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
@@ -249,13 +254,14 @@ Cada etapa é um `IJobMiddleware`; o slot `Custom` é o ponto de extensão do us
 
 O `Guara.Storage` define os contratos; cada provider os implementa usando as melhores primitivas do seu backend. Todos os providers precisam passar o mesmo **kit de testes de conformidade** (aquisição atômica sob concorrência, lease/visibility, idempotência, locks com TTL).
 
-| Provider | Dequeue atômico | Lock distribuído | Push em tempo real |
+| Provider | Dequeue atômico | Lock distribuído | Estado |
 |---|---|---|---|
-| PostgreSQL | `FOR UPDATE SKIP LOCKED` | Advisory locks | `LISTEN/NOTIFY` |
-| SQL Server | `READPAST + UPDLOCK` | `sp_getapplock` | Polling |
-| Redis | Scripts Lua | `SET NX PX` + TTL | Keyspace notifications |
-| MongoDB | `findAndModify` | Coleção com TTL | Change streams |
-| In-Memory | Estruturas lock-free | Local ao processo | Imediato |
+| PostgreSQL | `FOR UPDATE SKIP LOCKED` | Advisory locks | ✅ implementado, conformidade verde |
+| In-Memory | Exclusão mútua sobre o dicionário | Local ao processo | ✅ implementado, conformidade verde |
+| SQL Server | `READPAST + UPDLOCK` | `sp_getapplock` | 🕓 planejado |
+| MySQL 8+ | `FOR UPDATE SKIP LOCKED` | `GET_LOCK` | 🕓 planejado |
+| MongoDB | `findAndModify` | Coleção com TTL | 🕓 planejado |
+| Redis | Scripts Lua | `SET NX PX` + TTL | 🕓 planejado (escopo em revisão) |
 
 Trocar de provider é uma mudança de uma linha:
 
@@ -310,7 +316,23 @@ public sealed class SomenteHorarioComercial : IDashboardAccessRule
 // registro: .UseGuaraAuthentication(auth => auth.ComRegra<SomenteHorarioComercial>())
 ```
 
-Dentro do painel, cada ação ainda é protegida por permissões granulares (`guara:view`, `guara:trigger`, `guara:retry`, `guara:delete`, `guara:view-payload`) integradas às policies do ASP.NET Core (cookie, JWT, OIDC).
+### Permissões dentro do painel
+
+As regras acima decidem **quem entra**. O que cada um pode **fazer** lá dentro é do `Guara.Authorization`, e é negado por omissão:
+
+```csharp
+builder.Services
+    .AddGuara()
+    .AddGuaraAuthorization(auth => auth
+        .Require(GuaraActions.Delete, "SomenteSustentacao")   // policy do ASP.NET Core
+        .AllowAll("AdministradorDoPainel"));                  // ou tudo de uma vez
+```
+
+Ações reconhecidas: `guara:view`, `guara:view-payload`, `guara:retry`, `guara:trigger`, `guara:delete` e `guara:calendars`. Sem `AddGuaraAuthorization()`, o painel segue tudo-ou-nada — quem passa pelas regras de acesso opera tudo. Com ela, cada rota exige sua concessão, vinda de uma policy do ASP.NET Core, de um papel de administrador ou de uma claim `guara:permission`.
+
+### Operando pelo painel
+
+Além de observar, o painel **opera**: busca por texto, tipo, fila, estado e período; gráficos ao vivo de vazão e de latência p50/p95; pausar, retomar, disparar e editar a agenda de recorrentes; criar e editar calendários numa visão mensal clicável; e retentar ou excluir jobs em massa, com o desfecho relatado item a item.
 
 ## Configuração
 
@@ -333,23 +355,36 @@ Toda a configuração segue o padrão Options do .NET, sob a seção `Guara` (va
 - **Logs**: estruturados, via `Microsoft.Extensions.Logging` — propriedades como `JobId`, `Queue`, `JobType`, `Attempt`, `DurationMs` em todo registro. O host de exemplo escreve JSON no stdout com o formatter nativo do console; use o sink que preferir.
 - **Métricas**: `System.Diagnostics.Metrics` (`guara.jobs.processed`, `guara.jobs.failed`, `guara.job.duration`, `guara.queue.length`).
 - **Traces**: um span de `Activity` por execução de job (`ActivitySource("Guara")`).
-- **Health checks**: alcance do storage, liveness do servidor, limites de fila.
-- **OpenTelemetry**: o pacote opcional `Guara.OpenTelemetry` registra as fontes do Guará no seu pipeline OTel existente. O núcleo nunca força um exporter.
+- **Séries temporais**: a API do painel agrega vazão, sucesso/falha e latência p50/p95 por balde, em janelas de 1h, 24h e 7 dias.
+- **OpenTelemetry** _(planejado)_: um pacote opcional registrará as fontes do Guará no seu pipeline OTel. O núcleo nunca força um exporter — hoje as fontes já existem e podem ser consumidas direto.
 
 ## Roadmap
 
 | Marco | Status |
 |---|---|
-| Documentação de arquitetura e ADRs | Concluído |
-| Especificação completa (38 specs, uma por componente/feature) | Concluído |
-| Fundação: `Guara.Abstractions` + `Guara.Core` (pipeline, máquina de estados, eventos) | Concluído |
-| Serialização (`Guara.Serialization` — source-gen, allowlist) | Concluído |
-| Contratos de storage + provider In-Memory + kit de conformidade | Concluído |
-| Motores: Scheduler (cron próprio), Dispatcher, Worker, Executor | Em andamento |
-| Hosting, Server, provider PostgreSQL | Planejado |
-| Dashboard (API + SPA Angular, tempo real) | Planejado |
-| Demais providers, cluster, CLI, analyzers, atributos de job | Planejado |
-| Primeira publicação no NuGet | Planejado |
+| Documentação de arquitetura e ADRs | ✅ Concluído |
+| Especificação completa (40 specs, uma por componente/feature) | ✅ Concluído |
+| Fundação: `Guara.Abstractions` + `Guara.Core` (pipeline, máquina de estados, eventos) | ✅ Concluído |
+| Serialização (`Guara.Serialization` — source-gen, allowlist) | ✅ Concluído |
+| Contratos de storage + provider In-Memory + kit de conformidade | ✅ Concluído |
+| Motores: Scheduler (cron próprio), Dispatcher, Worker, Executor | ✅ Concluído |
+| Hosting, Server e provider PostgreSQL | ✅ Concluído |
+| Continuations, atributos de job e source generators | ✅ Concluído |
+| Agendamento fluente: builder, `GuaraDatas`, calendários, fusos nativos | ✅ Concluído |
+| Dashboard: API v1 com SSE + SPA Angular (visão geral, jobs, recorrentes, servidores) | ✅ Concluído |
+| Autenticação do painel: regras fluentes, login fixo, página de login | ✅ Concluído |
+| Painel operável: busca, gráficos ao vivo, calendários, ações em massa | ✅ Concluído |
+| `Guara.Authorization`: permissões por ação, negadas por omissão | ✅ Concluído |
+| Licença Apache-2.0, assinatura de assembly e governança do repositório | ✅ Concluído |
+| Empacotamento: versão por tag, SourceLink, símbolos, metadados de pacote | ✅ Concluído |
+| Congelamento da API pública (`PublicApiAnalyzers`) | 🔨 Em andamento |
+| CI/CD: build multi-TFM, conformance por container, publicação por tag | 🔨 Em andamento |
+| **Primeira publicação no NuGet (`0.1.0-preview`)** | 🕓 Próximo |
+| Providers restantes: SQL Server → MySQL → MongoDB → Redis | 🕓 Planejado |
+| `Guara.Analyzers`, `Guara.Extensions`, `Guara.Authentication` | 🕓 Planejado |
+| Cluster e coordenação distribuída, OpenTelemetry, CLI, benchmarks | 🕓 Planejado |
+| Documentação de usuário e guia de migração do Hangfire | 🕓 Planejado |
+| **1.0** | 🕓 Planejado |
 
 ## Semântica e garantias
 
