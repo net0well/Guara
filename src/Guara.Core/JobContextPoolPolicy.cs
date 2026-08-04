@@ -6,7 +6,7 @@ namespace Guara.Core;
 /// Política de pool para <see cref="JobContext"/>: reaproveita instâncias entre jobs,
 /// chamando <see cref="JobContext.Reset"/> na devolução (alocação amortizada ~zero).
 /// </summary>
-public sealed class JobContextPoolPolicy : IPooledObjectPolicy<JobContext>
+internal sealed class JobContextPoolPolicy : IPooledObjectPolicy<JobContext>
 {
     /// <inheritdoc />
     public JobContext Create() => new();

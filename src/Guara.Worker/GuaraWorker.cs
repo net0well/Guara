@@ -12,7 +12,7 @@ namespace Guara.Worker;
 /// execução (posse perdida → aborta local, evitando execução dupla) e faz drain
 /// gracioso no shutdown.
 /// </summary>
-public sealed class GuaraWorker : IWorker, IEventHandler<WorkerRequested>
+internal sealed class GuaraWorker : IWorker, IEventHandler<WorkerRequested>
 {
     private readonly IStorage _storage;
     private readonly IExecutor _executor;

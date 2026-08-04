@@ -10,7 +10,7 @@ namespace Guara.Dashboard.Api;
 /// o estado verdadeiro está sempre na API de consulta). Os eventos carregam um número
 /// de sequência para reconexão via <c>Last-Event-ID</c>.
 /// </summary>
-public sealed class DashboardEventStream :
+internal sealed class DashboardEventStream :
     IEventHandler<JobCreated>,
     IEventHandler<JobScheduled>,
     IEventHandler<JobCompleted>,

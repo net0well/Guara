@@ -11,7 +11,7 @@ namespace Guara.Dispatcher;
 /// publicar aguarda vaga, então o dispatcher nunca busca além da capacidade.
 /// Falha de storage não derruba o laço — back-off exponencial e retomada.
 /// </summary>
-public sealed class GuaraDispatcher(
+internal sealed class GuaraDispatcher(
     IStorage storage,
     IEventPublisher events,
     DispatcherOptions options,
