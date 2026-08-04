@@ -26,6 +26,8 @@ jobs:
 
     permissions:
       contents: write
+      # Permite ao job pedir o token OIDC que o NuGet.org troca por uma chave temporária.
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
@@ -68,12 +70,25 @@ jobs:
             exit 1
           fi
 
+      # Trusted Publishing: o GitHub emite um token OIDC assinado, o NuGet.org confere
+      # contra a policy (dono, repositório, arquivo de workflow e environment) e devolve
+      # uma chave válida por 1 hora. Não há chave de longa duração guardada em lugar
+      # nenhum — nada a rotacionar, nada a vazar.
+      #
+      # O login fica imediatamente antes do push de propósito: a chave expira em 1 hora,
+      # e pedi-la antes do build e dos testes arriscaria vencer no meio do caminho.
+      - name: Autentica no NuGet.org
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: net0well
+
       # skip-duplicate deixa a etapa idempotente: reexecutar o job por causa de uma
       # falha depois do push não tenta republicar o que já subiu.
       - name: Publica no NuGet.org
         run: >
           dotnet nuget push "artefatos/*.nupkg"
-          --api-key "${{ secrets.NUGET_API_KEY }}"
+          --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}"
           --source https://api.nuget.org/v3/index.json
           --skip-duplicate
 

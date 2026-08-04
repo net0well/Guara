@@ -121,9 +121,16 @@ Três coisas que costumam surpreender:
 Publicar é sempre por **tag**: `v0.1.0-preview.1` produz pacotes `0.1.0-preview.1`, via
 MinVer. Ninguém edita número de versão em arquivo.
 
-Para o release funcionar, o repositório precisa de um secret `NUGET_API_KEY` e de um
-environment chamado `nuget` (`Settings > Environments`) — protegê-lo com aprovação manual é
-o que separa uma tag de uma publicação irreversível no NuGet.org.
+A publicação usa **Trusted Publishing**: o GitHub emite um token OIDC assinado, o NuGet.org
+confere contra uma policy registrada e devolve uma chave válida por 1 hora. **Não há chave de
+API guardada no repositório** — nada a rotacionar, nada a vazar.
+
+Para funcionar, dois lados precisam bater:
+
+- **No nuget.org** (`Trusted Publishing`): dono `net0well`, repositório `Guara`, arquivo de
+  workflow `release.yml` (só o nome, sem o caminho) e environment `nuget`.
+- **No GitHub** (`Settings > Environments`): um environment chamado `nuget`, com aprovação
+  manual obrigatória. É o que separa uma tag de uma publicação irreversível no NuGet.org.
 
 ## Comentários de código
 
