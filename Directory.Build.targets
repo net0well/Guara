@@ -31,6 +31,25 @@
   </ItemGroup>
 
   <!--
+    Congelamento da superfície pública. O analisador compara o código com PublicAPI.*.txt e
+    reclama nos dois sentidos: membro público fora do arquivo, e membro no arquivo que sumiu
+    do código. Com warning tratado como erro, mudar API pública deixa de passar despercebido
+    no meio de um diff de implementação — vira linha adicionada ou removida num arquivo cujo
+    único propósito é registrar isso.
+
+    Shipped.txt guarda o que já foi publicado e, depois da primeira release, só cresce;
+    Unshipped.txt acumula o que ainda não saiu.
+  -->
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
+  </ItemGroup>
+
+  <!--
     README e ícone dentro de cada .nupkg. O NuGet exige que o arquivo esteja empacotado, não
     referenciado por caminho: um pacote que aponta para fora de si mesmo mostra a página vazia
     na galeria.

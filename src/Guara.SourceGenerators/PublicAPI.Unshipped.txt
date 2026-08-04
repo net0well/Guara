@@ -1,0 +1,150 @@
+Guara.SourceGenerators.ArgKind
+Guara.SourceGenerators.ArgKind.Boolean = 2 -> Guara.SourceGenerators.ArgKind
+Guara.SourceGenerators.ArgKind.Char = 10 -> Guara.SourceGenerators.ArgKind
+Guara.SourceGenerators.ArgKind.DateOnly = 8 -> Guara.SourceGenerators.ArgKind
+Guara.SourceGenerators.ArgKind.DateTime = 5 -> Guara.SourceGenerators.ArgKind
+Guara.SourceGenerators.ArgKind.DateTimeOffset = 6 -> Guara.SourceGenerators.ArgKind
+Guara.SourceGenerators.ArgKind.Enum = 12 -> Guara.SourceGenerators.ArgKind
+Guara.SourceGenerators.ArgKind.Guid = 4 -> Guara.SourceGenerators.ArgKind
+Guara.SourceGenerators.ArgKind.Number = 1 -> Guara.SourceGenerators.ArgKind
+Guara.SourceGenerators.ArgKind.String = 3 -> Guara.SourceGenerators.ArgKind
+Guara.SourceGenerators.ArgKind.TimeOnly = 9 -> Guara.SourceGenerators.ArgKind
+Guara.SourceGenerators.ArgKind.TimeSpan = 7 -> Guara.SourceGenerators.ArgKind
+Guara.SourceGenerators.ArgKind.Unsupported = 0 -> Guara.SourceGenerators.ArgKind
+Guara.SourceGenerators.ArgKind.Uri = 11 -> Guara.SourceGenerators.ArgKind
+Guara.SourceGenerators.ArgTypeMap
+Guara.SourceGenerators.DiagnosticModel
+Guara.SourceGenerators.DiagnosticModel.<Clone>$() -> Guara.SourceGenerators.DiagnosticModel!
+Guara.SourceGenerators.DiagnosticModel.Deconstruct(out string! Id, out Guara.SourceGenerators.LocationModel? Location, out Guara.SourceGenerators.EquatableArray<string!> MessageArgs) -> void
+Guara.SourceGenerators.DiagnosticModel.DiagnosticModel(string! Id, Guara.SourceGenerators.LocationModel? Location, Guara.SourceGenerators.EquatableArray<string!> MessageArgs) -> void
+Guara.SourceGenerators.DiagnosticModel.Equals(Guara.SourceGenerators.DiagnosticModel? other) -> bool
+Guara.SourceGenerators.DiagnosticModel.Id.get -> string!
+Guara.SourceGenerators.DiagnosticModel.Id.init -> void
+Guara.SourceGenerators.DiagnosticModel.Location.get -> Guara.SourceGenerators.LocationModel?
+Guara.SourceGenerators.DiagnosticModel.Location.init -> void
+Guara.SourceGenerators.DiagnosticModel.MessageArgs.get -> Guara.SourceGenerators.EquatableArray<string!>
+Guara.SourceGenerators.DiagnosticModel.MessageArgs.init -> void
+Guara.SourceGenerators.EquatableArray<T>
+Guara.SourceGenerators.EquatableArray<T>.Count.get -> int
+Guara.SourceGenerators.EquatableArray<T>.Equals(Guara.SourceGenerators.EquatableArray<T> other) -> bool
+Guara.SourceGenerators.EquatableArray<T>.EquatableArray() -> void
+Guara.SourceGenerators.EquatableArray<T>.EquatableArray(System.Collections.Immutable.ImmutableArray<T> items) -> void
+Guara.SourceGenerators.EquatableArray<T>.GetEnumerator() -> System.Collections.Generic.IEnumerator<T>!
+Guara.SourceGenerators.EquatableArray<T>.Items.get -> System.Collections.Immutable.ImmutableArray<T>
+Guara.SourceGenerators.GuaraJobGenerator
+Guara.SourceGenerators.GuaraJobGenerator.GuaraJobGenerator() -> void
+Guara.SourceGenerators.GuaraJobGenerator.Initialize(Microsoft.CodeAnalysis.IncrementalGeneratorInitializationContext context) -> void
+Guara.SourceGenerators.JobDiagnostics
+Guara.SourceGenerators.JobEmitter
+Guara.SourceGenerators.JobModel
+Guara.SourceGenerators.JobModel.<Clone>$() -> Guara.SourceGenerators.JobModel!
+Guara.SourceGenerators.JobModel.ConcurrencyKeyTemplate.get -> string?
+Guara.SourceGenerators.JobModel.ConcurrencyKeyTemplate.init -> void
+Guara.SourceGenerators.JobModel.ConcurrencyWaitSeconds.get -> int
+Guara.SourceGenerators.JobModel.ConcurrencyWaitSeconds.init -> void
+Guara.SourceGenerators.JobModel.Diagnostics.get -> Guara.SourceGenerators.EquatableArray<Guara.SourceGenerators.DiagnosticModel!>
+Guara.SourceGenerators.JobModel.Diagnostics.init -> void
+Guara.SourceGenerators.JobModel.DisableConcurrency.get -> bool
+Guara.SourceGenerators.JobModel.DisableConcurrency.init -> void
+Guara.SourceGenerators.JobModel.Equals(Guara.SourceGenerators.JobModel? other) -> bool
+Guara.SourceGenerators.JobModel.IsStatic.get -> bool
+Guara.SourceGenerators.JobModel.IsStatic.init -> void
+Guara.SourceGenerators.JobModel.JobModel() -> void
+Guara.SourceGenerators.JobModel.Location.get -> Guara.SourceGenerators.LocationModel?
+Guara.SourceGenerators.JobModel.Location.init -> void
+Guara.SourceGenerators.JobModel.MaxAttempts.get -> int?
+Guara.SourceGenerators.JobModel.MaxAttempts.init -> void
+Guara.SourceGenerators.JobModel.MethodName.get -> string!
+Guara.SourceGenerators.JobModel.MethodName.init -> void
+Guara.SourceGenerators.JobModel.Parameters.get -> Guara.SourceGenerators.EquatableArray<Guara.SourceGenerators.ParameterModel!>
+Guara.SourceGenerators.JobModel.Parameters.init -> void
+Guara.SourceGenerators.JobModel.Queue.get -> string?
+Guara.SourceGenerators.JobModel.Queue.init -> void
+Guara.SourceGenerators.JobModel.ReturnKind.get -> Guara.SourceGenerators.ReturnKind
+Guara.SourceGenerators.JobModel.ReturnKind.init -> void
+Guara.SourceGenerators.JobModel.SafeName.get -> string!
+Guara.SourceGenerators.JobModel.SerializableParameters.get -> System.Collections.Generic.IEnumerable<Guara.SourceGenerators.ParameterModel!>!
+Guara.SourceGenerators.JobModel.SkipIfPreviousRunning.get -> bool
+Guara.SourceGenerators.JobModel.SkipIfPreviousRunning.init -> void
+Guara.SourceGenerators.JobModel.TimeoutSeconds.get -> int?
+Guara.SourceGenerators.JobModel.TimeoutSeconds.init -> void
+Guara.SourceGenerators.JobModel.TypeFullName.get -> string!
+Guara.SourceGenerators.JobModel.TypeFullName.init -> void
+Guara.SourceGenerators.JobModel.TypeName.get -> string!
+Guara.SourceGenerators.JobModel.TypeName.init -> void
+Guara.SourceGenerators.JobModel.TypeShortName.get -> string!
+Guara.SourceGenerators.JobModel.TypeShortName.init -> void
+Guara.SourceGenerators.JobParser
+Guara.SourceGenerators.LocationModel
+Guara.SourceGenerators.LocationModel.<Clone>$() -> Guara.SourceGenerators.LocationModel!
+Guara.SourceGenerators.LocationModel.Deconstruct(out string! FilePath, out int Start, out int Length, out int StartLine, out int StartCharacter, out int EndLine, out int EndCharacter) -> void
+Guara.SourceGenerators.LocationModel.EndCharacter.get -> int
+Guara.SourceGenerators.LocationModel.EndCharacter.init -> void
+Guara.SourceGenerators.LocationModel.EndLine.get -> int
+Guara.SourceGenerators.LocationModel.EndLine.init -> void
+Guara.SourceGenerators.LocationModel.Equals(Guara.SourceGenerators.LocationModel? other) -> bool
+Guara.SourceGenerators.LocationModel.FilePath.get -> string!
+Guara.SourceGenerators.LocationModel.FilePath.init -> void
+Guara.SourceGenerators.LocationModel.Length.get -> int
+Guara.SourceGenerators.LocationModel.Length.init -> void
+Guara.SourceGenerators.LocationModel.LocationModel(string! FilePath, int Start, int Length, int StartLine, int StartCharacter, int EndLine, int EndCharacter) -> void
+Guara.SourceGenerators.LocationModel.Start.get -> int
+Guara.SourceGenerators.LocationModel.Start.init -> void
+Guara.SourceGenerators.LocationModel.StartCharacter.get -> int
+Guara.SourceGenerators.LocationModel.StartCharacter.init -> void
+Guara.SourceGenerators.LocationModel.StartLine.get -> int
+Guara.SourceGenerators.LocationModel.StartLine.init -> void
+Guara.SourceGenerators.ParameterModel
+Guara.SourceGenerators.ParameterModel.<Clone>$() -> Guara.SourceGenerators.ParameterModel!
+Guara.SourceGenerators.ParameterModel.Deconstruct(out string! Name, out string! FullTypeName, out Guara.SourceGenerators.ArgKind Kind, out bool IsCancellationToken, out string! WriterStatement, out string! ReaderExpression) -> void
+Guara.SourceGenerators.ParameterModel.Equals(Guara.SourceGenerators.ParameterModel? other) -> bool
+Guara.SourceGenerators.ParameterModel.FullTypeName.get -> string!
+Guara.SourceGenerators.ParameterModel.FullTypeName.init -> void
+Guara.SourceGenerators.ParameterModel.IsCancellationToken.get -> bool
+Guara.SourceGenerators.ParameterModel.IsCancellationToken.init -> void
+Guara.SourceGenerators.ParameterModel.Kind.get -> Guara.SourceGenerators.ArgKind
+Guara.SourceGenerators.ParameterModel.Kind.init -> void
+Guara.SourceGenerators.ParameterModel.Name.get -> string!
+Guara.SourceGenerators.ParameterModel.Name.init -> void
+Guara.SourceGenerators.ParameterModel.ParameterModel(string! Name, string! FullTypeName, Guara.SourceGenerators.ArgKind Kind, bool IsCancellationToken, string! WriterStatement = "", string! ReaderExpression = "") -> void
+Guara.SourceGenerators.ParameterModel.ReaderExpression.get -> string!
+Guara.SourceGenerators.ParameterModel.ReaderExpression.init -> void
+Guara.SourceGenerators.ParameterModel.WriterStatement.get -> string!
+Guara.SourceGenerators.ParameterModel.WriterStatement.init -> void
+Guara.SourceGenerators.ReturnKind
+Guara.SourceGenerators.ReturnKind.Task = 0 -> Guara.SourceGenerators.ReturnKind
+Guara.SourceGenerators.ReturnKind.ValueTask = 1 -> Guara.SourceGenerators.ReturnKind
+Guara.SourceGenerators.ReturnKind.Void = 2 -> Guara.SourceGenerators.ReturnKind
+override Guara.SourceGenerators.DiagnosticModel.Equals(object? obj) -> bool
+override Guara.SourceGenerators.DiagnosticModel.GetHashCode() -> int
+override Guara.SourceGenerators.DiagnosticModel.ToString() -> string!
+override Guara.SourceGenerators.EquatableArray<T>.Equals(object? obj) -> bool
+override Guara.SourceGenerators.EquatableArray<T>.GetHashCode() -> int
+override Guara.SourceGenerators.JobModel.Equals(object? obj) -> bool
+override Guara.SourceGenerators.JobModel.GetHashCode() -> int
+override Guara.SourceGenerators.JobModel.ToString() -> string!
+override Guara.SourceGenerators.LocationModel.Equals(object? obj) -> bool
+override Guara.SourceGenerators.LocationModel.GetHashCode() -> int
+override Guara.SourceGenerators.LocationModel.ToString() -> string!
+override Guara.SourceGenerators.ParameterModel.Equals(object? obj) -> bool
+override Guara.SourceGenerators.ParameterModel.GetHashCode() -> int
+override Guara.SourceGenerators.ParameterModel.ToString() -> string!
+static Guara.SourceGenerators.ArgTypeMap.Resolve(string! name, Microsoft.CodeAnalysis.ITypeSymbol! type) -> Guara.SourceGenerators.ParameterModel!
+static Guara.SourceGenerators.DiagnosticModel.operator !=(Guara.SourceGenerators.DiagnosticModel? left, Guara.SourceGenerators.DiagnosticModel? right) -> bool
+static Guara.SourceGenerators.DiagnosticModel.operator ==(Guara.SourceGenerators.DiagnosticModel? left, Guara.SourceGenerators.DiagnosticModel? right) -> bool
+static Guara.SourceGenerators.JobDiagnostics.ToDiagnostic(Guara.SourceGenerators.DiagnosticModel! model) -> Microsoft.CodeAnalysis.Diagnostic!
+static Guara.SourceGenerators.JobEmitter.Emit(System.Collections.Immutable.ImmutableArray<Guara.SourceGenerators.JobModel?> jobs, string! assemblyName, System.Action<Guara.SourceGenerators.DiagnosticModel!>! reportDiagnostic) -> string?
+static Guara.SourceGenerators.JobModel.operator !=(Guara.SourceGenerators.JobModel? left, Guara.SourceGenerators.JobModel? right) -> bool
+static Guara.SourceGenerators.JobModel.operator ==(Guara.SourceGenerators.JobModel? left, Guara.SourceGenerators.JobModel? right) -> bool
+static Guara.SourceGenerators.JobParser.Parse(Microsoft.CodeAnalysis.GeneratorAttributeSyntaxContext context) -> Guara.SourceGenerators.JobModel?
+static Guara.SourceGenerators.LocationModel.operator !=(Guara.SourceGenerators.LocationModel? left, Guara.SourceGenerators.LocationModel? right) -> bool
+static Guara.SourceGenerators.LocationModel.operator ==(Guara.SourceGenerators.LocationModel? left, Guara.SourceGenerators.LocationModel? right) -> bool
+static Guara.SourceGenerators.ParameterModel.operator !=(Guara.SourceGenerators.ParameterModel? left, Guara.SourceGenerators.ParameterModel? right) -> bool
+static Guara.SourceGenerators.ParameterModel.operator ==(Guara.SourceGenerators.ParameterModel? left, Guara.SourceGenerators.ParameterModel? right) -> bool
+static readonly Guara.SourceGenerators.JobDiagnostics.ByRefParameterNotSupported -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
+static readonly Guara.SourceGenerators.JobDiagnostics.CancellationTokenMustBeLast -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
+static readonly Guara.SourceGenerators.JobDiagnostics.DuplicateJob -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
+static readonly Guara.SourceGenerators.JobDiagnostics.GenericJobNotSupported -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
+static readonly Guara.SourceGenerators.JobDiagnostics.InvalidConcurrencyPlaceholder -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
+static readonly Guara.SourceGenerators.JobDiagnostics.UnsupportedParameterType -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
+static readonly Guara.SourceGenerators.JobDiagnostics.UnsupportedReturnType -> Microsoft.CodeAnalysis.DiagnosticDescriptor!

@@ -22,4 +22,4 @@ namespace Guara.Dashboard.Api;
 [JsonSerializable(typeof(RecurringScheduleRequest))]
 [JsonSerializable(typeof(BulkJobsRequest))]
 [JsonSerializable(typeof(BulkResultDto))]
-public sealed partial class DashboardJsonContext : JsonSerializerContext;
+internal sealed partial class DashboardJsonContext : JsonSerializerContext;

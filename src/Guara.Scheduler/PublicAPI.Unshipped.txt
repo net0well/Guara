@@ -1,0 +1,44 @@
+Guara.Scheduler.ContinuationPromoter
+Guara.Scheduler.ContinuationPromoter.ContinuationPromoter(Guara.Storage.IStorage! storage, System.TimeProvider! time, Microsoft.Extensions.Logging.ILogger<Guara.Scheduler.ContinuationPromoter!>! logger) -> void
+Guara.Scheduler.ContinuationPromoter.DiscardPendingAsync(Guara.Abstractions.JobId parentId, string! reason, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Scheduler.ContinuationPromoter.PromoteAsync(Guara.Abstractions.JobId parentId, Guara.Abstractions.JobState parentFinalState, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Scheduler.ContinuationPromoter.SweepAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Scheduler.CronExpression
+Guara.Scheduler.CronExpression.GetNextOccurrence(System.DateTimeOffset after, System.TimeZoneInfo! timeZone) -> System.DateTimeOffset?
+Guara.Scheduler.GuaraClient
+Guara.Scheduler.GuaraClient.AdicionarOuAtualizarCalendarioAsync(string! nome, System.Action<Guara.Abstractions.ICalendarBuilder!>! configurar, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Guara.Scheduler.GuaraClient.AdicionarOuAtualizarRecorrenteAsync(string! id, Guara.Abstractions.JobDescriptor! job, string! cron, System.TimeZoneInfo! fuso, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Guara.Scheduler.GuaraClient.AdicionarOuAtualizarRecorrenteAsync(System.Action<Guara.Abstractions.IRecurringJobBuilder!>! configurar, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Guara.Scheduler.GuaraClient.AgendarAsync(Guara.Abstractions.JobDescriptor! job, System.TimeSpan atraso, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Guara.Abstractions.JobId>
+Guara.Scheduler.GuaraClient.ContinuarComAsync(Guara.Abstractions.JobId paiId, Guara.Abstractions.JobDescriptor! filho, Guara.Abstractions.ContinuationOptions? opcoes = null, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Guara.Abstractions.JobId>
+Guara.Scheduler.GuaraClient.DispararRecorrenteAgoraAsync(string! id, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Guara.Abstractions.JobId?>
+Guara.Scheduler.GuaraClient.EnfileirarAsync(Guara.Abstractions.JobDescriptor! job, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Guara.Abstractions.JobId>
+Guara.Scheduler.GuaraClient.ExcluirAsync(Guara.Abstractions.JobId id, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
+Guara.Scheduler.GuaraClient.ExcluirCalendarioAsync(string! nome, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
+Guara.Scheduler.GuaraClient.ExcluirRecorrenteAsync(string! id, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
+Guara.Scheduler.GuaraClient.GuaraClient(Guara.Storage.IStorage! storage, Guara.Abstractions.IEventPublisher! events, Guara.Scheduler.RecurrenceCalculator! calculator, Guara.Scheduler.ContinuationPromoter! continuations, System.TimeProvider! time, Microsoft.Extensions.Logging.ILogger<Guara.Scheduler.GuaraClient!>! logger) -> void
+Guara.Scheduler.GuaraClient.PausarRecorrenteAsync(string! id, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
+Guara.Scheduler.GuaraClient.RetomarRecorrenteAsync(string! id, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
+Guara.Scheduler.GuaraCronParser
+Guara.Scheduler.GuaraCronParser.GetNext(string! expression, System.TimeZoneInfo! timeZone, System.DateTimeOffset after) -> System.DateTimeOffset?
+Guara.Scheduler.GuaraCronParser.GuaraCronParser() -> void
+Guara.Scheduler.GuaraDatas
+Guara.Scheduler.GuaraScheduler
+Guara.Scheduler.GuaraScheduler.GetNextOccurrence(Guara.Abstractions.ScheduleDescriptor! schedule, System.DateTimeOffset after) -> System.DateTimeOffset?
+Guara.Scheduler.GuaraScheduler.GuaraScheduler(Guara.Scheduler.ICronParser! cronParser) -> void
+Guara.Scheduler.ICronParser
+Guara.Scheduler.ICronParser.GetNext(string! expression, System.TimeZoneInfo! timeZone, System.DateTimeOffset after) -> System.DateTimeOffset?
+Guara.Scheduler.RecurrenceCalculator
+Guara.Scheduler.RecurrenceCalculator.GetNextOccurrence(Guara.Storage.RecurringJobRecord! recurring, Guara.Storage.CalendarRecord? calendar, System.DateTimeOffset after) -> System.DateTimeOffset?
+Guara.Scheduler.RecurrenceCalculator.RecurrenceCalculator(Guara.Scheduler.ICronParser! cronParser) -> void
+Microsoft.Extensions.DependencyInjection.SchedulerServiceCollectionExtensions
+override Guara.Scheduler.CronExpression.ToString() -> string!
+static Guara.Scheduler.CronExpression.Parse(string! expression) -> Guara.Scheduler.CronExpression!
+static Guara.Scheduler.CronExpression.TryParse(string! expression, out Guara.Scheduler.CronExpression? result) -> bool
+static Guara.Scheduler.GuaraDatas.AmanhaAs(int hora, int minuto = 0, System.TimeZoneInfo? fuso = null) -> System.DateTimeOffset
+static Guara.Scheduler.GuaraDatas.HojeAs(int hora, int minuto = 0, System.TimeZoneInfo? fuso = null) -> System.DateTimeOffset
+static Guara.Scheduler.GuaraDatas.HoraExata(System.DateTimeOffset instante) -> System.DateTimeOffset
+static Guara.Scheduler.GuaraDatas.MinutoExato(System.DateTimeOffset instante) -> System.DateTimeOffset
+static Guara.Scheduler.GuaraDatas.ProximoDiaUtil(System.TimeZoneInfo? fuso = null) -> System.DateTimeOffset
+static Guara.Scheduler.GuaraDatas.SegundoExato(System.DateTimeOffset instante) -> System.DateTimeOffset
+static Microsoft.Extensions.DependencyInjection.SchedulerServiceCollectionExtensions.AddGuaraScheduler(this Guara.Abstractions.IGuaraBuilder! builder) -> Guara.Abstractions.IGuaraBuilder!

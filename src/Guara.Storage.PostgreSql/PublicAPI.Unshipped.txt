@@ -1,0 +1,22 @@
+Guara.Storage.PostgreSql.PostgreSqlStorage
+Guara.Storage.PostgreSql.PostgreSqlStorage.BeginTransactionAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Storage.ITransaction!>
+Guara.Storage.PostgreSql.PostgreSqlStorage.Capabilities.get -> Guara.Storage.StorageCapabilities!
+Guara.Storage.PostgreSql.PostgreSqlStorage.Continuations.get -> Guara.Storage.IContinuationStorage!
+Guara.Storage.PostgreSql.PostgreSqlStorage.DisposeAsync() -> System.Threading.Tasks.ValueTask
+Guara.Storage.PostgreSql.PostgreSqlStorage.Jobs.get -> Guara.Storage.IJobStorage!
+Guara.Storage.PostgreSql.PostgreSqlStorage.Locks.get -> Guara.Storage.ILockProvider!
+Guara.Storage.PostgreSql.PostgreSqlStorage.PostgreSqlStorage(Guara.Storage.PostgreSql.PostgreSqlStorageOptions! options, System.TimeProvider? timeProvider = null) -> void
+Guara.Storage.PostgreSql.PostgreSqlStorage.Queues.get -> Guara.Storage.IQueueStorage!
+Guara.Storage.PostgreSql.PostgreSqlStorage.Recurring.get -> Guara.Storage.IRecurringStorage!
+Guara.Storage.PostgreSql.PostgreSqlStorage.Servers.get -> Guara.Storage.IServerRegistry!
+Guara.Storage.PostgreSql.PostgreSqlStorageOptions
+Guara.Storage.PostgreSql.PostgreSqlStorageOptions.AutoMigrate.get -> bool
+Guara.Storage.PostgreSql.PostgreSqlStorageOptions.AutoMigrate.set -> void
+Guara.Storage.PostgreSql.PostgreSqlStorageOptions.ConnectionString.get -> string!
+Guara.Storage.PostgreSql.PostgreSqlStorageOptions.ConnectionString.set -> void
+Guara.Storage.PostgreSql.PostgreSqlStorageOptions.PostgreSqlStorageOptions() -> void
+Guara.Storage.PostgreSql.PostgreSqlStorageOptions.Schema.get -> string!
+Guara.Storage.PostgreSql.PostgreSqlStorageOptions.Schema.set -> void
+Microsoft.Extensions.DependencyInjection.PostgreSqlStorageExtensions
+static Microsoft.Extensions.DependencyInjection.PostgreSqlStorageExtensions.UsePostgreSqlStorage(this Guara.Abstractions.IGuaraBuilder! builder, string! connectionString, System.Action<Guara.Storage.PostgreSql.PostgreSqlStorageOptions!>? configure = null) -> Guara.Abstractions.IGuaraBuilder!
+static Microsoft.Extensions.DependencyInjection.PostgreSqlStorageExtensions.UsePostgreSqlStorage(this Guara.Abstractions.IGuaraBuilder! builder, System.Action<Guara.Storage.PostgreSql.PostgreSqlStorageOptions!>? configure = null) -> Guara.Abstractions.IGuaraBuilder!

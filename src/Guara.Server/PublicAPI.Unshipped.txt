@@ -1,0 +1,29 @@
+Guara.Server.RetentionPolicy
+Guara.Server.RetentionPolicy.<Clone>$() -> Guara.Server.RetentionPolicy!
+Guara.Server.RetentionPolicy.Deconstruct(out System.TimeSpan Succeeded, out System.TimeSpan Failed) -> void
+Guara.Server.RetentionPolicy.Equals(Guara.Server.RetentionPolicy? other) -> bool
+Guara.Server.RetentionPolicy.Failed.get -> System.TimeSpan
+Guara.Server.RetentionPolicy.Failed.init -> void
+Guara.Server.RetentionPolicy.RetentionPolicy(System.TimeSpan Succeeded, System.TimeSpan Failed) -> void
+Guara.Server.RetentionPolicy.Succeeded.get -> System.TimeSpan
+Guara.Server.RetentionPolicy.Succeeded.init -> void
+Guara.Server.ServerOptions
+Guara.Server.ServerOptions.HeartbeatInterval.get -> System.TimeSpan
+Guara.Server.ServerOptions.HeartbeatInterval.set -> void
+Guara.Server.ServerOptions.MaintenanceInterval.get -> System.TimeSpan
+Guara.Server.ServerOptions.MaintenanceInterval.set -> void
+Guara.Server.ServerOptions.RecurringPollInterval.get -> System.TimeSpan
+Guara.Server.ServerOptions.RecurringPollInterval.set -> void
+Guara.Server.ServerOptions.Retention.get -> Guara.Server.RetentionPolicy!
+Guara.Server.ServerOptions.Retention.set -> void
+Guara.Server.ServerOptions.ServerOptions() -> void
+Guara.Server.ServerOptions.ServerTimeout.get -> System.TimeSpan
+Guara.Server.ServerOptions.ServerTimeout.set -> void
+Microsoft.Extensions.DependencyInjection.ServerServiceCollectionExtensions
+override Guara.Server.RetentionPolicy.Equals(object? obj) -> bool
+override Guara.Server.RetentionPolicy.GetHashCode() -> int
+override Guara.Server.RetentionPolicy.ToString() -> string!
+static Guara.Server.RetentionPolicy.Default.get -> Guara.Server.RetentionPolicy!
+static Guara.Server.RetentionPolicy.operator !=(Guara.Server.RetentionPolicy? left, Guara.Server.RetentionPolicy? right) -> bool
+static Guara.Server.RetentionPolicy.operator ==(Guara.Server.RetentionPolicy? left, Guara.Server.RetentionPolicy? right) -> bool
+static Microsoft.Extensions.DependencyInjection.ServerServiceCollectionExtensions.AddGuaraServer(this Guara.Abstractions.IGuaraBuilder! builder, System.Action<Guara.Server.ServerOptions!>? configure = null) -> Guara.Abstractions.IGuaraBuilder!

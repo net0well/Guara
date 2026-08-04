@@ -1,0 +1,8 @@
+Guara.Hosting.GuaraOptions
+Guara.Hosting.GuaraOptions.ApplicationName.get -> string!
+Guara.Hosting.GuaraOptions.ApplicationName.set -> void
+Guara.Hosting.GuaraOptions.DefaultQueues.get -> string![]!
+Guara.Hosting.GuaraOptions.DefaultQueues.set -> void
+Guara.Hosting.GuaraOptions.GuaraOptions() -> void
+Microsoft.Extensions.DependencyInjection.GuaraServiceCollectionExtensions
+static Microsoft.Extensions.DependencyInjection.GuaraServiceCollectionExtensions.AddGuara(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Guara.Hosting.GuaraOptions!>? configure = null) -> Guara.Abstractions.IGuaraBuilder!

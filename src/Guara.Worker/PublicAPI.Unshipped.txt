@@ -1,0 +1,12 @@
+Guara.Worker.WorkerOptions
+Guara.Worker.WorkerOptions.LeaseDuration.get -> System.TimeSpan
+Guara.Worker.WorkerOptions.LeaseDuration.set -> void
+Guara.Worker.WorkerOptions.LeaseRenewInterval.get -> System.TimeSpan
+Guara.Worker.WorkerOptions.LeaseRenewInterval.set -> void
+Guara.Worker.WorkerOptions.MaxConcurrency.get -> int
+Guara.Worker.WorkerOptions.MaxConcurrency.set -> void
+Guara.Worker.WorkerOptions.ShutdownDrainTimeout.get -> System.TimeSpan
+Guara.Worker.WorkerOptions.ShutdownDrainTimeout.set -> void
+Guara.Worker.WorkerOptions.WorkerOptions() -> void
+Microsoft.Extensions.DependencyInjection.WorkerServiceCollectionExtensions
+static Microsoft.Extensions.DependencyInjection.WorkerServiceCollectionExtensions.AddGuaraWorker(this Guara.Abstractions.IGuaraBuilder! builder, System.Action<Guara.Worker.WorkerOptions!>? configure = null) -> Guara.Abstractions.IGuaraBuilder!

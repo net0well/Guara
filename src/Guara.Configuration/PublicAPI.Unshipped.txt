@@ -1,0 +1,13 @@
+const Guara.Configuration.GuaraConfiguration.RootSection = "Guara" -> string!
+Guara.Configuration.GuaraConfiguration
+Guara.Configuration.GuaraConfiguration.Component(string! name) -> Microsoft.Extensions.Configuration.IConfigurationSection!
+Guara.Configuration.GuaraConfiguration.GuaraConfiguration(Microsoft.Extensions.Configuration.IConfiguration! configuration) -> void
+Guara.Configuration.GuaraConfiguration.Root.get -> Microsoft.Extensions.Configuration.IConfigurationSection!
+Guara.Configuration.GuaraConfigurationValues
+Microsoft.Extensions.DependencyInjection.ConfigurationServiceCollectionExtensions
+static Guara.Configuration.GuaraConfigurationValues.ReadBoolean(Microsoft.Extensions.Configuration.IConfigurationSection! section, string! key) -> bool?
+static Guara.Configuration.GuaraConfigurationValues.ReadInt32(Microsoft.Extensions.Configuration.IConfigurationSection! section, string! key) -> int?
+static Guara.Configuration.GuaraConfigurationValues.ReadString(Microsoft.Extensions.Configuration.IConfigurationSection! section, string! key) -> string?
+static Guara.Configuration.GuaraConfigurationValues.ReadStringArray(Microsoft.Extensions.Configuration.IConfigurationSection! section, string! key) -> string![]?
+static Guara.Configuration.GuaraConfigurationValues.ReadTimeSpan(Microsoft.Extensions.Configuration.IConfigurationSection! section, string! key) -> System.TimeSpan?
+static Microsoft.Extensions.DependencyInjection.ConfigurationServiceCollectionExtensions.UseConfiguration(this Guara.Abstractions.IGuaraBuilder! builder, Microsoft.Extensions.Configuration.IConfiguration! configuration) -> Guara.Abstractions.IGuaraBuilder!

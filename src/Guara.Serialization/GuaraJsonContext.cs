@@ -23,6 +23,6 @@ namespace Guara.Serialization;
 [JsonSerializable(typeof(TimeSpan))]
 [JsonSerializable(typeof(Guid))]
 [JsonSerializable(typeof(Dictionary<string, string>))]
-public sealed partial class GuaraJsonContext : JsonSerializerContext
+internal sealed partial class GuaraJsonContext : JsonSerializerContext
 {
 }
