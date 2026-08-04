@@ -120,4 +120,27 @@ public interface IJobStorage
     /// <param name="ct">Token de cancelamento.</param>
     /// <returns>A página de resultados, do mais recente para o mais antigo.</returns>
     ValueTask<IReadOnlyList<JobRecord>> ListAsync(JobQuery query, CancellationToken ct);
+
+    /// <summary>
+    /// Total de jobs que satisfazem os filtros, ignorando a paginação. Existe para que a
+    /// busca possa informar quantas páginas há sem varrer todas elas.
+    /// </summary>
+    /// <param name="query">Filtros; <c>Page</c> e <c>PageSize</c> são ignorados.</param>
+    /// <param name="ct">Token de cancelamento.</param>
+    /// <returns>Quantidade de jobs que casam com os filtros.</returns>
+    ValueTask<long> CountAsync(JobQuery query, CancellationToken ct);
+
+    /// <summary>
+    /// Série temporal de desfechos por balde, agregada no provider. Cobre a janela inteira:
+    /// baldes sem job finalizado voltam zerados, com as latências nulas.
+    /// <para>
+    /// A série enxerga apenas o que ainda está persistido — a purga por retenção remove os
+    /// jobs terminais antigos, então janelas mais longas que a retenção vêm truncadas.
+    /// </para>
+    /// </summary>
+    /// <param name="query">Janela, largura do balde e fila.</param>
+    /// <param name="ct">Token de cancelamento.</param>
+    /// <returns>Os pontos da janela, em ordem cronológica.</returns>
+    /// <exception cref="ArgumentException">Quando a janela é inválida ou geraria pontos demais.</exception>
+    ValueTask<IReadOnlyList<JobSeriesPoint>> GetSeriesAsync(JobSeriesQuery query, CancellationToken ct);
 }
