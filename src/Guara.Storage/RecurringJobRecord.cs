@@ -66,4 +66,29 @@ public sealed record RecurringJobRecord
 
     /// <summary>Última ocorrência pulada por sobreposição (visível no dashboard).</summary>
     public DateTimeOffset? LastSkippedAt { get; init; }
+
+    /// <summary>
+    /// Monta o descritor da ocorrência a enfileirar: a fila da definição vence a do
+    /// descritor original e o id da definição entra nos metadados, que é como uma
+    /// ocorrência é rastreada de volta ao recorrente que a gerou. Os metadados próprios
+    /// do descritor são preservados, sem sobrescrever essa marca.
+    /// </summary>
+    /// <returns>O descritor pronto para enfileirar.</returns>
+    public JobDescriptor ToOccurrence()
+    {
+        var metadata = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [JobMetadataKeys.RecurringId] = Id,
+        };
+
+        if (Descriptor.Metadata is { } original)
+        {
+            foreach (var pair in original)
+            {
+                metadata.TryAdd(pair.Key, pair.Value);
+            }
+        }
+
+        return Descriptor with { Queue = Queue, Metadata = metadata };
+    }
 }

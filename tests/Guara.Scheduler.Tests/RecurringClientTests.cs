@@ -21,6 +21,15 @@ public class RecurringClientTests
         public override DateTimeOffset GetUtcNow() => now;
     }
 
+    private sealed class MovableTimeProvider(DateTimeOffset start) : TimeProvider
+    {
+        private DateTimeOffset _now = start;
+
+        public override DateTimeOffset GetUtcNow() => _now;
+
+        public void Advance(TimeSpan by) => _now += by;
+    }
+
     // 2026-07-16 é quinta-feira; 17 sexta, 18 sábado.
     private static readonly DateTimeOffset T0 = new(2026, 7, 16, 10, 0, 0, TimeSpan.Zero);
 
@@ -32,13 +41,18 @@ public class RecurringClientTests
 
     private static (GuaraClient Client, MemoryStorage Storage) NewClient()
     {
-        var time = new FixedTimeProvider(T0);
+        var (client, storage, _) = NewClient(new FixedTimeProvider(T0));
+        return (client, storage);
+    }
+
+    private static (GuaraClient Client, MemoryStorage Storage, TimeProvider Time) NewClient(TimeProvider time)
+    {
         var storage = new MemoryStorage(time);
         var client = new GuaraClient(
             storage, new NullPublisher(), new RecurrenceCalculator(new GuaraCronParser()),
             new ContinuationPromoter(storage, time, NullLogger<ContinuationPromoter>.Instance),
             time, NullLogger<GuaraClient>.Instance);
-        return (client, storage);
+        return (client, storage, time);
     }
 
     [Fact]
@@ -222,6 +236,134 @@ public class RecurringClientTests
         await Assert.ThrowsAsync<TimeZoneNotFoundException>(async () =>
             await client.AdicionarOuAtualizarRecorrenteAsync(
                 job => job.ComId("r").Executa(Descriptor()).ComCron("* * * * *").NoFusoHorario("Marte/Olympus"), Ct));
+    }
+
+    [Fact]
+    public async Task Pausar_TiraDaBuscaDeVencidos()
+    {
+        var (client, storage) = NewClient();
+        await client.AdicionarOuAtualizarRecorrenteAsync(
+            job => job.ComId("r").Executa(Descriptor()).ComCron("0 3 * * *"), Ct);
+
+        Assert.True(await client.PausarRecorrenteAsync("r", Ct));
+
+        var vencidos = await storage.Recurring.ListDueAsync(Utc(18, 4), Ct);
+        Assert.Empty(vencidos);
+        Assert.True((await storage.Recurring.GetAsync("r", Ct))!.Paused);
+    }
+
+    [Fact]
+    public async Task Pausar_ManteveOProximoDisparoVisivel()
+    {
+        var (client, storage) = NewClient();
+        await client.AdicionarOuAtualizarRecorrenteAsync(
+            job => job.ComId("r").Executa(Descriptor()).ComCron("0 3 * * *"), Ct);
+
+        await client.PausarRecorrenteAsync("r", Ct);
+
+        // O painel continua mostrando quando teria rodado; a busca de vencidos já ignora pausados.
+        Assert.Equal(Utc(17, 3), (await storage.Recurring.GetAsync("r", Ct))!.NextRunAt);
+    }
+
+    [Fact]
+    public async Task Pausar_DuasVezes_EhIdempotente()
+    {
+        var (client, _) = NewClient();
+        await client.AdicionarOuAtualizarRecorrenteAsync(
+            job => job.ComId("r").Executa(Descriptor()).ComCron("0 3 * * *"), Ct);
+
+        Assert.True(await client.PausarRecorrenteAsync("r", Ct));
+        Assert.True(await client.PausarRecorrenteAsync("r", Ct));
+    }
+
+    [Fact]
+    public async Task Pausar_Inexistente_RetornaFalso()
+    {
+        var (client, _) = NewClient();
+        Assert.False(await client.PausarRecorrenteAsync("fantasma", Ct));
+    }
+
+    [Fact]
+    public async Task Retomar_RecalculaAPartirDeAgora_SemRecuperarOPeriodoPausado()
+    {
+        var time = new MovableTimeProvider(T0);
+        var (client, storage, _) = NewClient(time);
+        await client.AdicionarOuAtualizarRecorrenteAsync(
+            job => job.ComId("r").Executa(Descriptor()).ComCron("0 3 * * *"), Ct);
+        await client.PausarRecorrenteAsync("r", Ct);
+
+        // Três dias pausado: o disparo de 17/07 03:00 ficou para trás.
+        time.Advance(TimeSpan.FromDays(3));
+        Assert.True(await client.RetomarRecorrenteAsync("r", Ct));
+
+        var retomado = await storage.Recurring.GetAsync("r", Ct);
+        Assert.NotNull(retomado);
+        Assert.False(retomado.Paused);
+        Assert.Equal(Utc(20, 3), retomado.NextRunAt);
+    }
+
+    [Fact]
+    public async Task Retomar_NaoPausado_NaoMexeNaAgenda()
+    {
+        var time = new MovableTimeProvider(T0);
+        var (client, storage, _) = NewClient(time);
+        await client.AdicionarOuAtualizarRecorrenteAsync(
+            job => job.ComId("r").Executa(Descriptor()).ComCron("0 3 * * *"), Ct);
+
+        time.Advance(TimeSpan.FromDays(3));
+        Assert.True(await client.RetomarRecorrenteAsync("r", Ct));
+
+        Assert.Equal(Utc(17, 3), (await storage.Recurring.GetAsync("r", Ct))!.NextRunAt);
+    }
+
+    [Fact]
+    public async Task Retomar_Inexistente_RetornaFalso()
+    {
+        var (client, _) = NewClient();
+        Assert.False(await client.RetomarRecorrenteAsync("fantasma", Ct));
+    }
+
+    [Fact]
+    public async Task DispararAgora_EnfileiraOcorrenciaSemMexerNaAgenda()
+    {
+        var (client, storage) = NewClient();
+        await client.AdicionarOuAtualizarRecorrenteAsync(
+            job => job.ComId("r").Executa(Descriptor()).ComCron("0 3 * * *").NaFila("relatorios"), Ct);
+
+        var jobId = await client.DispararRecorrenteAgoraAsync("r", Ct);
+
+        Assert.NotNull(jobId);
+        var job = await storage.Jobs.GetAsync(jobId.Value, Ct);
+        Assert.NotNull(job);
+        Assert.Equal(JobState.Enqueued, job.State);
+        Assert.Equal("relatorios", job.Queue);
+        Assert.Equal("r", job.Descriptor.Metadata![JobMetadataKeys.RecurringId]);
+
+        var record = await storage.Recurring.GetAsync("r", Ct);
+        Assert.NotNull(record);
+        Assert.Equal(Utc(17, 3), record.NextRunAt);
+        Assert.Equal(jobId, record.LastRunJobId);
+        Assert.Equal(T0, record.LastRunAt);
+    }
+
+    [Fact]
+    public async Task DispararAgora_FuncionaComORecorrentePausado()
+    {
+        var (client, storage) = NewClient();
+        await client.AdicionarOuAtualizarRecorrenteAsync(
+            job => job.ComId("r").Executa(Descriptor()).ComCron("0 3 * * *"), Ct);
+        await client.PausarRecorrenteAsync("r", Ct);
+
+        // Disparo manual é execução avulsa, não retomada: a definição segue pausada.
+        Assert.NotNull(await client.DispararRecorrenteAgoraAsync("r", Ct));
+        Assert.True((await storage.Recurring.GetAsync("r", Ct))!.Paused);
+    }
+
+    [Fact]
+    public async Task DispararAgora_Inexistente_RetornaNulo()
+    {
+        var (client, _) = NewClient();
+        Assert.Null(await client.DispararRecorrenteAgoraAsync("fantasma", Ct));
     }
 
     [Fact]
