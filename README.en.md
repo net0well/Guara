@@ -371,7 +371,9 @@ Guará documents its guarantees precisely in [`docs/semantics.md`](docs/semantic
 
 ## Contributing
 
-Guará is being built specification-first: every component has an approved spec with acceptance criteria before any code is written. If you want to contribute, start by reading [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and the spec of the component you are interested in. Contribution guidelines and issue templates will be published before the first release.
+Guará is being built specification-first: every component has an approved spec with acceptance criteria before any code is written. Start with [`CONTRIBUTING.md`](CONTRIBUTING.md) — it covers running locally, the three architectural laws, and how a change reaches `main`. Then read [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and the spec of the component you care about. Contributor-facing docs are written in Portuguese.
+
+This project adopts the [Contributor Covenant](CODE_OF_CONDUCT.md). Security vulnerabilities do **not** go in public issues — use the private channel described in [`SECURITY.md`](SECURITY.md).
 
 ## License
 

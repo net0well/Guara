@@ -371,7 +371,9 @@ O Guará documenta suas garantias com precisão em [`docs/semantics.md`](docs/se
 
 ## Contribuindo
 
-O Guará está sendo construído com especificação primeiro: todo componente tem uma spec aprovada com critérios de aceite antes de qualquer código. Se quiser contribuir, comece lendo [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) e a spec do componente que interessa. Diretrizes de contribuição e templates de issue serão publicados antes da primeira release.
+O Guará está sendo construído com especificação primeiro: todo componente tem uma spec aprovada com critérios de aceite antes de qualquer código. Comece por [`CONTRIBUTING.md`](CONTRIBUTING.md) — ele traz como rodar localmente, as três leis da arquitetura e o fluxo de uma mudança até o `main`. Depois leia [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) e a spec do componente que interessa.
+
+Este projeto adota o [Contributor Covenant](CODE_OF_CONDUCT.md). Vulnerabilidade de segurança **não** vira issue pública: use o canal privado descrito em [`SECURITY.md`](SECURITY.md).
 
 ## Licença
 
