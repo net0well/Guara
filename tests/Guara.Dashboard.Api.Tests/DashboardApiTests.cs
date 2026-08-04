@@ -210,13 +210,27 @@ public sealed class DashboardApiTests : IAsyncDisposable
         using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, Ct);
         Assert.Equal("text/event-stream", response.Content.Headers.ContentType!.MediaType);
 
-        var events = services.GetRequiredService<IEventPublisher>();
-        await events.PublishAsync(new JobCompleted(new JobId("j-sse"), T0), Ct);
-
         await using var body = await response.Content.ReadAsStreamAsync(Ct);
         using var reader = new StreamReader(body);
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(Ct);
-        timeout.CancelAfter(TimeSpan.FromSeconds(10));
+        timeout.CancelAfter(TimeSpan.FromSeconds(30));
+
+        // Publicar uma vez só é uma corrida: os cabeçalhos chegam antes de o handler
+        // registrar o canal do assinante, e um evento emitido nessa janela se perde para
+        // sempre — o stream entrega o que acontece depois da inscrição, não o histórico.
+        // Republicar até o leitor ver o evento remove a corrida sem afrouxar a asserção.
+        var events = services.GetRequiredService<IEventPublisher>();
+        using var publishing = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token);
+        var publisher = Task.Run(
+            async () =>
+            {
+                while (!publishing.IsCancellationRequested)
+                {
+                    await events.PublishAsync(new JobCompleted(new JobId("j-sse"), T0), publishing.Token);
+                    await Task.Delay(TimeSpan.FromMilliseconds(100), publishing.Token);
+                }
+            },
+            publishing.Token);
 
         var lines = new List<string>();
         while (!timeout.IsCancellationRequested)
@@ -232,6 +246,15 @@ public sealed class DashboardApiTests : IAsyncDisposable
             {
                 break;
             }
+        }
+
+        await publishing.CancelAsync();
+        try
+        {
+            await publisher;
+        }
+        catch (OperationCanceledException)
+        {
         }
 
         Assert.Contains(lines, l => l.StartsWith("event: job", StringComparison.Ordinal));

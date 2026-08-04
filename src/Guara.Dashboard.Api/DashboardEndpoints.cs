@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Routing;
 namespace Microsoft.AspNetCore.Builder; // extensões de mapeamento aparecem junto das do ASP.NET Core
 
 /// <summary>Mapeamento dos endpoints da API do dashboard (só JSON — a UI é outro pacote).</summary>
-public static class DashboardEndpoints
+public static partial class DashboardEndpoints
 {
     /// <summary>
     /// Mapeia a API do dashboard sob <paramref name="prefix"/> e devolve o grupo para
@@ -62,6 +62,8 @@ public static class DashboardEndpoints
             .WithSummary("Stream SSE de eventos de job em tempo real.")
             .RequireAction(GuaraActions.View);
 
+        MapOperations(group);
+
         return group;
     }
 
@@ -100,12 +102,11 @@ public static class DashboardEndpoints
             stateFilter = parsed;
         }
 
-        var effectivePage = Math.Max(1, page);
-        var effectivePageSize = Math.Clamp(pageSize, 1, JobQuery.MaxPageSize);
-        var jobs = await storage.Jobs.ListAsync(
-            new JobQuery(stateFilter, queue, effectivePage, effectivePageSize), ct);
-        var items = jobs.Select(ToSummary).ToList();
-        return TypedResults.Ok(new PageDto<JobSummaryDto>(items, effectivePage, effectivePageSize));
+        var query = new JobQuery(stateFilter, queue, page, pageSize);
+        var jobs = await storage.Jobs.ListAsync(query, ct);
+        var total = await storage.Jobs.CountAsync(query, ct);
+        return TypedResults.Ok(new PageDto<JobSummaryDto>(
+            [.. jobs.Select(ToSummary)], query.EffectivePage, query.EffectivePageSize, total));
     }
 
     private static async Task<Results<Ok<JobDetailDto>, NotFound>> GetJobAsync(

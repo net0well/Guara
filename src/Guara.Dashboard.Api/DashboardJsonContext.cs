@@ -15,4 +15,11 @@ namespace Guara.Dashboard.Api;
 [JsonSerializable(typeof(IReadOnlyList<ServerDto>))]
 [JsonSerializable(typeof(IReadOnlyList<RecurringDto>))]
 [JsonSerializable(typeof(JobEventDto))]
+[JsonSerializable(typeof(SeriesDto))]
+[JsonSerializable(typeof(IReadOnlyList<CalendarSummaryDto>))]
+[JsonSerializable(typeof(CalendarDetailDto))]
+[JsonSerializable(typeof(CalendarUpsertRequest))]
+[JsonSerializable(typeof(RecurringScheduleRequest))]
+[JsonSerializable(typeof(BulkJobsRequest))]
+[JsonSerializable(typeof(BulkResultDto))]
 public sealed partial class DashboardJsonContext : JsonSerializerContext;
