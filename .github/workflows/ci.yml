@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Um push novo na mesma branch cancela a execução anterior: revisão espera pelo
+# resultado do último commit, não pelo do penúltimo.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  # Liga o build determinístico e os caminhos de fonte do SourceLink.
+  CI: true
+
+jobs:
+  build-e-testes:
+    name: Build e testes
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # O MinVer deriva a versão da tag mais recente: sem o histórico completo
+          # todo build sairia como 0.0.0-alpha.
+          fetch-depth: 0
+
+      - name: Instala o .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # A SPA do painel é construída pelo build .NET e embutida como recurso. Sem Node
+      # o dashboard cai numa página placeholder — no CI isso passaria despercebido, então
+      # o Node é obrigatório aqui.
+      - name: Instala o Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/guara-dashboard-angular/package-lock.json
+
+      - name: Cache do NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore Guara.slnx
+
+      # Compila as duas TFMs de uma vez. O build trata warning como erro e roda os
+      # analisadores de trimming/AOT e o congelamento da API pública, então esta etapa
+      # é também o gate de compatibilidade e de AOT.
+      - name: Build
+        run: dotnet build Guara.slnx --configuration Release --no-restore
+
+      # Os testes de conformidade do PostgreSQL sobem um container por Testcontainers.
+      # O runner do GitHub já traz Docker; sem ele estes testes falham de forma explícita
+      # em vez de passarem vazios.
+      - name: Testes
+        run: >
+          dotnet test Guara.slnx
+          --configuration Release
+          --no-build
+          --logger "trx;LogFileName=resultados.trx"
+          --results-directory TestResults
+          --collect:"XPlat Code Coverage"
+          --settings coverage.runsettings
+
+      - name: Publica os resultados de teste
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: resultados-de-teste
+          path: |
+            TestResults/**/*.trx
+            TestResults/**/coverage.cobertura.xml
+          retention-days: 14
+
+      # Empacotar no CI captura erro de pacote (metadado ausente, layout de analyzer
+      # errado) no PR, e não na hora de publicar a tag.
+      - name: Pack
+        run: dotnet pack Guara.slnx --configuration Release --no-build --output artefatos
+
+      - name: Publica os pacotes
+        uses: actions/upload-artifact@v4
+        with:
+          name: pacotes
+          path: |
+            artefatos/*.nupkg
+            artefatos/*.snupkg
+          retention-days: 14

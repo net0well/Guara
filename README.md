@@ -377,8 +377,8 @@ Toda a configuração segue o padrão Options do .NET, sob a seção `Guara` (va
 | `Guara.Authorization`: permissões por ação, negadas por omissão | ✅ Concluído |
 | Licença Apache-2.0, assinatura de assembly e governança do repositório | ✅ Concluído |
 | Empacotamento: versão por tag, SourceLink, símbolos, metadados de pacote | ✅ Concluído |
-| Congelamento da API pública (`PublicApiAnalyzers`) | 🔨 Em andamento |
-| CI/CD: build multi-TFM, conformance por container, publicação por tag | 🔨 Em andamento |
+| Congelamento da API pública (`PublicApiAnalyzers`) | ✅ Concluído |
+| CI/CD: build multi-TFM, conformance por container, publicação por tag | ✅ Concluído |
 | **Primeira publicação no NuGet (`0.1.0-preview`)** | 🕓 Próximo |
 | Providers restantes: SQL Server → MySQL → MongoDB → Redis | 🕓 Planejado |
 | `Guara.Analyzers`, `Guara.Extensions`, `Guara.Authentication` | 🕓 Planejado |

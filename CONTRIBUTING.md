@@ -104,6 +104,27 @@ quem lê em inglês, e a divergência só cresce.
 Marque o que ainda não existe com 🕓 e o que está pronto com ✅. Um recurso descrito sem marca
 é lido como disponível hoje.
 
+## O que o CI executa
+
+Todo PR passa por `.github/workflows/ci.yml`, que roda exatamente a mesma sequência que
+você roda local: restore, build em Release, testes e `dotnet pack`.
+
+Três coisas que costumam surpreender:
+
+- **O build é o gate de compatibilidade e de AOT.** Warning é erro, e nele rodam os
+  analisadores de trimming/AOT e o congelamento da API pública. Não há etapa separada.
+- **Node é obrigatório no CI.** A SPA do painel é construída pelo build .NET; sem Node ela
+  cairia na página placeholder e ninguém perceberia.
+- **`dotnet pack` roda em todo PR.** Erro de empacotamento (metadado ausente, layout de
+  analyzer errado) aparece na revisão, não na hora de publicar a tag.
+
+Publicar é sempre por **tag**: `v0.1.0-preview.1` produz pacotes `0.1.0-preview.1`, via
+MinVer. Ninguém edita número de versão em arquivo.
+
+Para o release funcionar, o repositório precisa de um secret `NUGET_API_KEY` e de um
+environment chamado `nuget` (`Settings > Environments`) — protegê-lo com aprovação manual é
+o que separa uma tag de uma publicação irreversível no NuGet.org.
+
 ## Comentários de código
 
 Comentários descrevem **o código** — o quê e o porquê técnico. Nunca referenciam specs, ADRs,
