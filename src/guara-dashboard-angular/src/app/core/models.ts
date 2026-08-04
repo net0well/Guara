@@ -49,6 +49,7 @@ export interface Recurring {
   cronExpression?: string | null;
   interval?: string | null;
   timeZoneId?: string | null;
+  calendarName?: string | null;
   paused: boolean;
   skipIfPreviousRunning: boolean;
   nextRunAt?: string | null;

@@ -140,7 +140,8 @@ public static partial class DashboardEndpoints
         IReadOnlyList<RecurringDto> dtos = definitions
             .Select(recurring => new RecurringDto(
                 recurring.Id, recurring.Description, recurring.Queue, recurring.CronExpression,
-                recurring.Interval?.ToString("c"), recurring.TimeZoneId, recurring.Paused,
+                recurring.Interval?.ToString("c"), recurring.TimeZoneId, recurring.CalendarName,
+                recurring.Paused,
                 recurring.SkipIfPreviousRunning, recurring.NextRunAt, recurring.LastRunAt, recurring.LastSkippedAt))
             .ToList();
         return TypedResults.Ok(dtos);
