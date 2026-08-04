@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Guara.Abstractions;
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace Guara.Dashboard;
@@ -68,6 +69,15 @@ internal sealed class DashboardSessionService(DashboardOptions options, TimeProv
 
         var identity = new ClaimsIdentity(authenticationType: "GuaraDashboard");
         identity.AddClaim(new Claim(ClaimTypes.Name, content[..separator]));
+
+        // O login fixo é o dono do painel daquela instalação: recebe todas as permissões.
+        // Sem isto, ligar AddGuaraAuthorization() trancaria o próprio administrador para
+        // fora, já que essa identidade não vem de um provedor de claims do host.
+        foreach (var action in GuaraActions.All)
+        {
+            identity.AddClaim(new Claim(GuaraClaimTypes.Permission, action));
+        }
+
         return new ClaimsPrincipal(identity);
     }
 }

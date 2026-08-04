@@ -27,26 +27,40 @@ public static class DashboardEndpoints
 
         var group = endpoints.MapGroup(prefix).WithTags("Guara");
 
+        // A permissão de cada rota é metadado; um único filtro no grupo a aplica. Sem
+        // AddGuaraAuthorization() no host o filtro é transparente.
+        group.AddEndpointFilter<DashboardPermissionFilter>();
+
         group.MapGet("/stats", GetStatsAsync).WithName("GuaraStats")
-            .WithSummary("Contadores de jobs por estado.");
+            .WithSummary("Contadores de jobs por estado.")
+            .RequireAction(GuaraActions.View);
         group.MapGet("/queues", GetQueuesAsync).WithName("GuaraQueues")
-            .WithSummary("Filas conhecidas e seus tamanhos.");
+            .WithSummary("Filas conhecidas e seus tamanhos.")
+            .RequireAction(GuaraActions.View);
         group.MapGet("/jobs", GetJobsAsync).WithName("GuaraJobs")
-            .WithSummary("Lista paginada de jobs, com filtros por estado e fila.");
+            .WithSummary("Lista paginada de jobs, com filtros por estado e fila.")
+            .RequireAction(GuaraActions.View);
         group.MapGet("/jobs/{id}", GetJobAsync).WithName("GuaraJobDetail")
-            .WithSummary("Detalhe de um job.");
+            .WithSummary("Detalhe de um job.")
+            .RequireAction(GuaraActions.View);
         group.MapGet("/servers", GetServersAsync).WithName("GuaraServers")
-            .WithSummary("Nós servidores registrados e seus heartbeats.");
+            .WithSummary("Nós servidores registrados e seus heartbeats.")
+            .RequireAction(GuaraActions.View);
         group.MapGet("/recurring", GetRecurringAsync).WithName("GuaraRecurring")
-            .WithSummary("Definições recorrentes.");
+            .WithSummary("Definições recorrentes.")
+            .RequireAction(GuaraActions.View);
         group.MapPost("/jobs/{id}/retry", RetryJobAsync).WithName("GuaraRetryJob")
-            .WithSummary("Reenfileira um job que falhou definitivamente.");
+            .WithSummary("Reenfileira um job que falhou definitivamente.")
+            .RequireAction(GuaraActions.Retry);
         group.MapPost("/jobs/{id}/trigger", TriggerJobAsync).WithName("GuaraTriggerJob")
-            .WithSummary("Antecipa um job agendado/em retentativa para agora.");
+            .WithSummary("Antecipa um job agendado/em retentativa para agora.")
+            .RequireAction(GuaraActions.Trigger);
         group.MapDelete("/jobs/{id}", DeleteJobAsync).WithName("GuaraDeleteJob")
-            .WithSummary("Exclui um job que não está em execução.");
+            .WithSummary("Exclui um job que não está em execução.")
+            .RequireAction(GuaraActions.Delete);
         group.MapGet("/stream", StreamAsync).WithName("GuaraStream")
-            .WithSummary("Stream SSE de eventos de job em tempo real.");
+            .WithSummary("Stream SSE de eventos de job em tempo real.")
+            .RequireAction(GuaraActions.View);
 
         return group;
     }
