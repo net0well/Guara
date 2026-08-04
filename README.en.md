@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-LGPL--3.0-blue" alt="License: LGPL-3.0"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License: Apache-2.0"></a>
   <img src="https://img.shields.io/badge/.NET-8.0%20%7C%2010.0-512BD4" alt=".NET 8.0 | 10.0">
   <img src="https://img.shields.io/badge/status-under%20active%20development-orange" alt="Status: under active development">
 </p>
@@ -375,4 +375,8 @@ Guará is being built specification-first: every component has an approved spec 
 
 ## License
 
-Guará's core — everything documented in this repository — is licensed under **LGPL-3.0**, which allows free use in commercial and proprietary applications via the standard NuGet packages. A small set of advanced add-ons (such as batch orchestration) is planned as separately licensed commercial packages that help fund the project's development; the core will always remain free and open source.
+Guará's core — everything documented in this repository — is licensed under **[Apache-2.0](LICENSE)**: free use in commercial and proprietary applications, no obligation to open your own code, and an explicit patent grant. That includes **Native AOT and single-file** publishing, where the library is statically linked into your binary.
+
+A small set of advanced add-ons (such as batch orchestration) is planned as separately licensed commercial `Guara.Pro.*` packages that help fund development; the core will always remain free and open source. See [ADR-0011](docs/adr/0011-licenca-apache-e-assinatura-de-assembly.md).
+
+All assemblies ship **strong-named** (binding identity — not a security mechanism).

@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/licen%C3%A7a-LGPL--3.0-blue" alt="Licença: LGPL-3.0"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licen%C3%A7a-Apache--2.0-blue" alt="Licença: Apache-2.0"></a>
   <img src="https://img.shields.io/badge/.NET-8.0%20%7C%2010.0-512BD4" alt=".NET 8.0 | 10.0">
   <img src="https://img.shields.io/badge/status-em%20desenvolvimento%20ativo-orange" alt="Status: em desenvolvimento ativo">
 </p>
@@ -375,4 +375,8 @@ O Guará está sendo construído com especificação primeiro: todo componente t
 
 ## Licença
 
-O núcleo do Guará — tudo o que está documentado neste repositório — é licenciado sob **LGPL-3.0**, o que permite uso gratuito em aplicações comerciais e proprietárias via os pacotes NuGet padrão. Um pequeno conjunto de add-ons avançados (como orquestração de batches) está planejado como pacotes comerciais licenciados à parte, que ajudam a financiar o desenvolvimento do projeto; o núcleo permanecerá sempre gratuito e open source.
+O núcleo do Guará — tudo o que está documentado neste repositório — é licenciado sob **[Apache-2.0](LICENSE)**: uso livre em aplicações comerciais e proprietárias, sem obrigação de abrir seu código, e com concessão explícita de patente. Vale inclusive para publicação **Native AOT ou single-file**, em que a biblioteca é linkada estaticamente no seu binário.
+
+Um pequeno conjunto de add-ons avançados (como orquestração de batches) está planejado como pacotes `Guara.Pro.*` comerciais licenciados à parte, que ajudam a financiar o desenvolvimento; o núcleo permanecerá sempre gratuito e open source. Ver [ADR-0011](docs/adr/0011-licenca-apache-e-assinatura-de-assembly.md).
+
+Todos os assemblies são publicados com **nome forte** (assinatura de identidade de binding — não é mecanismo de segurança).

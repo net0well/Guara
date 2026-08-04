@@ -205,6 +205,7 @@ Decisões arquiteturais são registradas e versionadas em [adr/](adr/README.md).
 | [0008](adr/0008-native-aot-e-trimming.md) | Compatibilidade com Native AOT e Trimming |
 | [0009](adr/0009-politica-de-dependencias.md) | Política de dependências (núcleo sem terceiros; drivers isolados; cron próprio) |
 | [0010](adr/0010-api-do-usuario-em-portugues.md) | API voltada ao usuário em português (métodos do `IGuaraClient`) |
+| [0011](adr/0011-licenca-apache-e-assinatura-de-assembly.md) | Core sob Apache-2.0 e assemblies com nome forte |
 
 ---
 
@@ -230,7 +231,8 @@ Decisões arquiteturais são registradas e versionadas em [adr/](adr/README.md).
 O Guará é um **produto open-source publicado no NuGet** (como Hangfire/EF Core), com um tier comercial. Detalhes nas specs [033](../spec/033-empacotamento-build-versionamento.md)–[035](../spec/035-governanca-licenciamento-docs.md).
 
 - **Target Frameworks:** multi-target `net8.0` (LTS) + `net10.0`. AOT/trimming plenos no `net10`; features específicas sob `#if NET10_0_OR_GREATER`.
-- **Licença:** core **LGPL-3.0** (aberto); pacotes `Guara.Pro.*` sob **licença comercial** (ex.: `Guara.Pro.Batches`). O core **nunca** referencia pacotes Pro.
+- **Licença:** core **Apache-2.0** (aberto, com concessão de patente e sem atrito com AOT/single-file); pacotes `Guara.Pro.*` sob **licença comercial** (ex.: `Guara.Pro.Batches`). O core **nunca** referencia pacotes Pro. Ver [ADR-0011](adr/0011-licenca-apache-e-assinatura-de-assembly.md).
+- **Assinatura:** todos os assemblies com **nome forte** (chave única `guara.snk`) — identidade de binding, não segurança.
 - **Empacotamento:** Central Package Management, `.slnx`, SourceLink, símbolos `.snupkg`, XML docs, versão semântica automática, `PublicApiAnalyzers` (extend-only).
 - **Release:** CI multi-TFM + matriz AOT + conformance de providers (Testcontainers); publish no NuGet.org por tag.
 
