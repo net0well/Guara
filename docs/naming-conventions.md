@@ -21,7 +21,7 @@ Os **métodos que o usuário chama** para operar jobs são em **português**; to
 |---|---|---|
 | Interface principal do componente | `I{Componente}` | `IWorker`, `IScheduler`, `IStorage`, `IExecutor`, `IDispatcher` |
 | Contrato de recurso | `I{Recurso}{Papel}` | `IJobStorage`, `IQueueStorage`, `ILockProvider`, `ITransaction` |
-| Provider (implementação) | `{Tecnologia}{Contrato}` | `SqlServerStorage`, `RedisLockProvider`, `MongoJobStorage` |
+| Provider (implementação) | `{Tecnologia}{Contrato}` | `SqlServerStorage`, `MySqlLockProvider`, `MongoJobStorage`, `RedisQueueSignal` |
 | Opções de configuração | `{Componente}Options` | `SchedulerOptions`, `WorkerOptions`, `StorageOptions` |
 | Middleware do pipeline | `{Etapa}Middleware` | `ValidationMiddleware`, `RetryMiddleware`, `MetricsMiddleware` |
 | Evento | `{Substantivo}{ParticípioPassado}` | `JobCreated`, `JobScheduled`, `JobCompleted`, `WorkerRequested` |
@@ -47,10 +47,10 @@ Cada pacote expõe **exatamente um** ponto de entrada. Sem sobrecargas espalhada
 // Guara.Hosting
 builder.Services.AddGuara();
 
-// Providers de storage — verbo "Use"
+// Pontos de extensão (storage, aceleradores) — verbo "Use"
 builder.Services.AddGuara()
     .UseSqlServerStorage(connectionString)
-    .UseRedisStorage(redisOptions);
+    .UseRedis(redisConnectionString);
 
 // Componentes adicionais — verbo "Add"
 builder.Services.AddGuaraServer();

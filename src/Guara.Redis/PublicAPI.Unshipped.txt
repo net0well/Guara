@@ -1,0 +1,9 @@
+Guara.Redis.RedisOptions
+Guara.Redis.RedisOptions.ChannelPrefix.get -> string!
+Guara.Redis.RedisOptions.ChannelPrefix.set -> void
+Guara.Redis.RedisOptions.ConnectionString.get -> string!
+Guara.Redis.RedisOptions.ConnectionString.set -> void
+Guara.Redis.RedisOptions.RedisOptions() -> void
+Microsoft.Extensions.DependencyInjection.RedisServiceCollectionExtensions
+static Microsoft.Extensions.DependencyInjection.RedisServiceCollectionExtensions.UseRedis(this Guara.Abstractions.IGuaraBuilder! builder, string! connectionString, System.Action<Guara.Redis.RedisOptions!>? configure = null) -> Guara.Abstractions.IGuaraBuilder!
+static Microsoft.Extensions.DependencyInjection.RedisServiceCollectionExtensions.UseRedis(this Guara.Abstractions.IGuaraBuilder! builder, System.Action<Guara.Redis.RedisOptions!>? configure = null) -> Guara.Abstractions.IGuaraBuilder!

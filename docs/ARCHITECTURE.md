@@ -97,8 +97,10 @@ Guara.sln
 │   ├── Guara.Storage.Memory        # implementação in-memory
 │   ├── Guara.Storage.SqlServer     # implementação SQL Server
 │   ├── Guara.Storage.PostgreSql    # implementação PostgreSQL
-│   ├── Guara.Storage.Redis         # implementação Redis
+│   ├── Guara.Storage.MySql         # implementação MySQL
 │   ├── Guara.Storage.Mongo         # implementação MongoDB
+│   │
+│   ├── Guara.Redis                 # acelerador: leva o aviso de fila entre nós (não é storage)
 │   │
 │   ├── Guara.Serialization         # somente serialização
 │   ├── Guara.Diagnostics           # logging, metrics, tracing, healthchecks
@@ -138,7 +140,7 @@ Regra: **`Guara.Storage` define, `Guara.Storage.*` implementa.** O mesmo vale pa
 | Elemento | Convenção | Exemplo |
 |---|---|---|
 | Interface principal do componente | `I{Componente}` | `IWorker`, `IScheduler`, `IStorage`, `IExecutor` |
-| Provider (implementação) | `{Tecnologia}{Contrato}` | `SqlServerStorage`, `RedisLockProvider` |
+| Provider (implementação) | `{Tecnologia}{Contrato}` | `SqlServerStorage`, `MySqlLockProvider`, `RedisQueueSignal` |
 | Pacote | `Guara.{Componente}[.{Provider}]` | `Guara.Storage.PostgreSql` |
 | Extensão de DI | **um único** `AddGuara...()` / `Use...()` por pacote | `AddGuara()`, `UseSqlServerStorage()` |
 | Namespace das extensões | `Microsoft.Extensions.DependencyInjection` | integra-se ao ecossistema .NET |
@@ -207,6 +209,7 @@ Decisões arquiteturais são registradas e versionadas em [adr/](adr/README.md).
 | [0010](adr/0010-api-do-usuario-em-portugues.md) | API voltada ao usuário em português (métodos do `IGuaraClient`) |
 | [0011](adr/0011-licenca-apache-e-assinatura-de-assembly.md) | Core sob Apache-2.0 e assemblies com nome forte |
 | [0012](adr/0012-wakeup-por-sinal-de-fila.md) | Wakeup por sinal de fila (`IQueueSignal`), com o polling como piso |
+| [0013](adr/0013-redis-como-acelerador.md) | Redis como acelerador (`Guara.Redis`), não como storage |
 
 ---
 
