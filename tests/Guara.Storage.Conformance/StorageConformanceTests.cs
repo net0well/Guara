@@ -140,6 +140,41 @@ public abstract class StorageConformanceTests : IAsyncDisposable
         Assert.Equal(jobCount, acquired.Distinct().Count()); // nenhum job processado 2x
     }
 
+    /// <summary>
+    /// A ordem de início é por <b>elegibilidade</b>, não por criação: um agendado que já
+    /// venceu entra pela hora em que ficou elegível. Sem este caso, cada provider poderia
+    /// ordenar de um jeito e a divergência só apareceria em produção.
+    /// </summary>
+    [Fact]
+    public async Task Acquire_OrdersByEligibility_NotByCreation()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+
+        // Criado por último, mas vencido há mais tempo: elegível desde T0-30s.
+        await storage.Jobs.CreateAsync(
+            NewJob("vencido", state: JobState.Scheduled,
+                createdAt: T0 - TimeSpan.FromSeconds(5),
+                scheduledFor: T0 - TimeSpan.FromSeconds(30)),
+            CancellationToken.None);
+
+        await storage.Jobs.CreateAsync(
+            NewJob("antigo", createdAt: T0 - TimeSpan.FromSeconds(20)), CancellationToken.None);
+
+        await storage.Jobs.CreateAsync(
+            NewJob("recente", createdAt: T0 - TimeSpan.FromSeconds(10)), CancellationToken.None);
+
+        var ordem = new List<string>();
+        for (var i = 0; i < 3; i++)
+        {
+            var adquirido = await storage.Jobs.AcquireNextDueAsync(
+                "default", TimeSpan.FromMinutes(5), T0, CancellationToken.None);
+            Assert.NotNull(adquirido);
+            ordem.Add(adquirido.Id.Value);
+        }
+
+        Assert.Equal(["vencido", "antigo", "recente"], ordem);
+    }
+
     // --- Agendamento e lease/visibility ---
 
     [Fact]

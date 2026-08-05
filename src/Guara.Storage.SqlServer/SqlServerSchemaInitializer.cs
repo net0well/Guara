@@ -1,3 +1,4 @@
+using Guara.Abstractions;
 using Microsoft.Data.SqlClient;
 
 namespace Guara.Storage.SqlServer;
@@ -102,14 +103,42 @@ internal sealed class SqlServerSchemaInitializer(string connectionString, SqlSer
                 lease_until   datetimeoffset(7) NULL,
                 finished_at   datetimeoffset(7) NULL,
                 result        nvarchar(max)     NULL,
-                error         nvarchar(max)     NULL
+                error         nvarchar(max)     NULL,
+                eligible_at   datetimeoffset(7) NULL
             );
             """;
 
+        // Elegibilidade materializada: o instante em que o job passa a poder ser adquirido.
+        // Sem ela, a aquisição vira disjunção sobre estados e o servidor precisa reunir três
+        // faixas do índice e ordenar tudo para achar o primeiro — custo proporcional à
+        // profundidade da fila. Cada passo é um lote à parte porque a coluna precisa existir
+        // antes de ser referenciada.
         yield return $"""
-            IF INDEXPROPERTY(OBJECT_ID('{s}.jobs'), 'ix_jobs_eligibility', 'IndexID') IS NULL
-            CREATE INDEX ix_jobs_eligibility ON {s}.jobs (queue, state, created_at)
-                INCLUDE (scheduled_for, lease_until);
+            IF COL_LENGTH('{s}.jobs', 'eligible_at') IS NULL
+            ALTER TABLE {s}.jobs ADD eligible_at datetimeoffset(7) NULL;
+            """;
+
+        yield return $"""
+            UPDATE {s}.jobs SET eligible_at = CASE state
+                WHEN {(int)JobState.Enqueued} THEN created_at
+                WHEN {(int)JobState.Scheduled} THEN scheduled_for
+                WHEN {(int)JobState.Retrying} THEN scheduled_for
+                WHEN {(int)JobState.Processing} THEN lease_until
+                ELSE NULL END
+            WHERE eligible_at IS NULL
+              AND state <> {(int)JobState.Succeeded} AND state <> {(int)JobState.Failed};
+            """;
+
+        yield return $"""
+            IF INDEXPROPERTY(OBJECT_ID('{s}.jobs'), 'ix_jobs_due', 'IndexID') IS NULL
+            CREATE INDEX ix_jobs_due ON {s}.jobs (queue, eligible_at);
+            """;
+
+        // O índice antigo cobria a disjunção que deixou de existir: manter só custaria
+        // escrita a cada transição de estado, sem servir a nenhuma consulta.
+        yield return $"""
+            IF INDEXPROPERTY(OBJECT_ID('{s}.jobs'), 'ix_jobs_eligibility', 'IndexID') IS NOT NULL
+            DROP INDEX ix_jobs_eligibility ON {s}.jobs;
             """;
 
         yield return $"""

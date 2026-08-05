@@ -33,16 +33,18 @@ internal sealed class MemoryJobStorage(TimeProvider time) : IJobStorage
         lock (_sync)
         {
             JobRecord? eligible = null;
+            var elegivelEm = DateTimeOffset.MaxValue;
             foreach (var job in _jobs.Values)
             {
-                if (job.Queue != queue || !IsEligible(job, now))
+                if (job.Queue != queue || JobEligibility.For(job) is not { } quando || quando > now)
                 {
                     continue;
                 }
 
-                if (eligible is null || job.CreatedAt < eligible.CreatedAt)
+                if (eligible is null || quando < elegivelEm)
                 {
-                    eligible = job; // FIFO por criação
+                    eligible = job; // ~FIFO por elegibilidade, igual aos providers persistentes
+                    elegivelEm = quando;
                 }
             }
 
@@ -278,12 +280,4 @@ internal sealed class MemoryJobStorage(TimeProvider time) : IJobStorage
         }
     }
 
-    private static bool IsEligible(JobRecord job, DateTimeOffset now) => job.State switch
-    {
-        JobState.Enqueued => true,
-        JobState.Scheduled => job.ScheduledFor is { } due && due <= now,
-        JobState.Retrying => job.ScheduledFor is { } due && due <= now, // retentativa vencida
-        JobState.Processing => job.LeaseUntil is { } lease && lease < now, // lease expirado → reelegível
-        _ => false,
-    };
 }
