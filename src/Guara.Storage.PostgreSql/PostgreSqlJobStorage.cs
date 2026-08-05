@@ -17,14 +17,26 @@ internal sealed class PostgreSqlJobStorage(
     private const string Columns =
         "id, descriptor, state, attempt, queue, created_at, scheduled_for, lease_until, finished_at, result, error";
 
-    public async ValueTask<JobId> CreateAsync(JobRecord record, CancellationToken ct)
+    public ValueTask<JobId> CreateAsync(JobRecord record, CancellationToken ct)
+        => CreateCoreAsync(record, null, ct);
+
+    public ValueTask<JobId> CreateAsync(JobRecord record, IGuaraTransaction transaction, CancellationToken ct)
+        => CreateCoreAsync(record, RelationalTransaction.Require(transaction, "PostgreSQL"), ct);
+
+    private async ValueTask<JobId> CreateCoreAsync(
+        JobRecord record, RelationalTransaction? transaction, CancellationToken ct)
     {
+        ArgumentNullException.ThrowIfNull(record);
+
+        // O esquema roda fora da transação do chamador, na conexão própria do provider:
+        // DDL aqui dentro estenderia o alcance de um rollback dele até as tabelas do Guará.
         await schema.EnsureAsync(ct);
-        await using var command = dataSource.CreateCommand($"""
+
+        await using var command = NewCommand($"""
             INSERT INTO {s}.jobs ({Columns})
             VALUES (@id, @descriptor, @state, @attempt, @queue, @createdAt, @scheduledFor, @leaseUntil, @finishedAt, @result, @error)
             ON CONFLICT (id) DO NOTHING
-            """);
+            """, transaction);
         command.Parameters.AddWithValue("id", record.Id.Value);
         command.Parameters.Add(new NpgsqlParameter("descriptor", NpgsqlDbType.Jsonb)
         {
@@ -41,6 +53,25 @@ internal sealed class PostgreSqlJobStorage(
         command.Parameters.AddWithValue("error", (object?)record.Error ?? DBNull.Value);
         await command.ExecuteNonQueryAsync(ct);
         return record.Id;
+    }
+
+    /// <summary>
+    /// Comando na conexão própria do provider ou na do chamador, conforme a transação
+    /// recebida. Sem transação, a conexão vem do pool e o comando a devolve ao ser
+    /// descartado; com ela, o comando toma emprestada a conexão de quem abriu — que
+    /// continua dono do commit, do rollback e do fechamento.
+    /// </summary>
+    private NpgsqlCommand NewCommand(string sql, RelationalTransaction? transaction)
+    {
+        if (transaction is null)
+        {
+            return dataSource.CreateCommand(sql);
+        }
+
+        var command = transaction.RequireConnection<NpgsqlConnection>("PostgreSQL").CreateCommand();
+        command.CommandText = sql;
+        command.Transaction = transaction.RequireTransaction<NpgsqlTransaction>("PostgreSQL");
+        return command;
     }
 
     public async ValueTask<JobRecord?> AcquireNextDueAsync(

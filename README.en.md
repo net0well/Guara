@@ -162,6 +162,35 @@ public sealed class ReportService(IGuaraClient jobs)
 }
 ```
 
+### Enqueuing together with your data (transactional)
+
+The classic failure mode: you save the order, enqueue the confirmation email, and the order transaction rolls back. A worker then processes a job for an order that never existed. Or the reverse — the commit succeeds, the enqueue fails, and the email never goes out.
+
+Hand over your transaction and the two become one operation:
+
+```csharp
+await using var tx = await db.Database.BeginTransactionAsync(ct);
+
+db.Orders.Add(order);
+await db.SaveChangesAsync(ct);
+
+await jobs.EnfileirarAsync(
+    () => SendConfirmationAsync(order.Id),
+    new RelationalTransaction(db.Database.GetDbTransaction()),
+    ct);
+
+await tx.CommitAsync(ct);   // either both happen, or neither
+```
+
+**You** own the transaction; Guará only writes inside it and never commits or rolls back. This requires Guará to live in the **same database** as your application — which is exactly what the schema and prefix isolation is for.
+
+Two caveats worth knowing before you reach for it:
+
+- **The id comes back before the commit.** Recording it outside the transaction (log, HTTP response, another connection) is on you: a rollback leaves that id pointing at nothing.
+- **This path does not signal the queue.** Guará cannot see your commit, so waking the dispatcher now would send it looking for a job that is not visible yet. The job is picked up on the next polling cycle — atomicity at the cost of some latency.
+
+Available on **PostgreSQL, SQL Server and MySQL**. MongoDB and in-memory declare `SupportsTransactions: false` and refuse the call with an explicit message: multi-document transactions in MongoDB require a replica set, and a standalone server does not offer one. See [ADR-0014](docs/adr/0014-enfileiramento-transacional.md).
+
 ### Recurring jobs (fluent builder, Quartz-style)
 
 Recurring jobs are configured through a **fluent builder** ([spec 038](spec/038-agendamento-fluente.md)) — identity, schedule, validity window, description, and calendar in one place (`ComId` = with id, `IniciaEm` = start at, `ACada` = every, `ComCalendario` = with calendar):
@@ -286,6 +315,8 @@ The dependency rules do not live in documentation alone: `Guara.Analyzers` turns
 | MySQL 8+ | `FOR UPDATE SKIP LOCKED` | Table with expiry and owner | ✅ published, conformance green |
 | MongoDB | `findAndModify` | Document with expiry and owner | ✅ published, conformance green |
 | In-Memory | Mutual exclusion over the dictionary | Process-local | ✅ published, conformance green |
+
+The three relational ones accept **enqueuing inside your transaction** — see [above](#enqueuing-together-with-your-data-transactional). MongoDB and in-memory declare `SupportsTransactions: false` and refuse the call.
 
 Every provider isolates what it writes from the rest of the database. PostgreSQL and SQL Server use a dedicated **schema** (`Schema`, default `guara`); in MySQL schema and database are the same thing, so isolation is by **table prefix** (`TablePrefix`, default `guara_`); in MongoDB, by **collection prefix** (`CollectionPrefix`, default `guara_`).
 
@@ -433,6 +464,7 @@ All configuration follows the .NET Options pattern under the `Guara` section (va
 | Queue-signal wakeup: the dispatcher wakes on enqueue, without shortening the interval | ✅ Done |
 | `Guara.Redis`: the queue signal over pub/sub, waking every node's dispatcher | ✅ Done |
 | **`0.1.0-preview.3` release: queue-signal wakeup and the Redis accelerator** | ✅ Done |
+| Enqueuing inside the caller's transaction (PostgreSQL, SQL Server, MySQL) | ✅ Done |
 | `Guara.Extensions`, `Guara.Authentication` | 🕓 Planned |
 | Cluster and distributed coordination, OpenTelemetry, CLI, benchmarks | 🕓 Planned |
 | User documentation and Hangfire migration guide | 🕓 Planned |

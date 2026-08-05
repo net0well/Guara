@@ -78,6 +78,47 @@ internal sealed class GuaraClient(
     }
 
     /// <inheritdoc />
+    public ValueTask<JobId> EnfileirarAsync(
+        JobDescriptor job, IGuaraTransaction transacao, CancellationToken ct = default)
+        => CriarNaTransacaoAsync(job, JobState.Enqueued, scheduledFor: null, transacao, ct);
+
+    /// <inheritdoc />
+    public ValueTask<JobId> AgendarAsync(
+        JobDescriptor job, TimeSpan atraso, IGuaraTransaction transacao, CancellationToken ct = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(atraso, TimeSpan.Zero);
+        return CriarNaTransacaoAsync(
+            job, JobState.Scheduled, time.GetUtcNow() + atraso, transacao, ct);
+    }
+
+    /// <summary>
+    /// Cria o job dentro da transação do chamador. Nada observável escapa antes da
+    /// confirmação dele: sem evento e sem aviso de fila, porque o Guará não enxerga esse
+    /// commit e anunciaria um job que ainda não existe — ou que vai sumir no rollback.
+    /// O job aparece no próximo ciclo de busca do dispatcher.
+    /// </summary>
+    private async ValueTask<JobId> CriarNaTransacaoAsync(
+        JobDescriptor job, JobState state, DateTimeOffset? scheduledFor,
+        IGuaraTransaction transacao, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(job);
+        ArgumentNullException.ThrowIfNull(transacao);
+
+        var id = NewId();
+        await storage.Jobs.CreateAsync(new JobRecord
+        {
+            Id = id,
+            Descriptor = job,
+            State = state,
+            Queue = job.Queue,
+            CreatedAt = time.GetUtcNow(),
+            ScheduledFor = scheduledFor,
+        }, transacao, ct);
+
+        return id;
+    }
+
+    /// <inheritdoc />
     public async ValueTask<bool> ExcluirAsync(JobId id, CancellationToken ct = default)
     {
         if (!await storage.Jobs.DeleteAsync(id, ct))

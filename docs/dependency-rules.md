@@ -59,7 +59,8 @@ Vivem em `Guara.Abstractions`, **exceto** a família Storage, que vive em `Guara
 
 | Contrato | Vive em | Dono conceitual | Implementado por |
 |---|---|---|---|
-| `IStorage`, `IJobStorage`, `IQueueStorage`, `ITransaction`, `ILockProvider` | `Guara.Storage` | `Guara.Storage` | `Guara.Storage.*` |
+| `IStorage`, `IJobStorage`, `IQueueStorage`, `ILockProvider` | `Guara.Storage` | `Guara.Storage` | `Guara.Storage.*` |
+| `IGuaraTransaction` | `Guara.Abstractions` | `Guara.Storage` | `Guara.Storage` (`RelationalTransaction`) |
 | `IScheduler` | `Guara.Abstractions` | `Guara.Scheduler` | `Guara.Scheduler` |
 | `IDispatcher` | `Guara.Abstractions` | `Guara.Dispatcher` | `Guara.Dispatcher` |
 | `IWorker` | `Guara.Abstractions` | `Guara.Worker` | `Guara.Worker` |

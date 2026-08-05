@@ -72,9 +72,11 @@ Guara.Abstractions.IGuaraClient
 Guara.Abstractions.IGuaraClient.AdicionarOuAtualizarCalendarioAsync(string! nome, System.Action<Guara.Abstractions.ICalendarBuilder!>! configurar, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
 Guara.Abstractions.IGuaraClient.AdicionarOuAtualizarRecorrenteAsync(string! id, Guara.Abstractions.JobDescriptor! job, string! cron, System.TimeZoneInfo! fuso, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
 Guara.Abstractions.IGuaraClient.AdicionarOuAtualizarRecorrenteAsync(System.Action<Guara.Abstractions.IRecurringJobBuilder!>! configurar, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Guara.Abstractions.IGuaraClient.AgendarAsync(Guara.Abstractions.JobDescriptor! job, System.TimeSpan atraso, Guara.Abstractions.IGuaraTransaction! transacao, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Guara.Abstractions.JobId>
 Guara.Abstractions.IGuaraClient.AgendarAsync(Guara.Abstractions.JobDescriptor! job, System.TimeSpan atraso, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Guara.Abstractions.JobId>
 Guara.Abstractions.IGuaraClient.ContinuarComAsync(Guara.Abstractions.JobId paiId, Guara.Abstractions.JobDescriptor! filho, Guara.Abstractions.ContinuationOptions? opcoes = null, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Guara.Abstractions.JobId>
 Guara.Abstractions.IGuaraClient.DispararRecorrenteAgoraAsync(string! id, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Guara.Abstractions.JobId?>
+Guara.Abstractions.IGuaraClient.EnfileirarAsync(Guara.Abstractions.JobDescriptor! job, Guara.Abstractions.IGuaraTransaction! transacao, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Guara.Abstractions.JobId>
 Guara.Abstractions.IGuaraClient.EnfileirarAsync(Guara.Abstractions.JobDescriptor! job, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Guara.Abstractions.JobId>
 Guara.Abstractions.IGuaraClient.ExcluirAsync(Guara.Abstractions.JobId id, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
 Guara.Abstractions.IGuaraClient.ExcluirCalendarioAsync(string! nome, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
@@ -97,6 +99,7 @@ Guara.Abstractions.IJobInvoker
 Guara.Abstractions.IJobInvoker.InvokeAsync(Guara.Abstractions.IJobContext! context, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
 Guara.Abstractions.IJobMiddleware
 Guara.Abstractions.IJobMiddleware.InvokeAsync(Guara.Abstractions.IJobContext! context, Guara.Abstractions.JobDelegate! next, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Abstractions.IGuaraTransaction
 Guara.Abstractions.IQueueSignal
 Guara.Abstractions.IQueueSignal.SignalAsync(string! queue, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
 Guara.Abstractions.IQueueSignal.WaitAsync(System.Collections.Generic.IReadOnlyList<string!>! queues, System.TimeSpan timeout, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<bool>

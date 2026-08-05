@@ -14,6 +14,13 @@ namespace Guara.Storage.Mongo;
 /// </summary>
 internal sealed class MongoJobStorage(MongoCollections collections, TimeProvider time) : IJobStorage
 {
+    public ValueTask<JobId> CreateAsync(JobRecord record, IGuaraTransaction transaction, CancellationToken ct)
+        => throw new NotSupportedException(
+            "MongoStorage não participa de transação do chamador " +
+            "(Capabilities.SupportsTransactions = false): transação multi-documento no MongoDB " +
+            "exige replica set, e um servidor standalone não a oferece. Para enfileirar junto com " +
+            "a gravação do negócio, use um provider relacional.");
+
     public async ValueTask<JobId> CreateAsync(JobRecord record, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(record);

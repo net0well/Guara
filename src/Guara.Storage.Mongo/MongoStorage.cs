@@ -43,8 +43,8 @@ internal sealed class MongoStorage : IStorage
 
     /// <inheritdoc />
     /// <remarks>
-    /// Transações: <c>false</c> — exigiriam replica set, e as operações já são
-    /// individualmente atômicas (capabilities honestas). Lock distribuído: <c>true</c>
+    /// Transações: <c>false</c> — transação multi-documento exige replica set, e um
+    /// servidor standalone não a oferece. Lock distribuído: <c>true</c>
     /// (documento com validade e dono, válido entre nós). Timers no servidor: <c>false</c>
     /// — quem acorda os jobs é o Dispatcher, não o banco.
     /// </remarks>
@@ -71,10 +71,4 @@ internal sealed class MongoStorage : IStorage
 
     /// <inheritdoc />
     public IContinuationStorage Continuations { get; }
-
-    /// <inheritdoc />
-    public ValueTask<ITransaction> BeginTransactionAsync(CancellationToken ct)
-        => throw new NotSupportedException(
-            "MongoStorage ainda não expõe transações (Capabilities.SupportsTransactions = false); " +
-            "as operações são individualmente atômicas.");
 }

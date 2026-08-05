@@ -20,7 +20,7 @@ Os **métodos que o usuário chama** para operar jobs são em **português**; to
 | Elemento | Convenção | Exemplo |
 |---|---|---|
 | Interface principal do componente | `I{Componente}` | `IWorker`, `IScheduler`, `IStorage`, `IExecutor`, `IDispatcher` |
-| Contrato de recurso | `I{Recurso}{Papel}` | `IJobStorage`, `IQueueStorage`, `ILockProvider`, `ITransaction` |
+| Contrato de recurso | `I{Recurso}{Papel}` | `IJobStorage`, `IQueueStorage`, `ILockProvider`, `IQueueSignal` |
 | Provider (implementação) | `{Tecnologia}{Contrato}` | `SqlServerStorage`, `MySqlLockProvider`, `MongoJobStorage`, `RedisQueueSignal` |
 | Opções de configuração | `{Componente}Options` | `SchedulerOptions`, `WorkerOptions`, `StorageOptions` |
 | Middleware do pipeline | `{Etapa}Middleware` | `ValidationMiddleware`, `RetryMiddleware`, `MetricsMiddleware` |

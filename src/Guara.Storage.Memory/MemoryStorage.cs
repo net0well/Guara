@@ -26,7 +26,7 @@ public sealed class MemoryStorage : IStorage
 
     /// <inheritdoc />
     /// <remarks>
-    /// Transações: <c>false</c> — operações são individualmente atômicas (capabilities honestas).
+    /// Transações: <c>false</c> — não há banco com que compartilhar a transação do chamador.
     /// Lock distribuído: <c>false</c> — locks valem apenas no processo local.
     /// </remarks>
     public StorageCapabilities Capabilities { get; } = new(
@@ -52,10 +52,4 @@ public sealed class MemoryStorage : IStorage
 
     /// <inheritdoc />
     public IContinuationStorage Continuations { get; }
-
-    /// <inheritdoc />
-    public ValueTask<ITransaction> BeginTransactionAsync(CancellationToken ct)
-        => throw new NotSupportedException(
-            "MemoryStorage não suporta transações (Capabilities.SupportsTransactions = false); " +
-            "as operações são individualmente atômicas.");
 }

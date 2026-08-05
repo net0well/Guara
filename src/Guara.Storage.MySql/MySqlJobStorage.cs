@@ -17,13 +17,29 @@ internal sealed class MySqlJobStorage(
     private const string Columns =
         "id, descriptor, state, attempt, queue, created_at, scheduled_for, lease_until, finished_at, result, error";
 
-    public async ValueTask<JobId> CreateAsync(JobRecord record, CancellationToken ct)
+    public ValueTask<JobId> CreateAsync(JobRecord record, CancellationToken ct)
+        => CreateCoreAsync(record, null, ct);
+
+    public ValueTask<JobId> CreateAsync(JobRecord record, IGuaraTransaction transaction, CancellationToken ct)
+        => CreateCoreAsync(record, RelationalTransaction.Require(transaction, "MySQL"), ct);
+
+    private async ValueTask<JobId> CreateCoreAsync(
+        JobRecord record, RelationalTransaction? transaction, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(record);
+
+        // O esquema roda na conexão própria do provider, fora da transação do chamador:
+        // DDL lá dentro estenderia o alcance de um rollback dele até as tabelas do Guará.
         await schema.EnsureAsync(ct);
 
-        await using var connection = await dataSource.OpenConnectionAsync(ct);
+        // Sem transação a conexão é nossa e fecha aqui; com ela é emprestada de quem a
+        // abriu e precisa continuar viva depois — por isso só a própria entra no descarte.
+        var propria = transaction is null ? await dataSource.OpenConnectionAsync(ct) : null;
+        await using var _ = propria;
+
+        var connection = propria ?? transaction!.RequireConnection<MySqlConnection>("MySQL");
         await using var command = connection.CreateCommand();
+        command.Transaction = transaction?.RequireTransaction<MySqlTransaction>("MySQL");
         // Idempotente pelo id: recriar o mesmo job não duplica nem sobrescreve.
         command.CommandText = $"""
             INSERT IGNORE INTO {p}jobs ({Columns})
