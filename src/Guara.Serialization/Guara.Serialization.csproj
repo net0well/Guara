@@ -9,9 +9,10 @@
     <ProjectReference Include="..\Guara.Abstractions\Guara.Abstractions.csproj" />
   </ItemGroup>
 
-  <!-- O contexto de serialização é detalhe interno; os testes o exercitam direto. -->
+  <!-- O contexto de serialização é detalhe interno; testes e benchmarks o exercitam direto. -->
   <ItemGroup>
     <InternalsVisibleTo Include="Guara.Serialization.Tests" />
+    <InternalsVisibleTo Include="Guara.Serialization.Benchmarks" />
   </ItemGroup>
 
 </Project>

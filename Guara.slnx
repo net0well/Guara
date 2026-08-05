@@ -24,6 +24,12 @@
     <Project Path="src/Guara.Hosting/Guara.Hosting.csproj" />
     <Project Path="src/Guara.Server/Guara.Server.csproj" />
   </Folder>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/Guara.Scheduler.Benchmarks/Guara.Scheduler.Benchmarks.csproj" />
+    <Project Path="benchmarks/Guara.Serialization.Benchmarks/Guara.Serialization.Benchmarks.csproj" />
+    <Project Path="benchmarks/Guara.Storage.Memory.Benchmarks/Guara.Storage.Memory.Benchmarks.csproj" />
+    <Project Path="benchmarks/Guara.Throughput.Harness/Guara.Throughput.Harness.csproj" />
+  </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/Guara.Host/Guara.Host.csproj" />
   </Folder>

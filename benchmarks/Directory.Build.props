@@ -1,0 +1,23 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <!--
+    Para medir, o BenchmarkDotNet gera um projeto próprio e o compila dentro de
+    benchmarks/**/bin — ou seja, debaixo desta pasta, herdando daqui. Sem fixar a TFM, ele
+    herdaria o multi-target da raiz, tentaria net8.0 e não conseguiria referenciar o
+    benchmark, que é net10.0. O erro aparece como NU1201 no projeto autogerado.
+
+    IsPackable=false vale pelo mesmo motivo: o projeto gerado não pode arrastar MinVer,
+    PublicApiAnalyzers nem o analisador do próprio Guará, que o Directory.Build.targets da
+    raiz adiciona a tudo que é empacotável.
+  -->
+  <PropertyGroup>
+    <TargetFrameworks>net10.0</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+    <!-- Nada aqui é API publicada: exigir XML doc em cada método de medição seria
+         cerimônia, e o [Benchmark(Description)] já descreve o que cada um mede. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+</Project>

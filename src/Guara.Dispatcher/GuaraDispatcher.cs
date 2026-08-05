@@ -46,19 +46,29 @@ internal sealed class GuaraDispatcher(
     /// <inheritdoc />
     public async ValueTask StopAsync(CancellationToken ct)
     {
-        if (_cts is null || _loop is null)
+        if (_cts is not { } cts || _loop is not { } loop)
         {
             return;
         }
 
-        await _cts.CancelAsync();
+        await cts.CancelAsync();
         try
         {
-            await _loop.WaitAsync(ct);
+            await loop.WaitAsync(ct);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
+            // O chamador desistiu de esperar, mas o laço ainda está terminando. Limpar o
+            // estado agora deixaria um StartAsync subir um segundo laço em paralelo com
+            // este — dois dispatchers competindo pela mesma fila.
+            return;
         }
+
+        // Sem isto, o laço parado continuaria registrado e o StartAsync seguinte cairia na
+        // guarda de idempotência: o dispatcher nunca mais voltaria a buscar job nenhum.
+        cts.Dispose();
+        _cts = null;
+        _loop = null;
     }
 
     private async Task RunAsync(CancellationToken ct)
