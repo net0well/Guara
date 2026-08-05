@@ -19,7 +19,7 @@
 
 ---
 
-> **Status do projeto.** O Guará está em desenvolvimento ativo, com o primeiro **preview público no NuGet** (`0.1.0-preview.1`). O runtime, o storage PostgreSQL e o painel completo estão implementados e cobertos por testes. Por ser pré-lançamento, a API pública ainda pode mudar até o 1.0 — o que não existe está marcado como _planejado_ ao longo deste documento e no [roadmap](#roadmap). Dê star e acompanhe o repositório para seguir o progresso.
+> **Status do projeto.** O Guará está em desenvolvimento ativo, publicado no NuGet como **preview** (`0.1.0-preview.2`). O runtime, o painel completo e quatro storages de produção — PostgreSQL, SQL Server, MySQL e MongoDB — estão implementados e cobertos por testes. Por ser pré-lançamento, a API pública ainda pode mudar até o 1.0 — o que não existe está marcado como _planejado_ ao longo deste documento e no [roadmap](#roadmap). Dê star e acompanhe o repositório para seguir o progresso.
 
 ## Instalação
 
@@ -32,7 +32,7 @@ dotnet add package Guara.Storage.PostgreSql --prerelease   # storage (escolha um
 dotnet add package Guara.Dashboard --prerelease            # opcional: painel web
 ```
 
-Para desenvolvimento e testes, troque o storage por `Guara.Storage.Memory`.
+O storage é uma escolha só: `Guara.Storage.PostgreSql`, `Guara.Storage.SqlServer`, `Guara.Storage.MySql` ou `Guara.Storage.Mongo` em produção; `Guara.Storage.Memory` em desenvolvimento e testes. Todos passam o mesmo kit de conformidade e trocar entre eles é uma linha.
 
 ## Pacotes
 
@@ -43,22 +43,22 @@ Instale só o que usar — o núcleo roda sozinho e todo o resto é opcional. A 
 | `Guara.Hosting` | Ponto de entrada: `AddGuara()` e o builder fluente | ✅ publicado |
 | `Guara.Server` | Lifecycle: workers, scheduler, heartbeat, manutenção | ✅ publicado |
 | `Guara.Scheduler` | Cron próprio, recorrentes, calendários, `IGuaraClient` | ✅ publicado |
-| `Guara.Storage.PostgreSql` | Storage PostgreSQL — recomendado para produção | ✅ publicado |
+| `Guara.Storage.PostgreSql` | Storage PostgreSQL | ✅ publicado |
+| `Guara.Storage.SqlServer` | Storage SQL Server 2016+ | ✅ publicado |
+| `Guara.Storage.MySql` | Storage MySQL 8+ | ✅ publicado |
+| `Guara.Storage.Mongo` | Storage MongoDB | ✅ publicado |
 | `Guara.Storage.Memory` | Storage em memória — dev, testes e demos | ✅ publicado |
 | `Guara.Dashboard` | Painel web (API + SPA Angular embutida, tempo real) | ✅ publicado |
 | `Guara.Authorization` | Permissões por ação do painel | ✅ publicado |
 | `Guara.Diagnostics` | Logs estruturados, métricas e traces | ✅ publicado |
 | `Guara.SourceGenerators` | Registro e invocação de jobs sem reflection | ✅ publicado |
+| `Guara.Analyzers` | Analisadores Roslyn que enforçam as regras de dependência | ✅ publicado |
 | `Guara.Abstractions` / `Guara.Storage` | Contratos — para autores de providers e extensões | ✅ publicado |
-| `Guara.Storage.SqlServer` | Storage SQL Server 2016+ | 🟡 implementado, sai no próximo preview |
-| `Guara.Storage.MySql` | Storage MySQL 8+ | 🟡 implementado, sai no próximo preview |
-| `Guara.Storage.Mongo` | Storage MongoDB | 🟡 implementado, sai no próximo preview |
-| `Guara.Storage.Redis` | Storage Redis | 🕓 planejado |
+| `Guara.Redis` | Acelerador: wakeup por pub/sub, lock e cache de leitura | 🕓 planejado |
 | `Guara.Authentication` | Esquemas de autenticação (JWT, OIDC, cookie) | 🕓 planejado |
 | `Guara.Cluster` / `Guara.Distributed` | Eleição de líder, failover, coordenação distribuída | 🕓 planejado |
 | `Guara.OpenTelemetry` | Exporters OpenTelemetry | 🕓 planejado |
 | `Guara.Cli` | Ferramenta de linha de comando (`dotnet tool`) | 🕓 planejado |
-| `Guara.Analyzers` | Analisadores Roslyn que enforçam as regras de dependência | 🟡 implementado, sai no próximo preview |
 | `Guara.Pro.Batches` | Comercial: grupos de jobs com callback de conclusão | 🕓 planejado |
 
 ## O que é o Guará
@@ -279,12 +279,11 @@ O `Guara.Storage` define os contratos; cada provider os implementa usando as mel
 
 | Provider | Dequeue atômico | Lock distribuído | Estado |
 |---|---|---|---|
-| PostgreSQL | `FOR UPDATE SKIP LOCKED` | Advisory locks | ✅ publicado, conformidade verde |
+| PostgreSQL | `FOR UPDATE SKIP LOCKED` | Tabela com validade e dono | ✅ publicado, conformidade verde |
+| SQL Server 2016+ | `READPAST + UPDLOCK` com `OUTPUT` | Tabela com validade e dono | ✅ publicado, conformidade verde |
+| MySQL 8+ | `FOR UPDATE SKIP LOCKED` | Tabela com validade e dono | ✅ publicado, conformidade verde |
+| MongoDB | `findAndModify` | Documento com validade e dono | ✅ publicado, conformidade verde |
 | In-Memory | Exclusão mútua sobre o dicionário | Local ao processo | ✅ publicado, conformidade verde |
-| SQL Server 2016+ | `READPAST + UPDLOCK` com `OUTPUT` | Tabela com TTL e dono | 🟡 conformidade verde, sai no próximo preview |
-| MySQL 8+ | `FOR UPDATE SKIP LOCKED` | Tabela com TTL e dono | 🟡 conformidade verde, sai no próximo preview |
-| MongoDB | `findAndModify` | Documento com validade e dono | 🟡 conformidade verde, sai no próximo preview |
-| Redis | Scripts Lua | `SET NX PX` + TTL | 🕓 planejado (escopo em revisão) |
 
 Cada provider isola o que grava do resto do banco. PostgreSQL e SQL Server usam um **schema** dedicado (`Schema`, padrão `guara`); no MySQL schema e banco de dados são a mesma coisa, então o isolamento é por **prefixo de tabela** (`TablePrefix`, padrão `guara_`); no MongoDB, por **prefixo de coleção** (`CollectionPrefix`, padrão `guara_`).
 
@@ -297,6 +296,12 @@ builder.Services.AddGuara().UseSqlServerStorage(connectionString);  // produçã
 builder.Services.AddGuara().UseMySqlStorage(connectionString);      // produção
 builder.Services.AddGuara().UseMongoStorage(connectionString);      // produção
 ```
+
+### E o Redis?
+
+O Redis **não entra como storage**, e isso é decisão, não pendência. Um scheduler não pode perder job: RDB perde a janela desde o último snapshot e o AOF `everysec` perde até um segundo. Além disso, o painel exige filtro por estado, fila, tipo, texto e período, com paginação, contagem e percentil de latência — em Redis isso viraria meia dúzia de índices secundários mantidos à mão, sem transação que os mantenha coerentes entre si.
+
+O Redis entra como **acelerador** (`Guara.Redis`, _planejado_), fazendo o que ele é realmente bom: wakeup por pub/sub no lugar de polling, lock distribuído e cache de leitura do painel. A verdade durável continua no provider de storage.
 
 ## Dashboard (opcional)
 
@@ -409,12 +414,14 @@ Toda a configuração segue o padrão Options do .NET, sob a seção `Guara` (va
 | CI/CD: build multi-TFM, conformance por container, publicação por tag | ✅ Concluído |
 | **Primeira publicação no NuGet (`0.1.0-preview.1`)** | ✅ Concluído |
 | Providers SQL Server, MySQL e MongoDB (mesmo kit de conformidade, 100% verde) | ✅ Concluído |
-| Provider Redis | 🕓 Planejado |
 | `Guara.Analyzers`: `GUARA0001` e `GUARA0002` ligados em todo o repositório | ✅ Concluído |
+| **Publicação `0.1.0-preview.2`: quatro storages de produção e os analisadores** | ✅ Concluído |
+| Estratégia de push no Dispatcher (acorda o worker sem polling) | 🕓 Planejado |
+| `Guara.Redis` acelerador, em cima da estratégia de push | 🕓 Planejado |
 | `Guara.Extensions`, `Guara.Authentication` | 🕓 Planejado |
 | Cluster e coordenação distribuída, OpenTelemetry, CLI, benchmarks | 🕓 Planejado |
 | Documentação de usuário e guia de migração do Hangfire | 🕓 Planejado |
-| **1.0** | 🕓 Planejado |
+| **1.0** — API congelada, transações resolvidas no contrato, rodagem real | 🕓 Planejado |
 
 ## Semântica e garantias
 
