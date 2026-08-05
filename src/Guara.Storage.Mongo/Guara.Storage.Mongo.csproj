@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Guara.Storage.Mongo</PackageId>
+    <Description>Storage MongoDB do Guará: dequeue atômico por findAndModify, locks distribuídos com dono e validade, índices idempotentes com AutoMigrate e persistência completa de jobs, recorrentes, calendários e continuações.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Guara.Configuration\Guara.Configuration.csproj" />
+    <ProjectReference Include="..\Guara.Storage\Guara.Storage.csproj" />
+  </ItemGroup>
+
+  <!-- A implementação é alcançada por IStorage; o kit de conformidade a constrói direto. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Guara.Storage.Mongo.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MongoDB.Driver" />
+  </ItemGroup>
+
+</Project>
