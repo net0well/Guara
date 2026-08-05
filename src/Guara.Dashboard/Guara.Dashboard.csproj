@@ -39,6 +39,21 @@
     <AngularInputs Include="$(AngularProjectDir)\angular.json;$(AngularProjectDir)\package.json;$(AngularProjectDir)\package-lock.json;$(AngularProjectDir)\tsconfig.json;$(AngularProjectDir)\tsconfig.app.json" />
   </ItemGroup>
 
+  <!--
+    O projeto é multi-target, e os builds das duas TFMs rodam em paralelo sobre o MESMO
+    diretório da SPA. Construir a SPA dentro do build por TFM cria uma corrida: um deles
+    começa `npm ci`, que cria node_modules antes de instalar as ferramentas, e o outro vê
+    o diretório existindo, pula a instalação e chama `ng` que ainda não está lá.
+
+    Por isso a construção acontece uma única vez, no passo externo do multi-target, antes
+    de as TFMs serem despachadas. Quando os builds internos chegam, o dist já está pronto
+    e eles apenas o embutem.
+  -->
+  <Target Name="BuildAngularDashboardOnce"
+          Condition="'$(TargetFramework)' == '' and '$(SkipAngularBuild)' != 'true'"
+          BeforeTargets="DispatchToInnerBuilds"
+          DependsOnTargets="BuildAngularDashboard" />
+
   <Target Name="BuildAngularDashboard"
           Condition="'$(SkipAngularBuild)' != 'true'"
           Inputs="@(AngularInputs)"
@@ -50,7 +65,12 @@
     <Warning Condition="'$(_GuaraNodeExit)' != '0'"
              Text="Guara.Dashboard: Node não encontrado — a SPA não será embutida; o dashboard servirá a página placeholder. Instale Node 20.19+/22 (ou defina SkipAngularBuild=true)." />
     <Message Condition="'$(_GuaraNodeExit)' == '0'" Importance="high" Text="Guara.Dashboard: construindo a SPA Angular…" />
-    <Exec Condition="'$(_GuaraNodeExit)' == '0' and !Exists('$(AngularProjectDir)\node_modules')"
+    <!--
+      A presença de node_modules não prova instalação concluída: o npm cria o diretório
+      logo no início. O binário do Angular só aparece no fim, então é ele que decide se
+      há o que instalar.
+    -->
+    <Exec Condition="'$(_GuaraNodeExit)' == '0' and !Exists('$(AngularProjectDir)\node_modules\.bin\ng')"
           Command="npm ci" WorkingDirectory="$(AngularProjectDir)" />
     <Exec Condition="'$(_GuaraNodeExit)' == '0'"
           Command="npm run build" WorkingDirectory="$(AngularProjectDir)" />
