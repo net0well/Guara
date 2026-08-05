@@ -65,7 +65,7 @@ jobs:
       - name: Build
         run: dotnet build Guara.slnx --configuration Release --no-restore
 
-      # Os testes de conformidade do PostgreSQL sobem um container por Testcontainers.
+      # Os testes de conformidade do PostgreSQL e do SQL Server sobem um container por Testcontainers.
       # O runner do GitHub já traz Docker; sem ele estes testes falham de forma explícita
       # em vez de passarem vazios.
       - name: Testes
