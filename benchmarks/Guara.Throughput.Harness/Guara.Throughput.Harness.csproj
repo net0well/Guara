@@ -13,12 +13,14 @@
     <ProjectReference Include="..\..\src\Guara.Storage.Memory\Guara.Storage.Memory.csproj" />
     <ProjectReference Include="..\..\src\Guara.Storage.PostgreSql\Guara.Storage.PostgreSql.csproj" />
     <ProjectReference Include="..\..\src\Guara.Storage.SqlServer\Guara.Storage.SqlServer.csproj" />
+    <ProjectReference Include="..\..\src\Guara.Storage.MySql\Guara.Storage.MySql.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Npgsql" />
     <PackageReference Include="Testcontainers.MsSql" />
+    <PackageReference Include="Testcontainers.MySql" />
     <PackageReference Include="Testcontainers.PostgreSql" />
   </ItemGroup>
 

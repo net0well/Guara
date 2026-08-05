@@ -110,6 +110,18 @@ Vazão de execução, jobs por segundo:
 
 As duas mudanças atacaram gargalos diferentes: a primeira tirou do caminho um `Sort` proporcional à profundidade da fila; a segunda parou de fazer o servidor replanejar as mesmas consultas a cada chamada, o que o `EXPLAIN` mostrava custar 1,6 a 2,5 ms por aquisição.
 
+### Os três providers relacionais, depois da elegibilidade indexada
+
+10.000 jobs, mesma máquina, mesmo job trivial:
+
+| Provider | Conc. 1 | 4 | 16 | 64 | Escalonamento | Enfileiramento | Alocado/job |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| PostgreSQL | 207 | 671 | 650 | 639 | **3,2×** | 619/s | 22 KB |
+| SQL Server | 116 | 167 | 181 | 175 | 1,51× | 188/s | 83 KB |
+| MySQL | 79 | 85 | 84 | 87 | 1,10× | 145/s | 44 KB |
+
+**A elegibilidade indexada entregou vazão só no PostgreSQL.** Nos outros dois ela tirou o `Sort` do caminho — e a correção continua necessária, porque a ordem de execução precisa bater entre providers — mas revelou um gargalo maior embaixo.
+
 ## Achados
 
 **A vazão não escala com a concorrência do worker — o teto está na aquisição.** Multiplicar `MaxConcurrency` por 64 rendeu 1,06× no in-memory e 1,07× no PostgreSQL. Plano nos dois, e é isso que isola a causa: a escrita de estado do lado da execução roda em paralelo entre os workers, então, se ela dominasse, a concorrência teria escalado. Não moveu. O que sobra é a parte serial.
@@ -119,6 +131,20 @@ O `GuaraDispatcher` adquire **um job por vez**, num laço único: `AcquireNextDu
 O desenho desperdiça justamente a propriedade pela qual o SQL foi escolhido: `FOR UPDATE SKIP LOCKED` e `READPAST` existem para que N consumidores adquiram em paralelo sem contenção.
 
 Duas saídas, ambas com impacto direto no número: **aquisição em lote** (devolver N jobs por ida — `LIMIT N` com `RETURNING`, `TOP (N)` com `OUTPUT`) e **aquisição concorrente** (mais de um laço buscando). A primeira muda `IJobStorage`, então precisa entrar antes do congelamento da API pública.
+
+**O custo por aquisição é ida-e-volta, e cada provider gasta um número diferente delas.** É o que explica a distância entre os três:
+
+| Provider | Idas ao banco por aquisição | Como |
+|---|---:|---|
+| PostgreSQL | 1 | `WITH candidato AS (...) UPDATE ... RETURNING` |
+| SQL Server | 1 | `WITH candidato AS (...) UPDATE ... OUTPUT` |
+| MySQL | 4 | `BEGIN`, `SELECT ... FOR UPDATE SKIP LOCKED`, `UPDATE`, `COMMIT` |
+
+O MySQL não tem `RETURNING`, então o provider precisa da transação explícita para segurar a linha entre a seleção e a atualização. Foi decisão de corretude, e é ela que hoje limita a vazão: 87 jobs/s são ~11,5 ms por job, consistente com quatro idas em série dentro do laço único do dispatcher.
+
+Isso torna a **aquisição em lote** uma medida com efeito previsível, e não mais uma hipótese: uma ida traz N jobs e divide o custo fixo por N. O ganho é maior justamente onde o custo por job é maior.
+
+**O SQL Server tem dois números que pedem sonda própria.** O enfileiramento é 3,3× mais lento que o do PostgreSQL para um `INSERT` simples — o candidato é o `WHERE NOT EXISTS (... WITH (UPDLOCK, SERIALIZABLE) ...)` que dá idempotência por id, já que `SERIALIZABLE` toma lock de intervalo e serializa inserções concorrentes por desenho. E a alocação é de 83 KB por job contra 22 KB do Npgsql, margem grande demais para atribuir só ao driver. Nenhum dos dois está diagnosticado: sem plano de execução na mão, seria chute.
 
 **A alocação por job merece investigação.** 2,2 KB no in-memory e ~21 KB no PostgreSQL, por job executado. O driver e o JSON explicam parte da diferença, mas o número absoluto não está medido por etapa — é o benchmark de pipeline que ainda falta.
 
@@ -134,6 +160,7 @@ Registrado para não passar por cobertura completa:
 
 - **Pipeline de execução e pool de `JobContext`** — o custo que o framework acrescenta por job executado. É o número mais pedido e ainda não existe.
 - **Providers persistentes** — PostgreSQL, SQL Server, MySQL e MongoDB. Exigem container, o que não combina com o modelo de medição do BenchmarkDotNet; precisa de harness próprio.
-- **SQL Server e MySQL no harness** — o harness já os aceita, mas os números publicados aqui são de in-memory e PostgreSQL.
+- **Sonda de diagnóstico para SQL Server e MySQL** — existe só para PostgreSQL (`--mode probe`). Sem ela, os dois achados do SQL Server acima continuam hipótese.
+- **MongoDB no harness** — o provider existe, o cenário não.
 - **Comparação com Hangfire e Quartz** — o harness foi desenhado para receber um segundo cenário sem retrabalho, mas nenhum foi escrito.
 - **Comparação de baseline no CI.** Hoje os benchmarks rodam quando alguém os roda. Não há baseline versionado nem gate de regressão.

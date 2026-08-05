@@ -198,6 +198,9 @@ internal sealed class ThroughputHarness(HarnessOptions options, string? connecti
                 connectionString!, o => o.Schema = $"g{Guid.NewGuid():n}"[..16]),
             StorageKind.SqlServer => builder.UseSqlServerStorage(
                 connectionString!, o => o.Schema = $"g{Guid.NewGuid():n}"[..16]),
+            // No MySQL schema e banco são a mesma coisa: o isolamento é por prefixo.
+            StorageKind.MySql => builder.UseMySqlStorage(
+                connectionString!, o => o.TablePrefix = $"g{Guid.NewGuid():n}"[..12] + "_"),
             _ => throw new ArgumentOutOfRangeException(nameof(options), options.Storage, "Storage desconhecido."),
         };
 
