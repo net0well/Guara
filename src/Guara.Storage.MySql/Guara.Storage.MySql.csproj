@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Guara.Storage.MySql</PackageId>
+    <Description>Storage MySQL 8+ do Guará: dequeue sem contenção via FOR UPDATE SKIP LOCKED, locks distribuídos com TTL e dono, esquema idempotente com AutoMigrate e persistência completa de jobs, recorrentes, calendários e continuações.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Guara.Configuration\Guara.Configuration.csproj" />
+    <ProjectReference Include="..\Guara.Storage\Guara.Storage.csproj" />
+  </ItemGroup>
+
+  <!-- A implementação é alcançada por IStorage; o kit de conformidade a constrói direto. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Guara.Storage.MySql.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MySqlConnector" />
+  </ItemGroup>
+
+</Project>
