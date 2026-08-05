@@ -44,6 +44,7 @@ internal static class MongoDocuments
         ["finishedAt"] = Instant(record.FinishedAt),
         ["result"] = Text(record.Result),
         ["error"] = Text(record.Error),
+        ["eligibleAt"] = Instant(JobEligibility.For(record)),
     };
 
     public static JobRecord ReadJob(BsonDocument document) => new()

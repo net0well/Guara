@@ -42,11 +42,12 @@ internal sealed class SqlServerJobStorage(
         command.Transaction = transaction?.RequireTransaction<SqlTransaction>("SQL Server");
         // Idempotente pelo id: recriar o mesmo job não duplica nem sobrescreve.
         command.CommandText = $"""
-            INSERT INTO {s}.jobs ({Columns})
+            INSERT INTO {s}.jobs ({Columns}, eligible_at)
             SELECT @id, @descriptor, @state, @attempt, @queue, @createdAt, @scheduledFor, @leaseUntil,
-                   @finishedAt, @result, @error
+                   @finishedAt, @result, @error, @eligibleAt
             WHERE NOT EXISTS (SELECT 1 FROM {s}.jobs WITH (UPDLOCK, SERIALIZABLE) WHERE id = @id);
             """;
+        command.Parameters.AddWithValue("@eligibleAt", (object?)JobEligibility.For(record) ?? DBNull.Value);
         command.Parameters.AddWithValue("@id", record.Id.Value);
         command.Parameters.AddWithValue(
             "@descriptor", JsonSerializer.Serialize(record.Descriptor, SqlServerJsonContext.Default.JobDescriptor));
@@ -72,20 +73,17 @@ internal sealed class SqlServerJobStorage(
         await using var command = connection.CreateCommand();
 
         // O candidato sai de uma CTE porque UPDATE TOP(1) não honra ORDER BY, e a ordem
-        // importa: a fila é FIFO por criação. READPAST faz o nó pular linhas já travadas
-        // por outro em vez de esperar — é o que troca contenção por vazão.
+        // importa: a fila é ~FIFO por elegibilidade. READPAST faz o nó pular linhas já
+        // travadas por outro em vez de esperar — é o que troca contenção por vazão.
         command.CommandText = $"""
             WITH candidato AS (
-                SELECT TOP (1) {Columns}
+                SELECT TOP (1) {Columns}, eligible_at
                 FROM {s}.jobs WITH (READPAST, UPDLOCK, ROWLOCK)
-                WHERE queue = @queue
-                  AND (state = {(int)JobState.Enqueued}
-                       OR (state IN ({(int)JobState.Scheduled}, {(int)JobState.Retrying}) AND scheduled_for <= @now)
-                       OR (state = {(int)JobState.Processing} AND lease_until < @now))
-                ORDER BY created_at
+                WHERE queue = @queue AND eligible_at <= @now
+                ORDER BY eligible_at
             )
             UPDATE candidato
-            SET state = {(int)JobState.Processing}, lease_until = @leaseUntil
+            SET state = {(int)JobState.Processing}, lease_until = @leaseUntil, eligible_at = @leaseUntil
             OUTPUT INSERTED.id, INSERTED.descriptor, INSERTED.state, INSERTED.attempt, INSERTED.queue,
                    INSERTED.created_at, INSERTED.scheduled_for, INSERTED.lease_until, INSERTED.finished_at,
                    INSERTED.result, INSERTED.error;
@@ -104,7 +102,7 @@ internal sealed class SqlServerJobStorage(
         await using var connection = await connections.OpenAsync(ct);
         await using var command = connection.CreateCommand();
         command.CommandText = $"""
-            UPDATE {s}.jobs SET lease_until = @leaseUntil
+            UPDATE {s}.jobs SET lease_until = @leaseUntil, eligible_at = @leaseUntil
             WHERE id = @id AND state = {(int)JobState.Processing} AND lease_until IS NOT NULL
             """;
         command.Parameters.AddWithValue("@id", id.Value);
@@ -120,7 +118,7 @@ internal sealed class SqlServerJobStorage(
         command.CommandText = $"""
             UPDATE {s}.jobs
             SET state = {(int)JobState.Retrying}, error = @error, attempt = attempt + 1,
-                scheduled_for = @retryAt, lease_until = NULL
+                scheduled_for = @retryAt, lease_until = NULL, eligible_at = @retryAt
             WHERE id = @id
             """;
         command.Parameters.AddWithValue("@id", id.Value);
@@ -136,7 +134,8 @@ internal sealed class SqlServerJobStorage(
         await using var command = connection.CreateCommand();
         command.CommandText = $"""
             UPDATE {s}.jobs
-            SET state = {(int)JobState.Scheduled}, scheduled_for = @scheduledFor, lease_until = NULL
+            SET state = {(int)JobState.Scheduled}, scheduled_for = @scheduledFor, lease_until = NULL,
+                eligible_at = @scheduledFor
             WHERE id = @id
             """;
         command.Parameters.AddWithValue("@id", id.Value);
@@ -157,7 +156,15 @@ internal sealed class SqlServerJobStorage(
                              THEN @value ELSE error END,
                 lease_until = CASE WHEN @state = {(int)JobState.Processing} THEN lease_until ELSE NULL END,
                 finished_at = CASE WHEN @state IN ({(int)JobState.Succeeded}, {(int)JobState.Failed})
-                                   THEN COALESCE(finished_at, @now) ELSE finished_at END
+                                   THEN COALESCE(finished_at, @now) ELSE finished_at END,
+                -- As atribuições do SET enxergam a linha antiga, então scheduled_for e
+                -- lease_until aqui são os valores que permanecem depois desta transição.
+                eligible_at = CASE @state
+                    WHEN {(int)JobState.Enqueued} THEN created_at
+                    WHEN {(int)JobState.Scheduled} THEN scheduled_for
+                    WHEN {(int)JobState.Retrying} THEN scheduled_for
+                    WHEN {(int)JobState.Processing} THEN lease_until
+                    ELSE NULL END
             WHERE id = @id
             """;
         command.Parameters.AddWithValue("@id", id.Value);

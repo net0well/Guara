@@ -42,10 +42,11 @@ internal sealed class MySqlJobStorage(
         command.Transaction = transaction?.RequireTransaction<MySqlTransaction>("MySQL");
         // Idempotente pelo id: recriar o mesmo job não duplica nem sobrescreve.
         command.CommandText = $"""
-            INSERT IGNORE INTO {p}jobs ({Columns})
+            INSERT IGNORE INTO {p}jobs ({Columns}, eligible_at)
             VALUES (@id, @descriptor, @state, @attempt, @queue, @createdAt, @scheduledFor, @leaseUntil,
-                    @finishedAt, @result, @error)
+                    @finishedAt, @result, @error, @eligibleAt)
             """;
+        command.Parameters.AddWithValue("@eligibleAt", MySqlTime.ToDatabaseOrNull(JobEligibility.For(record)));
         command.Parameters.AddWithValue("@id", record.Id.Value);
         command.Parameters.AddWithValue(
             "@descriptor", JsonSerializer.Serialize(record.Descriptor, MySqlJsonContext.Default.JobDescriptor));
@@ -83,11 +84,8 @@ internal sealed class MySqlJobStorage(
             // é o que troca contenção por vazão.
             select.CommandText = $"""
                 SELECT {Columns} FROM {p}jobs
-                WHERE queue = @queue
-                  AND (state = {(int)JobState.Enqueued}
-                       OR (state IN ({(int)JobState.Scheduled}, {(int)JobState.Retrying}) AND scheduled_for <= @now)
-                       OR (state = {(int)JobState.Processing} AND lease_until < @now))
-                ORDER BY created_at
+                WHERE queue = @queue AND eligible_at <= @now
+                ORDER BY eligible_at
                 LIMIT 1
                 FOR UPDATE SKIP LOCKED
                 """;
@@ -108,7 +106,7 @@ internal sealed class MySqlJobStorage(
         {
             update.Transaction = transaction;
             update.CommandText =
-                $"UPDATE {p}jobs SET state = @state, lease_until = @leaseUntil WHERE id = @id";
+                $"UPDATE {p}jobs SET state = @state, lease_until = @leaseUntil, eligible_at = @leaseUntil WHERE id = @id";
             update.Parameters.AddWithValue("@state", (int)JobState.Processing);
             update.Parameters.AddWithValue("@leaseUntil", MySqlTime.ToDatabase(leaseUntil));
             update.Parameters.AddWithValue("@id", candidato.Id.Value);
@@ -125,7 +123,7 @@ internal sealed class MySqlJobStorage(
         await using var connection = await dataSource.OpenConnectionAsync(ct);
         await using var command = connection.CreateCommand();
         command.CommandText = $"""
-            UPDATE {p}jobs SET lease_until = @leaseUntil
+            UPDATE {p}jobs SET lease_until = @leaseUntil, eligible_at = @leaseUntil
             WHERE id = @id AND state = {(int)JobState.Processing} AND lease_until IS NOT NULL
             """;
         command.Parameters.AddWithValue("@id", id.Value);
@@ -141,7 +139,7 @@ internal sealed class MySqlJobStorage(
         command.CommandText = $"""
             UPDATE {p}jobs
             SET state = {(int)JobState.Retrying}, error = @error, attempt = attempt + 1,
-                scheduled_for = @retryAt, lease_until = NULL
+                scheduled_for = @retryAt, lease_until = NULL, eligible_at = @retryAt
             WHERE id = @id
             """;
         command.Parameters.AddWithValue("@id", id.Value);
@@ -157,7 +155,8 @@ internal sealed class MySqlJobStorage(
         await using var command = connection.CreateCommand();
         command.CommandText = $"""
             UPDATE {p}jobs
-            SET state = {(int)JobState.Scheduled}, scheduled_for = @scheduledFor, lease_until = NULL
+            SET state = {(int)JobState.Scheduled}, scheduled_for = @scheduledFor, lease_until = NULL,
+                eligible_at = @scheduledFor
             WHERE id = @id
             """;
         command.Parameters.AddWithValue("@id", id.Value);
@@ -181,6 +180,12 @@ internal sealed class MySqlJobStorage(
                 lease_until = CASE WHEN @state = {(int)JobState.Processing} THEN lease_until ELSE NULL END,
                 finished_at = CASE WHEN @state IN ({(int)JobState.Succeeded}, {(int)JobState.Failed})
                                    THEN COALESCE(finished_at, @now) ELSE finished_at END,
+                eligible_at = CASE @state
+                    WHEN {(int)JobState.Enqueued} THEN created_at
+                    WHEN {(int)JobState.Scheduled} THEN scheduled_for
+                    WHEN {(int)JobState.Retrying} THEN scheduled_for
+                    WHEN {(int)JobState.Processing} THEN lease_until
+                    ELSE NULL END,
                 state = @state
             WHERE id = @id
             """;

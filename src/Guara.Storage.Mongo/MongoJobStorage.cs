@@ -46,37 +46,28 @@ internal sealed class MongoJobStorage(MongoCollections collections, TimeProvider
 
         // scheduledFor/leaseUntil nulos não casam com uma comparação numérica: o MongoDB só
         // compara dentro do mesmo tipo BSON, então nulo fica de fora sem cláusula extra.
+        // Elegibilidade materializada: um único intervalo ordenado no lugar da disjunção
+        // sobre estados, que obrigava o servidor a reunir três faixas e ordenar tudo.
+        // Nulo é de outro tipo BSON e fica de fora da comparação sem cláusula extra.
         var filtro = new BsonDocument
         {
             ["queue"] = queue,
-            ["$or"] = new BsonArray
-            {
-                new BsonDocument("state", (int)JobState.Enqueued),
-                new BsonDocument
-                {
-                    ["state"] = new BsonDocument("$in",
-                        new BsonArray { (int)JobState.Scheduled, (int)JobState.Retrying }),
-                    ["scheduledFor"] = new BsonDocument("$lte", agora),
-                },
-                new BsonDocument
-                {
-                    ["state"] = (int)JobState.Processing,
-                    ["leaseUntil"] = new BsonDocument("$lt", agora),
-                },
-            },
+            ["eligibleAt"] = new BsonDocument("$lte", agora),
         };
 
+        var leaseUntil = (now + lease).UtcTicks;
         var documento = await collections.Jobs.FindOneAndUpdateAsync<BsonDocument>(
             filtro,
             new BsonDocument("$set", new BsonDocument
             {
                 ["state"] = (int)JobState.Processing,
-                ["leaseUntil"] = (now + lease).UtcTicks,
+                ["leaseUntil"] = leaseUntil,
+                ["eligibleAt"] = leaseUntil,
             }),
             new FindOneAndUpdateOptions<BsonDocument>
             {
-                // A fila é FIFO por criação; o documento volta já com o estado novo.
-                Sort = Builders<BsonDocument>.Sort.Ascending("createdAt"),
+                // A fila é ~FIFO por elegibilidade; o documento volta já com o estado novo.
+                Sort = Builders<BsonDocument>.Sort.Ascending("eligibleAt"),
                 ReturnDocument = ReturnDocument.After,
             },
             ct);
@@ -94,7 +85,13 @@ internal sealed class MongoJobStorage(MongoCollections collections, TimeProvider
                 ["state"] = (int)JobState.Processing,
                 ["leaseUntil"] = new BsonDocument("$ne", BsonNull.Value),
             },
-            new BsonDocument("$set", new BsonDocument("leaseUntil", (time.GetUtcNow() + lease).UtcTicks)),
+            new BsonDocument("$set", new BsonDocument
+            {
+                // A elegibilidade acompanha a posse: renovar sem movê-la deixaria o job
+                // visível para outro nó no instante da posse antiga.
+                ["leaseUntil"] = (time.GetUtcNow() + lease).UtcTicks,
+                ["eligibleAt"] = (time.GetUtcNow() + lease).UtcTicks,
+            }),
             cancellationToken: ct);
         return resultado.MatchedCount > 0;
     }
@@ -112,6 +109,7 @@ internal sealed class MongoJobStorage(MongoCollections collections, TimeProvider
                     ["error"] = error,
                     ["scheduledFor"] = retryAt.UtcTicks,
                     ["leaseUntil"] = BsonNull.Value,
+                    ["eligibleAt"] = retryAt.UtcTicks,
                 },
                 ["$inc"] = new BsonDocument("attempt", 1),
             },
@@ -128,6 +126,7 @@ internal sealed class MongoJobStorage(MongoCollections collections, TimeProvider
                 ["state"] = (int)JobState.Scheduled,
                 ["scheduledFor"] = scheduledFor.UtcTicks,
                 ["leaseUntil"] = BsonNull.Value,
+                ["eligibleAt"] = scheduledFor.UtcTicks,
             }),
             cancellationToken: ct);
     }
@@ -154,6 +153,16 @@ internal sealed class MongoJobStorage(MongoCollections collections, TimeProvider
         {
             set["leaseUntil"] = BsonNull.Value;
         }
+
+        // A elegibilidade acompanha o estado novo. O pipeline enxerga a versão anterior do
+        // documento, então scheduledFor e leaseUntil aqui são os valores que permanecem.
+        set["eligibleAt"] = state switch
+        {
+            JobState.Enqueued => "$createdAt",
+            JobState.Scheduled or JobState.Retrying => "$scheduledFor",
+            JobState.Processing => "$leaseUntil",
+            _ => (BsonValue)BsonNull.Value,
+        };
 
         if (state is JobState.Succeeded or JobState.Failed)
         {

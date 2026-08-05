@@ -1,3 +1,4 @@
+using Guara.Abstractions;
 using MySqlConnector;
 
 namespace Guara.Storage.MySql;
@@ -71,6 +72,8 @@ internal sealed class MySqlSchemaInitializer(MySqlDataSource dataSource, MySqlSt
                 ddl.CommandText = lote;
                 await ddl.ExecuteNonQueryAsync(ct);
             }
+
+            await MigrarElegibilidadeAsync(connection, options.TablePrefix, ct);
         }
         finally
         {
@@ -88,6 +91,64 @@ internal sealed class MySqlSchemaInitializer(MySqlDataSource dataSource, MySqlSt
     /// <c>json</c>: numa coluna de texto o <c>JSON_EXTRACT</c> trataria o conteúdo como um
     /// escalar-string em vez de documento, e a busca por caminho voltaria vazia.
     /// </summary>
+    /// <summary>
+    /// Traz uma tabela já existente para o esquema com elegibilidade materializada.
+    /// <para>
+    /// O MySQL 8 não tem <c>ADD COLUMN IF NOT EXISTS</c>, e a forma condicional em SQL
+    /// exigiria variáveis de usuário — que este provider não obriga ninguém a habilitar.
+    /// A checagem acontece aqui, contra o <c>information_schema</c>, e cada passo só roda
+    /// se faltar.
+    /// </para>
+    /// </summary>
+    private static async Task MigrarElegibilidadeAsync(MySqlConnection connection, string p, CancellationToken ct)
+    {
+        if (!await ExisteAsync(connection, ct,
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() " +
+                $"AND table_name = '{p}jobs' AND column_name = 'eligible_at'"))
+        {
+            await ExecutarAsync(connection, ct, $"ALTER TABLE {p}jobs ADD COLUMN eligible_at datetime(6) NULL");
+            await ExecutarAsync(connection, ct, $"""
+                UPDATE {p}jobs SET eligible_at = CASE state
+                    WHEN {(int)JobState.Enqueued} THEN created_at
+                    WHEN {(int)JobState.Scheduled} THEN scheduled_for
+                    WHEN {(int)JobState.Retrying} THEN scheduled_for
+                    WHEN {(int)JobState.Processing} THEN lease_until
+                    ELSE NULL END
+                WHERE eligible_at IS NULL
+                """);
+        }
+
+        if (!await ExisteAsync(connection, ct,
+                "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() " +
+                $"AND table_name = '{p}jobs' AND index_name = 'ix_{p}jobs_due'"))
+        {
+            await ExecutarAsync(connection, ct, $"CREATE INDEX ix_{p}jobs_due ON {p}jobs (queue, eligible_at)");
+        }
+
+        // O índice antigo cobria a disjunção que deixou de existir: manter só custaria
+        // escrita a cada transição de estado, sem servir a nenhuma consulta.
+        if (await ExisteAsync(connection, ct,
+                "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() " +
+                $"AND table_name = '{p}jobs' AND index_name = 'ix_{p}jobs_eligibility'"))
+        {
+            await ExecutarAsync(connection, ct, $"DROP INDEX ix_{p}jobs_eligibility ON {p}jobs");
+        }
+    }
+
+    private static async Task<bool> ExisteAsync(MySqlConnection connection, CancellationToken ct, string consulta)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = consulta;
+        return Convert.ToInt64(await command.ExecuteScalarAsync(ct), System.Globalization.CultureInfo.InvariantCulture) > 0;
+    }
+
+    private static async Task ExecutarAsync(MySqlConnection connection, CancellationToken ct, string sql)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        await command.ExecuteNonQueryAsync(ct);
+    }
+
     private static IEnumerable<string> BuildDdl(string p)
     {
         yield return $"""
@@ -103,8 +164,9 @@ internal sealed class MySqlSchemaInitializer(MySqlDataSource dataSource, MySqlSt
                 finished_at   datetime(6)  NULL,
                 result        longtext     NULL,
                 error         longtext     NULL,
+                eligible_at   datetime(6)  NULL,
                 PRIMARY KEY (id),
-                INDEX ix_{p}jobs_eligibility (queue, state, created_at),
+                INDEX ix_{p}jobs_due (queue, eligible_at),
                 INDEX ix_{p}jobs_purge (state, finished_at)
             ) ENGINE=InnoDB
             """;

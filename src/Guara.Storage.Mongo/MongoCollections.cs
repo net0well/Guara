@@ -70,11 +70,11 @@ internal sealed class MongoCollections
         var jobs = Builders<BsonDocument>.IndexKeys;
         await Jobs.Indexes.CreateManyAsync(
             [
-                // Cobre a busca do próximo job elegível: filtra por fila e estado e já entrega
-                // ordenado por criação, que é a ordem FIFO da fila.
+                // Cobre a busca do próximo job elegível: um único intervalo ordenado por
+                // elegibilidade, que já é a ordem em que a fila entrega.
                 new CreateIndexModel<BsonDocument>(
-                    jobs.Ascending("queue").Ascending("state").Ascending("createdAt"),
-                    new CreateIndexOptions { Name = "ix_eligibility" }),
+                    jobs.Ascending("queue").Ascending("eligibleAt"),
+                    new CreateIndexOptions { Name = "ix_due" }),
                 new CreateIndexModel<BsonDocument>(
                     jobs.Ascending("state").Ascending("finishedAt"),
                     new CreateIndexOptions { Name = "ix_purge" }),
