@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Guara.Storage.SqlServer</PackageId>
+    <Description>Storage SQL Server do Guará: dequeue sem contenção via READPAST + UPDLOCK com OUTPUT, locks distribuídos por sp_getapplock, esquema idempotente com AutoMigrate e persistência completa de jobs, recorrentes, calendários e continuações.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Guara.Configuration\Guara.Configuration.csproj" />
+    <ProjectReference Include="..\Guara.Storage\Guara.Storage.csproj" />
+  </ItemGroup>
+
+  <!-- A implementação é alcançada por IStorage; o kit de conformidade a constrói direto. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Guara.Storage.SqlServer.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" />
+  </ItemGroup>
+
+</Project>
