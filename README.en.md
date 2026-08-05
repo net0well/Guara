@@ -7,6 +7,7 @@
 </p>
 
 <p align="center">
+  <a href="https://www.nuget.org/packages/Guara.Hosting"><img src="https://img.shields.io/nuget/vpre/Guara.Hosting?label=NuGet&color=004880" alt="NuGet"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License: Apache-2.0"></a>
   <img src="https://img.shields.io/badge/.NET-8.0%20%7C%2010.0-512BD4" alt=".NET 8.0 | 10.0">
   <img src="https://img.shields.io/badge/status-under%20active%20development-orange" alt="Status: under active development">
@@ -18,24 +19,37 @@
 
 ---
 
-> **Project status.** Guará is under active development and **has not been published to NuGet yet**. The runtime, the PostgreSQL storage and the full dashboard are implemented and covered by tests; anything not there yet is marked _planned_ throughout this document and in the [roadmap](#roadmap). Star and watch the repository to follow the progress.
+> **Project status.** Guará is under active development, with its first **public preview on NuGet** (`0.1.0-preview.1`). The runtime, the PostgreSQL storage and the full dashboard are implemented and covered by tests. Being a prerelease, the public API may still change until 1.0 — anything not there yet is marked _planned_ throughout this document and in the [roadmap](#roadmap). Star and watch the repository to follow the progress.
+
+## Installation
+
+Prereleases require the `--prerelease` flag; without it NuGet ignores the version:
+
+```bash
+dotnet add package Guara.Hosting --prerelease              # entry point: AddGuara()
+dotnet add package Guara.Server --prerelease               # runs jobs in this process
+dotnet add package Guara.Storage.PostgreSql --prerelease   # storage (pick one)
+dotnet add package Guara.Dashboard --prerelease            # optional: web dashboard
+```
+
+For development and tests, swap the storage for `Guara.Storage.Memory`.
 
 ## Packages
 
-Install only what you use — the core runs on its own and everything else is optional. **Nothing is published yet**: the state column says what already exists in the repository and will ship in the first release.
+Install only what you use — the core runs on its own and everything else is optional. The state column separates what is already published from what is still to come.
 
 | Package | Purpose | State |
 |---|---|---|
-| `Guara.Hosting` | Entry point: `AddGuara()` and the fluent builder | ✅ implemented |
-| `Guara.Server` | Lifecycle: workers, scheduler, heartbeat, maintenance | ✅ implemented |
-| `Guara.Scheduler` | Own cron, recurring jobs, calendars, `IGuaraClient` | ✅ implemented |
-| `Guara.Storage.PostgreSql` | PostgreSQL storage — recommended for production | ✅ implemented |
-| `Guara.Storage.Memory` | In-memory storage — dev, tests and demos | ✅ implemented |
-| `Guara.Dashboard` | Web dashboard (API + embedded Angular SPA, real-time) | ✅ implemented |
-| `Guara.Authorization` | Per-action dashboard permissions | ✅ implemented |
-| `Guara.Diagnostics` | Structured logs, metrics and traces | ✅ implemented |
-| `Guara.SourceGenerators` | Reflection-free job registration and invocation | ✅ implemented |
-| `Guara.Abstractions` / `Guara.Storage` | Contracts — for provider and extension authors | ✅ implemented |
+| `Guara.Hosting` | Entry point: `AddGuara()` and the fluent builder | ✅ published |
+| `Guara.Server` | Lifecycle: workers, scheduler, heartbeat, maintenance | ✅ published |
+| `Guara.Scheduler` | Own cron, recurring jobs, calendars, `IGuaraClient` | ✅ published |
+| `Guara.Storage.PostgreSql` | PostgreSQL storage — recommended for production | ✅ published |
+| `Guara.Storage.Memory` | In-memory storage — dev, tests and demos | ✅ published |
+| `Guara.Dashboard` | Web dashboard (API + embedded Angular SPA, real-time) | ✅ published |
+| `Guara.Authorization` | Per-action dashboard permissions | ✅ published |
+| `Guara.Diagnostics` | Structured logs, metrics and traces | ✅ published |
+| `Guara.SourceGenerators` | Reflection-free job registration and invocation | ✅ published |
+| `Guara.Abstractions` / `Guara.Storage` | Contracts — for provider and extension authors | ✅ published |
 | `Guara.Storage.SqlServer` | SQL Server storage | 🕓 planned |
 | `Guara.Storage.MySql` | MySQL 8+ storage | 🕓 planned |
 | `Guara.Storage.Mongo` | MongoDB storage | 🕓 planned |
@@ -85,7 +99,7 @@ The name comes from the *lobo-guará* (maned wolf), a fast and resilient animal 
 
 ## Quick start
 
-With the packages installed (see [Packages](#packages)), configure everything with a fluent, ASP.NET Core-style API:
+With the packages installed (see [Installation](#installation)), configure everything with a fluent, ASP.NET Core-style API:
 
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
@@ -256,8 +270,8 @@ Each stage is an `IJobMiddleware`; the `Custom` slot is the user extension point
 
 | Provider | Atomic dequeue | Distributed lock | State |
 |---|---|---|---|
-| PostgreSQL | `FOR UPDATE SKIP LOCKED` | Advisory locks | ✅ implemented, conformance green |
-| In-Memory | Mutual exclusion over the dictionary | Process-local | ✅ implemented, conformance green |
+| PostgreSQL | `FOR UPDATE SKIP LOCKED` | Advisory locks | ✅ published, conformance green |
+| In-Memory | Mutual exclusion over the dictionary | Process-local | ✅ published, conformance green |
 | SQL Server | `READPAST + UPDLOCK` | `sp_getapplock` | 🕓 planned |
 | MySQL 8+ | `FOR UPDATE SKIP LOCKED` | `GET_LOCK` | 🕓 planned |
 | MongoDB | `findAndModify` | TTL collection | 🕓 planned |
@@ -379,7 +393,7 @@ All configuration follows the .NET Options pattern under the `Guara` section (va
 | Packaging: version from tag, SourceLink, symbols, package metadata | ✅ Done |
 | Public API freeze (`PublicApiAnalyzers`) | ✅ Done |
 | CI/CD: multi-TFM build, containerised conformance, publish on tag | ✅ Done |
-| **First NuGet release (`0.1.0-preview`)** | 🕓 Next |
+| **First NuGet release (`0.1.0-preview.1`)** | ✅ Done |
 | Remaining providers: SQL Server → MySQL → MongoDB → Redis | 🕓 Planned |
 | `Guara.Analyzers`, `Guara.Extensions`, `Guara.Authentication` | 🕓 Planned |
 | Cluster and distributed coordination, OpenTelemetry, CLI, benchmarks | 🕓 Planned |

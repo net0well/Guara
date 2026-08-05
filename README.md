@@ -7,6 +7,7 @@
 </p>
 
 <p align="center">
+  <a href="https://www.nuget.org/packages/Guara.Hosting"><img src="https://img.shields.io/nuget/vpre/Guara.Hosting?label=NuGet&color=004880" alt="NuGet"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/licen%C3%A7a-Apache--2.0-blue" alt="Licença: Apache-2.0"></a>
   <img src="https://img.shields.io/badge/.NET-8.0%20%7C%2010.0-512BD4" alt=".NET 8.0 | 10.0">
   <img src="https://img.shields.io/badge/status-em%20desenvolvimento%20ativo-orange" alt="Status: em desenvolvimento ativo">
@@ -18,24 +19,37 @@
 
 ---
 
-> **Status do projeto.** O Guará está em desenvolvimento ativo e **ainda não foi publicado no NuGet**. O runtime, o storage PostgreSQL e o painel completo já estão implementados e cobertos por testes; o que ainda não existe está marcado como _planejado_ ao longo deste documento e no [roadmap](#roadmap). Dê star e acompanhe o repositório para seguir o progresso.
+> **Status do projeto.** O Guará está em desenvolvimento ativo, com o primeiro **preview público no NuGet** (`0.1.0-preview.1`). O runtime, o storage PostgreSQL e o painel completo estão implementados e cobertos por testes. Por ser pré-lançamento, a API pública ainda pode mudar até o 1.0 — o que não existe está marcado como _planejado_ ao longo deste documento e no [roadmap](#roadmap). Dê star e acompanhe o repositório para seguir o progresso.
+
+## Instalação
+
+Pré-lançamento exige a flag `--prerelease`; sem ela o NuGet ignora a versão:
+
+```bash
+dotnet add package Guara.Hosting --prerelease              # ponto de entrada: AddGuara()
+dotnet add package Guara.Server --prerelease               # executa os jobs neste processo
+dotnet add package Guara.Storage.PostgreSql --prerelease   # storage (escolha um)
+dotnet add package Guara.Dashboard --prerelease            # opcional: painel web
+```
+
+Para desenvolvimento e testes, troque o storage por `Guara.Storage.Memory`.
 
 ## Pacotes
 
-Instale só o que usar — o núcleo roda sozinho e todo o resto é opcional. **Nada foi publicado ainda**: a coluna de estado diz o que já existe no repositório e sairá na primeira publicação.
+Instale só o que usar — o núcleo roda sozinho e todo o resto é opcional. A coluna de estado separa o que já está publicado do que ainda vai sair.
 
 | Pacote | Para quê | Estado |
 |---|---|---|
-| `Guara.Hosting` | Ponto de entrada: `AddGuara()` e o builder fluente | ✅ implementado |
-| `Guara.Server` | Lifecycle: workers, scheduler, heartbeat, manutenção | ✅ implementado |
-| `Guara.Scheduler` | Cron próprio, recorrentes, calendários, `IGuaraClient` | ✅ implementado |
-| `Guara.Storage.PostgreSql` | Storage PostgreSQL — recomendado para produção | ✅ implementado |
-| `Guara.Storage.Memory` | Storage em memória — dev, testes e demos | ✅ implementado |
-| `Guara.Dashboard` | Painel web (API + SPA Angular embutida, tempo real) | ✅ implementado |
-| `Guara.Authorization` | Permissões por ação do painel | ✅ implementado |
-| `Guara.Diagnostics` | Logs estruturados, métricas e traces | ✅ implementado |
-| `Guara.SourceGenerators` | Registro e invocação de jobs sem reflection | ✅ implementado |
-| `Guara.Abstractions` / `Guara.Storage` | Contratos — para autores de providers e extensões | ✅ implementado |
+| `Guara.Hosting` | Ponto de entrada: `AddGuara()` e o builder fluente | ✅ publicado |
+| `Guara.Server` | Lifecycle: workers, scheduler, heartbeat, manutenção | ✅ publicado |
+| `Guara.Scheduler` | Cron próprio, recorrentes, calendários, `IGuaraClient` | ✅ publicado |
+| `Guara.Storage.PostgreSql` | Storage PostgreSQL — recomendado para produção | ✅ publicado |
+| `Guara.Storage.Memory` | Storage em memória — dev, testes e demos | ✅ publicado |
+| `Guara.Dashboard` | Painel web (API + SPA Angular embutida, tempo real) | ✅ publicado |
+| `Guara.Authorization` | Permissões por ação do painel | ✅ publicado |
+| `Guara.Diagnostics` | Logs estruturados, métricas e traces | ✅ publicado |
+| `Guara.SourceGenerators` | Registro e invocação de jobs sem reflection | ✅ publicado |
+| `Guara.Abstractions` / `Guara.Storage` | Contratos — para autores de providers e extensões | ✅ publicado |
 | `Guara.Storage.SqlServer` | Storage SQL Server | 🕓 planejado |
 | `Guara.Storage.MySql` | Storage MySQL 8+ | 🕓 planejado |
 | `Guara.Storage.Mongo` | Storage MongoDB | 🕓 planejado |
@@ -85,7 +99,7 @@ O nome vem do **lobo-guará**, animal veloz e resiliente nativo do Brasil. Made 
 
 ## Começando
 
-Com os pacotes instalados (ver [Pacotes](#pacotes)), configure tudo com uma API fluente, no estilo do ASP.NET Core:
+Com os pacotes instalados (ver [Instalação](#instalação)), configure tudo com uma API fluente, no estilo do ASP.NET Core:
 
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
@@ -256,8 +270,8 @@ O `Guara.Storage` define os contratos; cada provider os implementa usando as mel
 
 | Provider | Dequeue atômico | Lock distribuído | Estado |
 |---|---|---|---|
-| PostgreSQL | `FOR UPDATE SKIP LOCKED` | Advisory locks | ✅ implementado, conformidade verde |
-| In-Memory | Exclusão mútua sobre o dicionário | Local ao processo | ✅ implementado, conformidade verde |
+| PostgreSQL | `FOR UPDATE SKIP LOCKED` | Advisory locks | ✅ publicado, conformidade verde |
+| In-Memory | Exclusão mútua sobre o dicionário | Local ao processo | ✅ publicado, conformidade verde |
 | SQL Server | `READPAST + UPDLOCK` | `sp_getapplock` | 🕓 planejado |
 | MySQL 8+ | `FOR UPDATE SKIP LOCKED` | `GET_LOCK` | 🕓 planejado |
 | MongoDB | `findAndModify` | Coleção com TTL | 🕓 planejado |
@@ -379,7 +393,7 @@ Toda a configuração segue o padrão Options do .NET, sob a seção `Guara` (va
 | Empacotamento: versão por tag, SourceLink, símbolos, metadados de pacote | ✅ Concluído |
 | Congelamento da API pública (`PublicApiAnalyzers`) | ✅ Concluído |
 | CI/CD: build multi-TFM, conformance por container, publicação por tag | ✅ Concluído |
-| **Primeira publicação no NuGet (`0.1.0-preview`)** | 🕓 Próximo |
+| **Primeira publicação no NuGet (`0.1.0-preview.1`)** | ✅ Concluído |
 | Providers restantes: SQL Server → MySQL → MongoDB → Redis | 🕓 Planejado |
 | `Guara.Analyzers`, `Guara.Extensions`, `Guara.Authentication` | 🕓 Planejado |
 | Cluster e coordenação distribuída, OpenTelemetry, CLI, benchmarks | 🕓 Planejado |
