@@ -31,6 +31,19 @@
   </ItemGroup>
 
   <!--
+    O Guará se analisa com as próprias regras. A documentação afirma que dependência
+    invertida e motor alcançando provider quebram a build — sem isto, não quebrariam.
+
+    Vale só para os pacotes: projetos de teste referenciam tudo por natureza, e o exemplo
+    escolhe um provider concreto, que é exatamente o ponto de composição.
+  -->
+  <ItemGroup Condition="'$(IsPackable)' == 'true' and '$(MSBuildProjectName)' != 'Guara.Analyzers'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)src\Guara.Analyzers\Guara.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <!--
     Congelamento da superfície pública. O analisador compara o código com PublicAPI.*.txt e
     reclama nos dois sentidos: membro público fora do arquivo, e membro no arquivo que sumiu
     do código. Com warning tratado como erro, mudar API pública deixa de passar despercebido
