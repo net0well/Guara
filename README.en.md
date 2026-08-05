@@ -19,7 +19,7 @@
 
 ---
 
-> **Project status.** Guará is under active development, with its first **public preview on NuGet** (`0.1.0-preview.1`). The runtime, the PostgreSQL storage and the full dashboard are implemented and covered by tests. Being a prerelease, the public API may still change until 1.0 — anything not there yet is marked _planned_ throughout this document and in the [roadmap](#roadmap). Star and watch the repository to follow the progress.
+> **Project status.** Guará is under active development, published on NuGet as a **preview** (`0.1.0-preview.2`). The runtime, the full dashboard and four production storages — PostgreSQL, SQL Server, MySQL and MongoDB — are implemented and covered by tests. Being a prerelease, the public API may still change until 1.0 — anything not there yet is marked _planned_ throughout this document and in the [roadmap](#roadmap). Star and watch the repository to follow the progress.
 
 ## Installation
 
@@ -32,7 +32,7 @@ dotnet add package Guara.Storage.PostgreSql --prerelease   # storage (pick one)
 dotnet add package Guara.Dashboard --prerelease            # optional: web dashboard
 ```
 
-For development and tests, swap the storage for `Guara.Storage.Memory`.
+Storage is a single choice: `Guara.Storage.PostgreSql`, `Guara.Storage.SqlServer`, `Guara.Storage.MySql` or `Guara.Storage.Mongo` in production; `Guara.Storage.Memory` for development and tests. They all pass the same conformance kit, and switching between them is one line.
 
 ## Packages
 
@@ -43,22 +43,22 @@ Install only what you use — the core runs on its own and everything else is op
 | `Guara.Hosting` | Entry point: `AddGuara()` and the fluent builder | ✅ published |
 | `Guara.Server` | Lifecycle: workers, scheduler, heartbeat, maintenance | ✅ published |
 | `Guara.Scheduler` | Own cron, recurring jobs, calendars, `IGuaraClient` | ✅ published |
-| `Guara.Storage.PostgreSql` | PostgreSQL storage — recommended for production | ✅ published |
+| `Guara.Storage.PostgreSql` | PostgreSQL storage | ✅ published |
+| `Guara.Storage.SqlServer` | SQL Server 2016+ storage | ✅ published |
+| `Guara.Storage.MySql` | MySQL 8+ storage | ✅ published |
+| `Guara.Storage.Mongo` | MongoDB storage | ✅ published |
 | `Guara.Storage.Memory` | In-memory storage — dev, tests and demos | ✅ published |
 | `Guara.Dashboard` | Web dashboard (API + embedded Angular SPA, real-time) | ✅ published |
 | `Guara.Authorization` | Per-action dashboard permissions | ✅ published |
 | `Guara.Diagnostics` | Structured logs, metrics and traces | ✅ published |
 | `Guara.SourceGenerators` | Reflection-free job registration and invocation | ✅ published |
+| `Guara.Analyzers` | Roslyn analyzers enforcing the dependency rules | ✅ published |
 | `Guara.Abstractions` / `Guara.Storage` | Contracts — for provider and extension authors | ✅ published |
-| `Guara.Storage.SqlServer` | SQL Server storage | 🕓 planned |
-| `Guara.Storage.MySql` | MySQL 8+ storage | 🕓 planned |
-| `Guara.Storage.Mongo` | MongoDB storage | 🕓 planned |
-| `Guara.Storage.Redis` | Redis storage | 🕓 planned |
+| `Guara.Redis` | Accelerator: pub/sub wakeup, locks and dashboard read cache | 🕓 planned |
 | `Guara.Authentication` | Authentication schemes (JWT, OIDC, cookie) | 🕓 planned |
 | `Guara.Cluster` / `Guara.Distributed` | Leader election, failover, distributed coordination | 🕓 planned |
 | `Guara.OpenTelemetry` | OpenTelemetry exporters | 🕓 planned |
 | `Guara.Cli` | Command-line tool (`dotnet tool`) | 🕓 planned |
-| `Guara.Analyzers` | Roslyn analyzers enforcing the dependency rules | 🕓 planned |
 | `Guara.Pro.Batches` | Commercial: job groups with completion callbacks | 🕓 planned |
 
 ## What is Guará
@@ -92,7 +92,7 @@ The name comes from the *lobo-guará* (maned wolf), a fast and resilient animal 
 | Operable dashboard | Search by text/type/queue/state/period, live throughput and latency charts (p50/p95), recurring management (pause, resume, trigger, edit schedule), calendar editing on a monthly grid, and bulk actions |
 | Dashboard authentication | Fluent rules (authenticated users, roles, claims, internal IPs, combinable), custom rules with `HttpContext`, fixed credentials and a **branded login page** |
 | Granular permissions | Every dashboard action requires its own grant (`guara:view`, `guara:retry`, `guara:trigger`, `guara:delete`, `guara:calendars`, `guara:view-payload`), on top of ASP.NET Core policies |
-| Pluggable storage | Shared contracts with a conformance kit every provider inherits. Today: PostgreSQL and In-Memory — switch with one line |
+| Pluggable storage | Shared contracts with a conformance kit every provider inherits. Today: PostgreSQL, SQL Server, MySQL, MongoDB and In-Memory — switch with one line |
 | Observability | Structured logs, metrics (`System.Diagnostics.Metrics`), traces (`ActivitySource`) |
 | Secure by default | Dashboard denies anonymous access unless explicitly configured otherwise; whatever was not granted is denied |
 | _Planned_ | Distributed processing (leader election, failover), remaining storage providers, OpenTelemetry exporters, CLI and Roslyn analyzers |
@@ -264,25 +264,44 @@ Validation -> Authorization -> Serialization -> Custom middleware
 
 Each stage is an `IJobMiddleware`; the `Custom` slot is the user extension point. The full architecture — dependency rules, naming conventions, execution flows, and the ADRs behind every decision — is documented in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (Portuguese).
 
+### Architecture rules that break the build
+
+The dependency rules do not live in documentation alone: `Guara.Analyzers` turns them into compiler errors, and every Guará package builds with it enabled.
+
+| Rule | What it prevents |
+|---|---|
+| `GUARA0001` | Inverted dependency — a component referencing another one from a higher layer |
+| `GUARA0002` | An execution engine reaching a concrete provider instead of the contract |
+
 ## Storage providers
 
 `Guara.Storage` defines the contracts; each provider implements them using the best primitives of its backend. All providers must pass the same **conformance test kit** (atomic acquisition under concurrency, lease/visibility, idempotency, TTL locks).
 
 | Provider | Atomic dequeue | Distributed lock | State |
 |---|---|---|---|
-| PostgreSQL | `FOR UPDATE SKIP LOCKED` | Advisory locks | ✅ published, conformance green |
+| PostgreSQL | `FOR UPDATE SKIP LOCKED` | Table with expiry and owner | ✅ published, conformance green |
+| SQL Server 2016+ | `READPAST + UPDLOCK` with `OUTPUT` | Table with expiry and owner | ✅ published, conformance green |
+| MySQL 8+ | `FOR UPDATE SKIP LOCKED` | Table with expiry and owner | ✅ published, conformance green |
+| MongoDB | `findAndModify` | Document with expiry and owner | ✅ published, conformance green |
 | In-Memory | Mutual exclusion over the dictionary | Process-local | ✅ published, conformance green |
-| SQL Server | `READPAST + UPDLOCK` | `sp_getapplock` | 🕓 planned |
-| MySQL 8+ | `FOR UPDATE SKIP LOCKED` | `GET_LOCK` | 🕓 planned |
-| MongoDB | `findAndModify` | TTL collection | 🕓 planned |
-| Redis | Lua scripts | `SET NX PX` + TTL | 🕓 planned (scope under review) |
+
+Every provider isolates what it writes from the rest of the database. PostgreSQL and SQL Server use a dedicated **schema** (`Schema`, default `guara`); in MySQL schema and database are the same thing, so isolation is by **table prefix** (`TablePrefix`, default `guara_`); in MongoDB, by **collection prefix** (`CollectionPrefix`, default `guara_`).
 
 Switching provider is a one-line change:
 
 ```csharp
 builder.Services.AddGuara().UseMemoryStorage();                    // dev/tests
 builder.Services.AddGuara().UsePostgreSqlStorage(connectionString); // production
+builder.Services.AddGuara().UseSqlServerStorage(connectionString);  // production
+builder.Services.AddGuara().UseMySqlStorage(connectionString);      // production
+builder.Services.AddGuara().UseMongoStorage(connectionString);      // production
 ```
+
+### What about Redis?
+
+Redis is **not shipping as a storage**, and that is a decision, not a gap. A scheduler cannot lose jobs: RDB loses the window since the last snapshot, and AOF `everysec` loses up to a second. On top of that, the dashboard needs filtering by state, queue, type, text and period, with pagination, counts and latency percentiles — in Redis that would mean half a dozen hand-maintained secondary indexes with no transaction keeping them consistent with each other.
+
+Redis ships as an **accelerator** instead (`Guara.Redis`, _planned_), doing what it is genuinely good at: pub/sub wakeup instead of polling, distributed locks and a dashboard read cache. The durable truth stays in the storage provider.
 
 ## Dashboard (optional)
 
@@ -394,11 +413,15 @@ All configuration follows the .NET Options pattern under the `Guara` section (va
 | Public API freeze (`PublicApiAnalyzers`) | ✅ Done |
 | CI/CD: multi-TFM build, containerised conformance, publish on tag | ✅ Done |
 | **First NuGet release (`0.1.0-preview.1`)** | ✅ Done |
-| Remaining providers: SQL Server → MySQL → MongoDB → Redis | 🕓 Planned |
-| `Guara.Analyzers`, `Guara.Extensions`, `Guara.Authentication` | 🕓 Planned |
+| SQL Server, MySQL and MongoDB providers (same conformance kit, 100% green) | ✅ Done |
+| `Guara.Analyzers`: `GUARA0001` and `GUARA0002` enabled across the repository | ✅ Done |
+| **`0.1.0-preview.2` release: four production storages and the analyzers** | ✅ Done |
+| Dispatcher push strategy (wake the worker without polling) | 🕓 Planned |
+| `Guara.Redis` accelerator, on top of the push strategy | 🕓 Planned |
+| `Guara.Extensions`, `Guara.Authentication` | 🕓 Planned |
 | Cluster and distributed coordination, OpenTelemetry, CLI, benchmarks | 🕓 Planned |
 | User documentation and Hangfire migration guide | 🕓 Planned |
-| **1.0** | 🕓 Planned |
+| **1.0** — frozen API, transactions settled in the contract, real-world burn-in | 🕓 Planned |
 
 ## Semantics and guarantees
 
