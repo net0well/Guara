@@ -410,6 +410,19 @@ Recognised actions: `guara:view`, `guara:view-payload`, `guara:retry`, `guara:tr
 
 Beyond observing, the panel **operates**: search by text, type, queue, state and period; live charts of throughput and p50/p95 latency; pause, resume, trigger and edit the schedule of recurring jobs; create and edit calendars on a clickable monthly grid; and retry or delete jobs in bulk, with the outcome reported item by item.
 
+## Performance
+
+Guará makes claims about performance — zero reflection, `ValueTask` on the hot path, low allocation — and those claims have numbers in [`benchmarks/`](benchmarks/README.md). A few, on a Xeon E5-2670 v3:
+
+| Operation | Time | Allocated |
+|---|---:|---:|
+| Cron: next occurrence (`0 3 * * *`) | 467 ns | **0 B** |
+| Cron: worst case (`0 0 29 2 *`, crosses years) | 1,571 ns | **0 B** |
+| `EnfileirarAsync` (in-memory storage) | 1,219 ns | 280 B |
+| Serialize 3 scalar arguments | 898 ns | 984 B |
+
+The in-house cron parser computes without allocating, worst case included. What is **not** measured yet — execution pipeline, persistent providers, end-to-end throughput — is listed in the same place, along with a finding about the in-memory storage under backlog.
+
 ## Configuration
 
 All configuration follows the .NET Options pattern under the `Guara` section (validated at startup — invalid configuration fails at boot, not in production):
@@ -465,6 +478,7 @@ All configuration follows the .NET Options pattern under the `Guara` section (va
 | `Guara.Redis`: the queue signal over pub/sub, waking every node's dispatcher | ✅ Done |
 | **`0.1.0-preview.3` release: queue-signal wakeup and the Redis accelerator** | ✅ Done |
 | Enqueuing inside the caller's transaction (PostgreSQL, SQL Server, MySQL) | ✅ Done |
+| Benchmarks: serialization, cron, enqueue and in-memory storage | ✅ Done |
 | `Guara.Extensions`, `Guara.Authentication` | 🕓 Planned |
 | Cluster and distributed coordination, OpenTelemetry, CLI, benchmarks | 🕓 Planned |
 | User documentation and Hangfire migration guide | 🕓 Planned |

@@ -410,6 +410,19 @@ Ações reconhecidas: `guara:view`, `guara:view-payload`, `guara:retry`, `guara:
 
 Além de observar, o painel **opera**: busca por texto, tipo, fila, estado e período; gráficos ao vivo de vazão e de latência p50/p95; pausar, retomar, disparar e editar a agenda de recorrentes; criar e editar calendários numa visão mensal clicável; e retentar ou excluir jobs em massa, com o desfecho relatado item a item.
 
+## Performance
+
+O Guará afirma coisas sobre performance — zero reflection, `ValueTask` no caminho crítico, baixa alocação — e essas afirmações têm número em [`benchmarks/`](benchmarks/README.md). Alguns de referência, num Xeon E5-2670 v3:
+
+| Operação | Tempo | Alocado |
+|---|---:|---:|
+| Cron: próximo disparo (`0 3 * * *`) | 467 ns | **0 B** |
+| Cron: pior caso (`0 0 29 2 *`, atravessa anos) | 1.571 ns | **0 B** |
+| `EnfileirarAsync` (storage in-memory) | 1.219 ns | 280 B |
+| Serializar 3 argumentos escalares | 898 ns | 984 B |
+
+O parser cron próprio calcula sem alocar, inclusive no pior caso. O que **ainda não** é medido — pipeline de execução, providers persistentes, vazão ponta a ponta — está listado no mesmo lugar, junto com um achado sobre o storage in-memory sob backlog.
+
 ## Configuração
 
 Toda a configuração segue o padrão Options do .NET, sob a seção `Guara` (validada no startup — configuração inválida falha no boot, não em produção):
@@ -465,6 +478,7 @@ Toda a configuração segue o padrão Options do .NET, sob a seção `Guara` (va
 | `Guara.Redis`: o aviso de fila por pub/sub, acordando o dispatcher de todos os nós | ✅ Concluído |
 | **Publicação `0.1.0-preview.3`: wakeup por sinal de fila e o acelerador Redis** | ✅ Concluído |
 | Enfileiramento dentro da transação do chamador (PostgreSQL, SQL Server, MySQL) | ✅ Concluído |
+| Benchmarks: serialização, cron, enfileiramento e storage in-memory | ✅ Concluído |
 | `Guara.Extensions`, `Guara.Authentication` | 🕓 Planejado |
 | Cluster e coordenação distribuída, OpenTelemetry, CLI, benchmarks | 🕓 Planejado |
 | Documentação de usuário e guia de migração do Hangfire | 🕓 Planejado |

@@ -1,6 +1,6 @@
 # Princípios de Performance
 
-Performance é requisito arquitetural, não otimização posterior. **Cada componente deve respeitar** as regras abaixo. Componentes de caminho crítico têm projeto em `benchmarks/` (BenchmarkDotNet) com baseline versionado.
+Performance é requisito arquitetural, não otimização posterior. **Cada componente deve respeitar** as regras abaixo. Componentes de caminho crítico têm projeto em [`benchmarks/`](../benchmarks/README.md) (BenchmarkDotNet), com os números de referência e os achados registrados lá.
 
 ## Regras
 
@@ -52,6 +52,6 @@ Ver também [anti-patterns.md](anti-patterns.md) (itens 9, 10, 14, 15).
 
 ## Verificação
 
-- Todo componente crítico tem benchmark em `benchmarks/Guara.{Componente}.Benchmarks`.
-- Regressões de alocação/latência acima do limiar do baseline **falham** o CI.
-- Builds AOT (`PublishAot=true`) fazem parte da matriz de CI para os pacotes runtime.
+- Componentes críticos têm benchmark em `benchmarks/Guara.{Componente}.Benchmarks`. Já medidos: serialização, cron/enfileiramento e storage in-memory. Ainda não: pipeline de execução, providers persistentes e vazão ponta a ponta — a lista viva está no [README dos benchmarks](../benchmarks/README.md).
+- Os analisadores de trimming/AOT rodam na build (`IsAotCompatible`), então incompatibilidade aparece como erro de compilação em todo pacote de runtime.
+- **Ainda não existe** baseline versionado nem gate de regressão no CI: os benchmarks rodam quando alguém os roda. Ligar isso depende de máquina de medição estável, já que runner compartilhado produz ruído maior que a regressão que se quer pegar.
