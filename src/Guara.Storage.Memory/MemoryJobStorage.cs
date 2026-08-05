@@ -22,6 +22,12 @@ internal sealed class MemoryJobStorage(TimeProvider time) : IJobStorage
         return ValueTask.FromResult(record.Id);
     }
 
+    public ValueTask<JobId> CreateAsync(JobRecord record, IGuaraTransaction transaction, CancellationToken ct)
+        => throw new NotSupportedException(
+            "MemoryStorage não participa de transação do chamador " +
+            "(Capabilities.SupportsTransactions = false): não há banco com que compartilhar " +
+            "uma. Para enfileirar junto com a gravação do negócio, use um provider relacional.");
+
     public ValueTask<JobRecord?> AcquireNextDueAsync(string queue, TimeSpan lease, DateTimeOffset now, CancellationToken ct)
     {
         lock (_sync)

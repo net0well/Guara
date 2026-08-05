@@ -1,5 +1,4 @@
 Guara.Storage.Memory.MemoryStorage
-Guara.Storage.Memory.MemoryStorage.BeginTransactionAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Storage.ITransaction!>
 Guara.Storage.Memory.MemoryStorage.Capabilities.get -> Guara.Storage.StorageCapabilities!
 Guara.Storage.Memory.MemoryStorage.Continuations.get -> Guara.Storage.IContinuationStorage!
 Guara.Storage.Memory.MemoryStorage.Jobs.get -> Guara.Storage.IJobStorage!

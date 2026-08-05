@@ -2,7 +2,7 @@ namespace Guara.Storage;
 
 /// <summary>
 /// Introspecção de filas (dashboard/métricas). Enfileirar é criar um <see cref="JobRecord"/>
-/// com estado <c>Enqueued</c> via <see cref="IJobStorage.CreateAsync"/>; desenfileirar é
+/// com estado <c>Enqueued</c> via <see cref="IJobStorage.CreateAsync(JobRecord, System.Threading.CancellationToken)"/>; desenfileirar é
 /// <see cref="IJobStorage.AcquireNextDueAsync"/> — este contrato não duplica essas operações.
 /// </summary>
 public interface IQueueStorage

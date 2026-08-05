@@ -1,4 +1,5 @@
 using Guara.Storage.Conformance;
+using Npgsql;
 using Xunit;
 
 namespace Guara.Storage.PostgreSql.Tests;
@@ -9,4 +10,16 @@ public sealed class PostgreSqlStorageConformanceTests(PostgresContainerFixture f
 {
     protected override ValueTask<IStorage> CreateStorageCoreAsync(TimeProvider timeProvider)
         => ValueTask.FromResult<IStorage>(new PostgreSqlStorage(fixture.NewOptions(), timeProvider));
+
+    /// <summary>
+    /// Conexão própria, como a de um <c>DbContext</c> da aplicação: mesma base do
+    /// provider, transação aberta e controlada por quem chama.
+    /// </summary>
+    protected override async ValueTask<ConformanceTransaction?> BeginCallerTransactionAsync(
+        IStorage storage, CancellationToken ct)
+    {
+        var connection = new NpgsqlConnection(fixture.ConnectionString);
+        await connection.OpenAsync(ct);
+        return new RelationalConformanceTransaction(connection, await connection.BeginTransactionAsync(ct));
+    }
 }

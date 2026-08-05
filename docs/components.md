@@ -14,7 +14,7 @@ Cada linha da tabela é um projeto em `src/`. **Um projeto = uma responsabilidad
 | `Guara.Worker` | **Apenas** executa Jobs | `Abstractions` | agendamento, dispatch |
 | `Guara.Dispatcher` | **Apenas** busca Jobs | `Abstractions` | execução, agendamento, serialização |
 | `Guara.Executor` | Recebe Job pronto → executa → atualiza estado → finaliza | `Abstractions` | como o Job foi buscado/agendado |
-| `Guara.Storage` | Define `IStorage`, `ITransaction`, `ILockProvider`, `IQueueStorage`, `IJobStorage` | `Abstractions` | qualquer banco específico |
+| `Guara.Storage` | Define `IStorage`, `IJobStorage`, `IQueueStorage`, `ILockProvider` e o handle `RelationalTransaction` | `Abstractions` | qualquer banco específico |
 | `Guara.Storage.Memory` | Implementa `IStorage` em memória | `Storage` | outros componentes |
 | `Guara.Storage.SqlServer` | Implementa `IStorage` sobre SQL Server | `Storage` | Scheduler, Worker, Dashboard |
 | `Guara.Storage.PostgreSql` | Implementa `IStorage` sobre PostgreSQL | `Storage` | idem |

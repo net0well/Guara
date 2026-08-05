@@ -37,13 +37,13 @@ internal sealed class MySqlStorage : IStorage, IAsyncDisposable
 
     /// <inheritdoc />
     /// <remarks>
-    /// Transações: <c>false</c> por ora — as operações são individualmente atômicas
-    /// (capabilities honestas). Lock distribuído: <c>true</c> (tabela com TTL e dono,
+    /// Transações: <c>true</c> — o enfileiramento participa da transação do chamador,
+    /// escrevendo na conexão dela. Lock distribuído: <c>true</c> (tabela com TTL e dono,
     /// válido entre nós). Timers no servidor: <c>false</c> — quem acorda os jobs é o
     /// Dispatcher, não o banco.
     /// </remarks>
     public StorageCapabilities Capabilities { get; } = new(
-        SupportsTransactions: false,
+        SupportsTransactions: true,
         SupportsDistributedLock: true,
         SupportsServerSideTimers: false,
         SupportsServerSideFilter: true);
@@ -65,12 +65,6 @@ internal sealed class MySqlStorage : IStorage, IAsyncDisposable
 
     /// <inheritdoc />
     public IContinuationStorage Continuations { get; }
-
-    /// <inheritdoc />
-    public ValueTask<ITransaction> BeginTransactionAsync(CancellationToken ct)
-        => throw new NotSupportedException(
-            "MySqlStorage ainda não expõe transações (Capabilities.SupportsTransactions = false); " +
-            "as operações são individualmente atômicas.");
 
     /// <summary>Libera o pool de conexões.</summary>
     /// <returns>Uma <see cref="ValueTask"/> que conclui quando o pool foi liberado.</returns>

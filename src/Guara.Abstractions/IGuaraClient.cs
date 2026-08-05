@@ -13,12 +13,54 @@ public interface IGuaraClient
     /// <returns>O id do job criado.</returns>
     ValueTask<JobId> EnfileirarAsync(JobDescriptor job, CancellationToken ct = default);
 
+    /// <summary>
+    /// Enfileira um job <b>dentro da transação do chamador</b>: se ela for desfeita, o
+    /// job nunca existiu. Use para gravar o dado do negócio e enfileirar o trabalho que
+    /// depende dele como uma operação só.
+    /// <para>
+    /// O id volta antes da confirmação. Registrá-lo fora da transação (log, resposta
+    /// HTTP, outra conexão) é responsabilidade de quem o faz — um rollback posterior
+    /// deixa esse id apontando para nada.
+    /// </para>
+    /// <para>
+    /// Este caminho <b>não avisa a fila</b>: o Guará não enxerga a confirmação do
+    /// chamador, então acordar o dispatcher agora o mandaria buscar um job que ainda não
+    /// é visível. O job entra no próximo ciclo de busca — atomicidade ao custo de alguma
+    /// latência.
+    /// </para>
+    /// </summary>
+    /// <param name="job">Descrição do job.</param>
+    /// <param name="transacao">Transação aberta pelo chamador, na conexão que alcança as tabelas do Guará.</param>
+    /// <param name="ct">Token de cancelamento.</param>
+    /// <returns>O id do job criado.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Quando o provider de storage não aceita enfileiramento transacional
+    /// (<see cref="Guara.Abstractions.IGuaraClient"/> consulta o provider; veja a
+    /// capacidade <c>SupportsTransactions</c>), ou quando o handle veio de outra família
+    /// de provider.
+    /// </exception>
+    ValueTask<JobId> EnfileirarAsync(JobDescriptor job, IGuaraTransaction transacao, CancellationToken ct = default);
+
     /// <summary>Agenda um job para rodar uma vez, após um atraso.</summary>
     /// <param name="job">Descrição do job.</param>
     /// <param name="atraso">Quanto tempo esperar antes de executar.</param>
     /// <param name="ct">Token de cancelamento.</param>
     /// <returns>O id do job criado.</returns>
     ValueTask<JobId> AgendarAsync(JobDescriptor job, TimeSpan atraso, CancellationToken ct = default);
+
+    /// <summary>
+    /// Agenda um job <b>dentro da transação do chamador</b>: se ela for desfeita, o job
+    /// nunca existiu. Mesmas ressalvas de
+    /// <see cref="EnfileirarAsync(JobDescriptor, IGuaraTransaction, CancellationToken)"/>.
+    /// </summary>
+    /// <param name="job">Descrição do job.</param>
+    /// <param name="atraso">Quanto tempo esperar antes de executar.</param>
+    /// <param name="transacao">Transação aberta pelo chamador, na conexão que alcança as tabelas do Guará.</param>
+    /// <param name="ct">Token de cancelamento.</param>
+    /// <returns>O id do job criado.</returns>
+    /// <exception cref="NotSupportedException">Quando o provider não aceita enfileiramento transacional.</exception>
+    ValueTask<JobId> AgendarAsync(
+        JobDescriptor job, TimeSpan atraso, IGuaraTransaction transacao, CancellationToken ct = default);
 
     /// <summary>
     /// Exclui um job que ainda não está em execução. Continuações pendentes do job

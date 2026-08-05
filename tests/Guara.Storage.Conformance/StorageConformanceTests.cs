@@ -21,6 +21,18 @@ public abstract class StorageConformanceTests : IAsyncDisposable
     /// <summary>Cria o storage sob teste usando o relógio fornecido.</summary>
     protected abstract ValueTask<IStorage> CreateStorageCoreAsync(TimeProvider timeProvider);
 
+    /// <summary>
+    /// Abre uma transação do chamador na mesma base que o storage alcança. Providers que
+    /// declaram <see cref="StorageCapabilities.SupportsTransactions"/> como <c>false</c>
+    /// não precisam sobrescrever: os casos transacionais passam a exigir a recusa.
+    /// </summary>
+    /// <param name="storage">Storage sob teste, para a fixture achar a mesma base.</param>
+    /// <param name="ct">Token de cancelamento.</param>
+    /// <returns>A transação aberta, ou <c>null</c> quando o provider não suporta.</returns>
+    protected virtual ValueTask<ConformanceTransaction?> BeginCallerTransactionAsync(
+        IStorage storage, CancellationToken ct)
+        => new((ConformanceTransaction?)null);
+
     /// <summary>Cria e registra o storage para descarte ao fim do teste.</summary>
     protected async ValueTask<IStorage> CreateStorageAsync(TimeProvider timeProvider)
     {
@@ -864,6 +876,97 @@ public abstract class StorageConformanceTests : IAsyncDisposable
         var pending = Assert.Single(await storage.Continuations.ListPendingAsync(CancellationToken.None));
         Assert.Equal(new JobId("c1"), pending.ChildId);
     }
+
+    // --- Enfileiramento transacional ---
+
+    /// <summary>
+    /// Prova que a capacidade declarada é verdadeira: quem diz suportar precisa entregar
+    /// uma transação ao kit; quem diz não suportar precisa recusar o enfileiramento.
+    /// Sem este par, a flag poderia mentir nas duas direções.
+    /// </summary>
+    [Fact]
+    public async Task Transactions_DeclaredCapabilityMatchesReality()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await using var transacao = await BeginCallerTransactionAsync(storage, CancellationToken.None);
+
+        Assert.Equal(storage.Capabilities.SupportsTransactions, transacao is not null);
+    }
+
+    [Fact]
+    public async Task Create_InsideCallerTransaction_IsVisibleAfterCommit()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await using var transacao = await BeginCallerTransactionAsync(storage, CancellationToken.None);
+        if (transacao is null)
+        {
+            Assert.Skip("Provider não participa de transação do chamador.");
+            return;
+        }
+
+        await storage.Jobs.CreateAsync(NewJob("jt1"), transacao.Handle, CancellationToken.None);
+        await transacao.CommitAsync(CancellationToken.None);
+
+        var found = await storage.Jobs.GetAsync(new JobId("jt1"), CancellationToken.None);
+        Assert.NotNull(found);
+        Assert.Equal(JobState.Enqueued, found.State);
+    }
+
+    [Fact]
+    public async Task Create_InsideCallerTransaction_NeverExistedAfterRollback()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await using var transacao = await BeginCallerTransactionAsync(storage, CancellationToken.None);
+        if (transacao is null)
+        {
+            Assert.Skip("Provider não participa de transação do chamador.");
+            return;
+        }
+
+        await storage.Jobs.CreateAsync(NewJob("jt2"), transacao.Handle, CancellationToken.None);
+        await transacao.RollbackAsync(CancellationToken.None);
+
+        Assert.Null(await storage.Jobs.GetAsync(new JobId("jt2"), CancellationToken.None));
+    }
+
+    /// <summary>
+    /// O job não pode aparecer para o dispatcher antes de o chamador confirmar — é o
+    /// modo de falha que motiva a funcionalidade: processar trabalho de um dado que
+    /// ainda pode não existir.
+    /// </summary>
+    [Fact]
+    public async Task Create_InsideCallerTransaction_IsInvisibleBeforeCommit()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await using var transacao = await BeginCallerTransactionAsync(storage, CancellationToken.None);
+        if (transacao is null)
+        {
+            Assert.Skip("Provider não participa de transação do chamador.");
+            return;
+        }
+
+        await storage.Jobs.CreateAsync(NewJob("jt3"), transacao.Handle, CancellationToken.None);
+
+        // A aquisição é o que importa: ela roda na conexão do provider, por fora da
+        // transação, e não pode entregar um job que ainda pode desaparecer. É também a
+        // leitura que não bloqueia em nenhum dos bancos — a busca pula linha travada.
+        Assert.Null(await storage.Jobs.AcquireNextDueAsync(
+            "default", TimeSpan.FromMinutes(1), T0, CancellationToken.None));
+
+        await transacao.RollbackAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task Create_WithForeignTransactionHandle_IsRefused()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+
+        await Assert.ThrowsAsync<NotSupportedException>(async () =>
+            await storage.Jobs.CreateAsync(NewJob("jt4"), new ForeignTransaction(), CancellationToken.None));
+    }
+
+    /// <summary>Handle de outra família — nenhum provider deste kit deve aceitá-lo.</summary>
+    private sealed class ForeignTransaction : Guara.Abstractions.IGuaraTransaction;
 
     // --- Capabilities ---
 

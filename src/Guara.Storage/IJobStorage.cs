@@ -17,6 +17,21 @@ public interface IJobStorage
     ValueTask<JobId> CreateAsync(JobRecord record, CancellationToken ct);
 
     /// <summary>
+    /// Persiste um job novo <b>dentro da transação do chamador</b>: se ela for desfeita,
+    /// o job nunca existiu. O provider escreve na conexão da transação recebida e
+    /// <b>nunca</b> a confirma nem a desfaz — o controle é de quem a abriu.
+    /// </summary>
+    /// <param name="record">Registro a persistir (estado inicial definido pelo chamador).</param>
+    /// <param name="transaction">Transação aberta pelo chamador.</param>
+    /// <param name="ct">Token de cancelamento.</param>
+    /// <returns>O id do job.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Quando o provider declara <see cref="StorageCapabilities.SupportsTransactions"/>
+    /// como <c>false</c>, ou quando o handle veio de outra família de provider.
+    /// </exception>
+    ValueTask<JobId> CreateAsync(JobRecord record, IGuaraTransaction transaction, CancellationToken ct);
+
+    /// <summary>
     /// Adquire atomicamente o próximo job elegível da fila: <c>Enqueued</c>, <c>Scheduled</c>
     /// ou <c>Retrying</c> vencidos (<c>ScheduledFor &lt;= now</c>), ou <c>Processing</c> com
     /// lease expirado. O job adquirido passa a <c>Processing</c> com

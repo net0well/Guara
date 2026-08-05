@@ -154,6 +154,35 @@ public sealed class RelatorioService(IGuaraClient jobs)
 }
 ```
 
+### Enfileirando junto com o seu dado (transacional)
+
+O modo de falha clássico: você grava o pedido, enfileira o e-mail de confirmação, e a transação do pedido faz rollback. O worker processa um job cujo pedido nunca existiu. Ou o inverso — o commit passa, o enfileiramento falha, e o e-mail nunca sai.
+
+Passe a sua transação e as duas coisas viram uma só:
+
+```csharp
+await using var tx = await db.Database.BeginTransactionAsync(ct);
+
+db.Pedidos.Add(pedido);
+await db.SaveChangesAsync(ct);
+
+await jobs.EnfileirarAsync(
+    () => EnviarConfirmacaoAsync(pedido.Id),
+    new RelationalTransaction(db.Database.GetDbTransaction()),
+    ct);
+
+await tx.CommitAsync(ct);   // ou os dois acontecem, ou nenhum
+```
+
+Quem abre a transação é **você**; o Guará só escreve dentro dela e nunca confirma nem desfaz nada. Isso exige que o Guará viva no **mesmo banco** da aplicação — que é justamente para isso que existe o isolamento por schema e por prefixo.
+
+Duas ressalvas que valem saber antes de usar:
+
+- **O id volta antes do commit.** Registrá-lo fora da transação (log, resposta HTTP, outra conexão) é por sua conta: um rollback deixa esse id apontando para nada.
+- **Este caminho não avisa a fila.** O Guará não enxerga o seu commit, então acordar o dispatcher agora o mandaria buscar um job que ainda não é visível. O job entra no próximo ciclo de busca — atomicidade ao custo de alguma latência.
+
+Disponível em **PostgreSQL, SQL Server e MySQL**. MongoDB e in-memory declaram `SupportsTransactions: false` e recusam a chamada com mensagem explícita: transação multi-documento no MongoDB exige replica set, e um servidor standalone não a oferece. Ver [ADR-0014](docs/adr/0014-enfileiramento-transacional.md).
+
 ### Jobs recorrentes (builder fluente, estilo Quartz)
 
 Recorrentes são configurados com um **builder fluente** ([spec 038](spec/038-agendamento-fluente.md)) — identidade, agenda, vigência, descrição e calendário num só lugar:
@@ -286,6 +315,8 @@ O `Guara.Storage` define os contratos; cada provider os implementa usando as mel
 | MySQL 8+ | `FOR UPDATE SKIP LOCKED` | Tabela com validade e dono | ✅ publicado, conformidade verde |
 | MongoDB | `findAndModify` | Documento com validade e dono | ✅ publicado, conformidade verde |
 | In-Memory | Exclusão mútua sobre o dicionário | Local ao processo | ✅ publicado, conformidade verde |
+
+Os três relacionais aceitam **enfileirar dentro da sua transação** — ver [acima](#enfileirando-junto-com-o-seu-dado-transacional). MongoDB e in-memory declaram `SupportsTransactions: false` e recusam a chamada.
 
 Cada provider isola o que grava do resto do banco. PostgreSQL e SQL Server usam um **schema** dedicado (`Schema`, padrão `guara`); no MySQL schema e banco de dados são a mesma coisa, então o isolamento é por **prefixo de tabela** (`TablePrefix`, padrão `guara_`); no MongoDB, por **prefixo de coleção** (`CollectionPrefix`, padrão `guara_`).
 
@@ -433,6 +464,7 @@ Toda a configuração segue o padrão Options do .NET, sob a seção `Guara` (va
 | Wakeup por sinal de fila: o dispatcher acorda ao enfileirar, sem baixar o intervalo | ✅ Concluído |
 | `Guara.Redis`: o aviso de fila por pub/sub, acordando o dispatcher de todos os nós | ✅ Concluído |
 | **Publicação `0.1.0-preview.3`: wakeup por sinal de fila e o acelerador Redis** | ✅ Concluído |
+| Enfileiramento dentro da transação do chamador (PostgreSQL, SQL Server, MySQL) | ✅ Concluído |
 | `Guara.Extensions`, `Guara.Authentication` | 🕓 Planejado |
 | Cluster e coordenação distribuída, OpenTelemetry, CLI, benchmarks | 🕓 Planejado |
 | Documentação de usuário e guia de migração do Hangfire | 🕓 Planejado |

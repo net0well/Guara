@@ -59,6 +59,7 @@ Guara.Storage.IJobStorage
 Guara.Storage.IJobStorage.AcquireNextDueAsync(string! queue, System.TimeSpan lease, System.DateTimeOffset now, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Storage.JobRecord?>
 Guara.Storage.IJobStorage.CountAsync(Guara.Storage.JobQuery! query, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<long>
 Guara.Storage.IJobStorage.CountByStateAsync(string? queue, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyDictionary<Guara.Abstractions.JobState, long>!>
+Guara.Storage.IJobStorage.CreateAsync(Guara.Storage.JobRecord! record, Guara.Abstractions.IGuaraTransaction! transaction, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Abstractions.JobId>
 Guara.Storage.IJobStorage.CreateAsync(Guara.Storage.JobRecord! record, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Abstractions.JobId>
 Guara.Storage.IJobStorage.DeleteAsync(Guara.Abstractions.JobId id, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<bool>
 Guara.Storage.IJobStorage.GetAsync(Guara.Abstractions.JobId id, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Storage.JobRecord?>
@@ -94,7 +95,6 @@ Guara.Storage.IServerRegistry.ListAsync(System.Threading.CancellationToken ct) -
 Guara.Storage.IServerRegistry.RemoveAsync(string! serverId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
 Guara.Storage.IServerRegistry.RemoveExpiredAsync(System.DateTimeOffset heartbeatBefore, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<int>
 Guara.Storage.IStorage
-Guara.Storage.IStorage.BeginTransactionAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Storage.ITransaction!>
 Guara.Storage.IStorage.Capabilities.get -> Guara.Storage.StorageCapabilities!
 Guara.Storage.IStorage.Continuations.get -> Guara.Storage.IContinuationStorage!
 Guara.Storage.IStorage.Jobs.get -> Guara.Storage.IJobStorage!
@@ -102,9 +102,6 @@ Guara.Storage.IStorage.Locks.get -> Guara.Storage.ILockProvider!
 Guara.Storage.IStorage.Queues.get -> Guara.Storage.IQueueStorage!
 Guara.Storage.IStorage.Recurring.get -> Guara.Storage.IRecurringStorage!
 Guara.Storage.IStorage.Servers.get -> Guara.Storage.IServerRegistry!
-Guara.Storage.ITransaction
-Guara.Storage.ITransaction.CommitAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
-Guara.Storage.ITransaction.RollbackAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
 Guara.Storage.JobLatency
 Guara.Storage.JobQuery
 Guara.Storage.JobQuery.<Clone>$() -> Guara.Storage.JobQuery!
@@ -189,6 +186,12 @@ Guara.Storage.JobSeriesQuery.To.init -> void
 Guara.Storage.JobSeriesQuery.Validate() -> void
 Guara.Storage.RecurringJobRecord
 Guara.Storage.RecurringJobRecord.<Clone>$() -> Guara.Storage.RecurringJobRecord!
+Guara.Storage.RelationalTransaction
+Guara.Storage.RelationalTransaction.RelationalTransaction(System.Data.Common.DbTransaction! transaction) -> void
+Guara.Storage.RelationalTransaction.RequireConnection<TConnection>(string! provider) -> TConnection!
+Guara.Storage.RelationalTransaction.RequireTransaction<TTransaction>(string! provider) -> TTransaction!
+Guara.Storage.RelationalTransaction.Transaction.get -> System.Data.Common.DbTransaction!
+static Guara.Storage.RelationalTransaction.Require(Guara.Abstractions.IGuaraTransaction! transaction, string! provider) -> Guara.Storage.RelationalTransaction!
 Guara.Storage.RecurringJobRecord.CalendarName.get -> string?
 Guara.Storage.RecurringJobRecord.CalendarName.init -> void
 Guara.Storage.RecurringJobRecord.CreatedAt.get -> System.DateTimeOffset

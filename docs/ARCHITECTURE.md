@@ -93,7 +93,7 @@ Guara.sln
 │   ├── Guara.Dispatcher            # apenas busca Jobs (não executa, não agenda)
 │   ├── Guara.Executor              # recebe Job pronto, executa, atualiza estado, finaliza
 │   │
-│   ├── Guara.Storage               # IStorage, ITransaction, ILockProvider, IQueueStorage... (não implementa)
+│   ├── Guara.Storage               # IStorage, IJobStorage, ILockProvider, IQueueStorage... (não implementa)
 │   ├── Guara.Storage.Memory        # implementação in-memory
 │   ├── Guara.Storage.SqlServer     # implementação SQL Server
 │   ├── Guara.Storage.PostgreSql    # implementação PostgreSQL
