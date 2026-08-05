@@ -1,0 +1,10 @@
+const Guara.Analyzers.ConcreteProviderAnalyzer.DiagnosticId = "GUARA0002" -> string!
+const Guara.Analyzers.DependencyDirectionAnalyzer.DiagnosticId = "GUARA0001" -> string!
+Guara.Analyzers.ConcreteProviderAnalyzer
+Guara.Analyzers.ConcreteProviderAnalyzer.ConcreteProviderAnalyzer() -> void
+Guara.Analyzers.DependencyDirectionAnalyzer
+Guara.Analyzers.DependencyDirectionAnalyzer.DependencyDirectionAnalyzer() -> void
+override Guara.Analyzers.ConcreteProviderAnalyzer.Initialize(Microsoft.CodeAnalysis.Diagnostics.AnalysisContext! context) -> void
+override Guara.Analyzers.ConcreteProviderAnalyzer.SupportedDiagnostics.get -> System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.DiagnosticDescriptor!>
+override Guara.Analyzers.DependencyDirectionAnalyzer.Initialize(Microsoft.CodeAnalysis.Diagnostics.AnalysisContext! context) -> void
+override Guara.Analyzers.DependencyDirectionAnalyzer.SupportedDiagnostics.get -> System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.DiagnosticDescriptor!>

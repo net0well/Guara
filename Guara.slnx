@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Guara.Abstractions/Guara.Abstractions.csproj" />
+    <Project Path="src/Guara.Analyzers/Guara.Analyzers.csproj" />
     <Project Path="src/Guara.Authorization/Guara.Authorization.csproj" />
     <Project Path="src/Guara.Configuration/Guara.Configuration.csproj" />
     <Project Path="src/Guara.Core/Guara.Core.csproj" />
@@ -23,6 +24,7 @@
     <Project Path="samples/Guara.Host/Guara.Host.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Guara.Analyzers.Tests/Guara.Analyzers.Tests.csproj" />
     <Project Path="tests/Guara.Authorization.Tests/Guara.Authorization.Tests.csproj" />
     <Project Path="tests/Guara.Core.Tests/Guara.Core.Tests.csproj" />
     <Project Path="tests/Guara.Dashboard.Api.Tests/Guara.Dashboard.Api.Tests.csproj" />
