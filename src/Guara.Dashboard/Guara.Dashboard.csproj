@@ -67,10 +67,11 @@
     <Message Condition="'$(_GuaraNodeExit)' == '0'" Importance="high" Text="Guara.Dashboard: construindo a SPA Angular…" />
     <!--
       A presença de node_modules não prova instalação concluída: o npm cria o diretório
-      logo no início. O binário do Angular só aparece no fim, então é ele que decide se
-      há o que instalar.
+      no início e o preenche depois. Quem decide é .package-lock.json, que o npm escreve
+      ao concluir — atalhos em .bin aparecem antes de os pacotes estarem inteiros, e uma
+      instalação interrompida no meio passaria por completa.
     -->
-    <Exec Condition="'$(_GuaraNodeExit)' == '0' and !Exists('$(AngularProjectDir)\node_modules\.bin\ng')"
+    <Exec Condition="'$(_GuaraNodeExit)' == '0' and !Exists('$(AngularProjectDir)\node_modules\.package-lock.json')"
           Command="npm ci" WorkingDirectory="$(AngularProjectDir)" />
     <Exec Condition="'$(_GuaraNodeExit)' == '0'"
           Command="npm run build" WorkingDirectory="$(AngularProjectDir)" />
