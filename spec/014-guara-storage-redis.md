@@ -1,6 +1,8 @@
 # Spec 014: `Guara.Storage.Redis` — Storage Redis
 
-**Status:** Approved (2026-07-16)
+> **Superada por [ADR-0013](../docs/adr/0013-redis-como-acelerador.md) (2026-08-05).** Este storage não será implementado: a persistência assíncrona do Redis perde jobs numa queda, e as consultas do painel virariam índices secundários mantidos à mão sem transação que os mantenha coerentes. O Redis entra como acelerador em `Guara.Redis`, levando o aviso de fila entre nós. O texto abaixo fica como registro do desenho avaliado.
+
+**Status:** Superseded (2026-08-05) — antes Approved (2026-07-16)
 **Date:** 2026-07-16
 **Componente:** `Guara.Storage.Redis`
 **Implementa:** [Spec 004 (`Guara.Storage`)](004-guara-storage.md)

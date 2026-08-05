@@ -33,6 +33,7 @@ public static class DispatcherServiceCollectionExtensions
         builder.Services.TryAddSingleton<IDispatcher>(sp => new GuaraDispatcher(
             sp.GetRequiredService<Guara.Storage.IStorage>(),
             sp.GetRequiredService<IEventPublisher>(),
+            sp.GetRequiredService<IQueueSignal>(),
             sp.GetRequiredService<DispatcherOptions>(),
             sp.GetRequiredService<TimeProvider>(),
             sp.GetService<ILogger<GuaraDispatcher>>() ?? NullLogger<GuaraDispatcher>.Instance));

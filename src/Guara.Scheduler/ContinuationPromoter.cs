@@ -10,7 +10,8 @@ namespace Guara.Scheduler;
 /// A resolução do vínculo é única entre nós (<see cref="IContinuationStorage.TryResolveAsync"/>);
 /// a varredura cobre quedas entre persistir o final do pai e promover.
 /// </summary>
-internal sealed class ContinuationPromoter(IStorage storage, TimeProvider time, ILogger<ContinuationPromoter> logger)
+internal sealed class ContinuationPromoter(
+    IStorage storage, IQueueSignal signal, TimeProvider time, ILogger<ContinuationPromoter> logger)
 {
     /// <summary>Avalia todas as continuações de um pai que atingiu um estado final.</summary>
     /// <param name="parentId">Id do job pai.</param>
@@ -101,6 +102,14 @@ internal sealed class ContinuationPromoter(IStorage storage, TimeProvider time, 
                 logger.LogInformation(
                     "Continuação {ChildId} enfileirada: o pai {ParentId} finalizou como {ParentState}",
                     continuation.ChildId.Value, continuation.ParentId.Value, parentFinalState);
+
+                // A leitura do filho existe só para descobrir a fila do aviso, e acontece
+                // apenas aqui: a resolução é única entre nós, então quem não promoveu
+                // não paga a consulta nem avisa em duplicidade.
+                if (await storage.Jobs.GetAsync(continuation.ChildId, ct) is { } child)
+                {
+                    await signal.SignalSafelyAsync(child.Queue, logger, ct);
+                }
             }
         }
         else

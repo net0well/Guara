@@ -29,6 +29,7 @@ internal static class GuaraArchitecture
             new System.Collections.Generic.KeyValuePair<string, int>("Guara.Configuration", 1),
             new System.Collections.Generic.KeyValuePair<string, int>("Guara.Serialization", 2),
             new System.Collections.Generic.KeyValuePair<string, int>("Guara.Diagnostics", 2),
+            new System.Collections.Generic.KeyValuePair<string, int>("Guara.Redis", 2),
             new System.Collections.Generic.KeyValuePair<string, int>("Guara.Scheduler", 3),
             new System.Collections.Generic.KeyValuePair<string, int>("Guara.Dispatcher", 3),
             new System.Collections.Generic.KeyValuePair<string, int>("Guara.Worker", 3),
@@ -80,6 +81,23 @@ internal static class GuaraArchitecture
     /// <returns><c>true</c> quando o assembly é um provider de storage.</returns>
     public static bool EhProviderDeStorage(string assembly)
         => assembly.StartsWith(ContratosDeStorage + ".", StringComparison.Ordinal);
+
+    /// <summary>
+    /// Pacotes que ligam um contrato do Guará a uma tecnologia concreta e não seguem o
+    /// nome <c>Guara.Storage.{Tecnologia}</c>. Alcançá-los prende o motor à tecnologia
+    /// exatamente como alcançar um provider de storage.
+    /// </summary>
+    private static readonly ImmutableHashSet<string> OutrasImplementacoesConcretas =
+        ImmutableHashSet.Create(StringComparer.Ordinal, "Guara.Redis");
+
+    /// <summary>
+    /// Indica se o assembly implementa um contrato do Guará sobre uma tecnologia
+    /// específica — o que os motores nunca podem alcançar.
+    /// </summary>
+    /// <param name="assembly">Nome simples do assembly.</param>
+    /// <returns><c>true</c> quando o assembly é uma implementação concreta.</returns>
+    public static bool EhImplementacaoConcreta(string assembly)
+        => EhProviderDeStorage(assembly) || OutrasImplementacoesConcretas.Contains(assembly);
 
     /// <summary>Indica se o assembly é um motor de execução do Guará.</summary>
     /// <param name="assembly">Nome simples do assembly.</param>

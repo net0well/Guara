@@ -55,7 +55,7 @@ O app já emite JSON estruturado no stdout; um painel como o Seq é **escolha su
 # volumes: guara_seq_data:
 ```
 
-### Redis (só se usar `Guara.Storage.Redis` ou cache distribuído)
+### Redis (só se usar o acelerador `Guara.Redis` ou cache distribuído)
 ```yaml
   redis:
     image: redis:7

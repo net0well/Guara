@@ -19,7 +19,7 @@ public sealed class ConcreteProviderAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor Regra = new(
         DiagnosticId,
         title: "Motor do Guará referenciando provider concreto",
-        messageFormat: "'{0}' usa '{1}', do provider '{2}'; motores falam com os contratos de Guara.Storage",
+        messageFormat: "'{0}' usa '{1}', de '{2}'; motores falam com os contratos, nunca com a tecnologia",
         category: "Guara.Architecture",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true,
@@ -71,7 +71,7 @@ public sealed class ConcreteProviderAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!GuaraArchitecture.EhProviderDeStorage(origem.Name))
+        if (!GuaraArchitecture.EhImplementacaoConcreta(origem.Name))
         {
             return;
         }

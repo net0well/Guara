@@ -54,7 +54,7 @@ Instale só o que usar — o núcleo roda sozinho e todo o resto é opcional. A 
 | `Guara.SourceGenerators` | Registro e invocação de jobs sem reflection | ✅ publicado |
 | `Guara.Analyzers` | Analisadores Roslyn que enforçam as regras de dependência | ✅ publicado |
 | `Guara.Abstractions` / `Guara.Storage` | Contratos — para autores de providers e extensões | ✅ publicado |
-| `Guara.Redis` | Acelerador: wakeup por pub/sub, lock e cache de leitura | 🕓 planejado |
+| `Guara.Redis` | Acelerador: leva o aviso de trabalho entre nós por pub/sub | 🚧 no repositório, sai no próximo preview |
 | `Guara.Authentication` | Esquemas de autenticação (JWT, OIDC, cookie) | 🕓 planejado |
 | `Guara.Cluster` / `Guara.Distributed` | Eleição de líder, failover, coordenação distribuída | 🕓 planejado |
 | `Guara.OpenTelemetry` | Exporters OpenTelemetry | 🕓 planejado |
@@ -301,7 +301,17 @@ builder.Services.AddGuara().UseMongoStorage(connectionString);      // produçã
 
 O Redis **não entra como storage**, e isso é decisão, não pendência. Um scheduler não pode perder job: RDB perde a janela desde o último snapshot e o AOF `everysec` perde até um segundo. Além disso, o painel exige filtro por estado, fila, tipo, texto e período, com paginação, contagem e percentil de latência — em Redis isso viraria meia dúzia de índices secundários mantidos à mão, sem transação que os mantenha coerentes entre si.
 
-O Redis entra como **acelerador** (`Guara.Redis`, _planejado_), fazendo o que ele é realmente bom: wakeup por pub/sub no lugar de polling, lock distribuído e cache de leitura do painel. A verdade durável continua no provider de storage.
+O Redis entra como **acelerador** (`Guara.Redis`), fazendo o que ele é realmente bom: entregar uma notificação a todos os nós em milissegundos. Enfileirar num nó acorda o dispatcher de todos os outros no ato, sem baixar o intervalo de busca. A verdade durável continua no provider de storage.
+
+```csharp
+builder.Services.AddGuara()
+    .UsePostgreSqlStorage(connectionString)  // a verdade durável
+    .UseRedis("localhost:6379");             // o aviso, entre nós
+```
+
+Nada nele é durável, e não precisa ser: o aviso é best-effort e o ciclo de busca é o piso. Com o Redis fora do ar, o nó que enfileirou continua acordando sozinho e os demais voltam ao intervalo configurado — nenhum job se perde. Se a aplicação já registra um `IConnectionMultiplexer`, o Guará usa o dela e dispensa a connection string.
+
+**Lock distribuído e cache de leitura ficaram de fora**, de propósito: os quatro storages de produção já fazem lock distribuído por conta própria, e o cache do painel depende de uma política de invalidação que ainda não existe — entregá-lo agora seria um painel mostrando o passado. Ver [ADR-0013](docs/adr/0013-redis-como-acelerador.md).
 
 ## Dashboard (opcional)
 
@@ -383,6 +393,8 @@ Toda a configuração segue o padrão Options do .NET, sob a seção `Guara` (va
 }
 ```
 
+`Dispatcher.PollingInterval` é o **teto** da espera, não o ritmo: enfileirar avisa a fila e o dispatcher acorda na hora. O intervalo é a garantia para o que volta a ser elegível sozinho — retentativa que venceu, posse abandonada por um nó que caiu. Aumentá-lo reduz a carga ociosa contra o banco sem custar latência.
+
 ## Observabilidade
 
 - **Logs**: estruturados, via `Microsoft.Extensions.Logging` — propriedades como `JobId`, `Queue`, `JobType`, `Attempt`, `DurationMs` em todo registro. O host de exemplo escreve JSON no stdout com o formatter nativo do console; use o sink que preferir.
@@ -416,8 +428,8 @@ Toda a configuração segue o padrão Options do .NET, sob a seção `Guara` (va
 | Providers SQL Server, MySQL e MongoDB (mesmo kit de conformidade, 100% verde) | ✅ Concluído |
 | `Guara.Analyzers`: `GUARA0001` e `GUARA0002` ligados em todo o repositório | ✅ Concluído |
 | **Publicação `0.1.0-preview.2`: quatro storages de produção e os analisadores** | ✅ Concluído |
-| Estratégia de push no Dispatcher (acorda o worker sem polling) | 🕓 Planejado |
-| `Guara.Redis` acelerador, em cima da estratégia de push | 🕓 Planejado |
+| Wakeup por sinal de fila: o dispatcher acorda ao enfileirar, sem baixar o intervalo | ✅ Concluído |
+| `Guara.Redis`: o aviso de fila por pub/sub, acordando o dispatcher de todos os nós | ✅ Concluído |
 | `Guara.Extensions`, `Guara.Authentication` | 🕓 Planejado |
 | Cluster e coordenação distribuída, OpenTelemetry, CLI, benchmarks | 🕓 Planejado |
 | Documentação de usuário e guia de migração do Hangfire | 🕓 Planejado |

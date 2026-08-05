@@ -18,8 +18,9 @@ Cada linha da tabela é um projeto em `src/`. **Um projeto = uma responsabilidad
 | `Guara.Storage.Memory` | Implementa `IStorage` em memória | `Storage` | outros componentes |
 | `Guara.Storage.SqlServer` | Implementa `IStorage` sobre SQL Server | `Storage` | Scheduler, Worker, Dashboard |
 | `Guara.Storage.PostgreSql` | Implementa `IStorage` sobre PostgreSQL | `Storage` | idem |
-| `Guara.Storage.Redis` | Implementa `IStorage`/locks sobre Redis | `Storage` | idem |
+| `Guara.Storage.MySql` | Implementa `IStorage` sobre MySQL | `Storage` | idem |
 | `Guara.Storage.Mongo` | Implementa `IStorage` sobre MongoDB | `Storage` | idem |
+| `Guara.Redis` | Implementa `IQueueSignal` sobre pub/sub — leva o aviso de trabalho entre nós. **Não é storage** ([ADR-0013](adr/0013-redis-como-acelerador.md)) | `Abstractions`, `Core` | storage, motores |
 | `Guara.Serialization` | **Somente** serialização | `Abstractions` | nada além |
 | `Guara.Diagnostics` | Logging, Metrics, Tracing, HealthChecks | `Abstractions` | providers de storage |
 | `Guara.OpenTelemetry` | Exporters OpenTelemetry | `Diagnostics`, `Abstractions` | lógica de negócio |

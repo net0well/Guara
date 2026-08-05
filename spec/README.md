@@ -41,7 +41,7 @@ Trabalhamos de baixo para cima na pirâmide de dependências: contratos primeiro
 | 011 | Storage em memória | `Guara.Storage.Memory` | ✅ Approved (2026-07-16) |
 | 012 | Storage SQL Server | `Guara.Storage.SqlServer` | ✅ Approved (2026-07-16) |
 | 013 | Storage PostgreSQL | `Guara.Storage.PostgreSql` | ✅ Approved (2026-07-16) |
-| 014 | Storage Redis | `Guara.Storage.Redis` | ✅ Approved (2026-07-16) |
+| 014 | Storage Redis | `Guara.Storage.Redis` | ⛔ Superseded por [ADR-0013](../docs/adr/0013-redis-como-acelerador.md) — o Redis vira acelerador (`Guara.Redis`) |
 | 015 | Storage MongoDB | `Guara.Storage.Mongo` | ✅ Approved (2026-07-16) |
 | 016 | Diagnostics (log/metrics/tracing/health) | `Guara.Diagnostics` | ✅ Approved (2026-07-16) |
 | 017 | Exporters OpenTelemetry | `Guara.OpenTelemetry` | ✅ Approved (2026-07-16) |

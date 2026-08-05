@@ -94,7 +94,7 @@ public static class PostgreSqlStorageExtensions
 }
 ```
 
-Trocar de provider = trocar **uma** linha (`UsePostgreSqlStorage` → `UseRedisStorage`). Nenhum motor muda. Ver [ADR-0003](adr/0003-abstracao-de-storage-por-provider.md).
+Trocar de provider = trocar **uma** linha (`UsePostgreSqlStorage` → `UseMongoStorage`). Nenhum motor muda. Ver [ADR-0003](adr/0003-abstracao-de-storage-por-provider.md).
 
 ## 5. Middleware do Pipeline
 

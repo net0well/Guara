@@ -3,7 +3,11 @@ namespace Guara.Dispatcher;
 /// <summary>Opções do dispatcher. Configuráveis pela seção <c>Guara:Dispatcher</c>.</summary>
 public sealed class DispatcherOptions
 {
-    /// <summary>Intervalo de polling quando não há jobs elegíveis.</summary>
+    /// <summary>
+    /// Teto da espera quando não há jobs elegíveis. O laço acorda antes disso ao receber
+    /// um aviso de trabalho novo; o intervalo é a garantia para o que se torna elegível
+    /// sem aviso (retentativa vencida, lease abandonado).
+    /// </summary>
     public TimeSpan PollingInterval { get; set; } = TimeSpan.FromSeconds(5);
 
     /// <summary>Filas consumidas, em ordem de prioridade.</summary>

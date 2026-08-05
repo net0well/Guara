@@ -22,7 +22,10 @@ public class ContinuationPromoterTests
     {
         var time = new FixedTimeProvider(T0);
         var storage = new MemoryStorage(time);
-        return (new ContinuationPromoter(storage, time, NullLogger<ContinuationPromoter>.Instance), storage);
+        return (
+            new ContinuationPromoter(
+                storage, new RecordingQueueSignal(), time, NullLogger<ContinuationPromoter>.Instance),
+            storage);
     }
 
     private static JobRecord Job(string id, JobState state = JobState.Scheduled) => new()

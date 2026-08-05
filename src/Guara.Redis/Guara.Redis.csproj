@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Guara.Redis</PackageId>
+    <Description>Acelerador Redis do Guará: o aviso de trabalho novo viaja por pub/sub e acorda o dispatcher de todos os nós no ato, sem baixar o intervalo de busca. Não substitui o storage — a verdade durável continua no provider.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Guara.Configuration\Guara.Configuration.csproj" />
+    <ProjectReference Include="..\Guara.Core\Guara.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="StackExchange.Redis" />
+  </ItemGroup>
+
+  <!-- A implementação é alcançada por IQueueSignal; os testes a constroem direto. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Guara.Redis.Tests" />
+  </ItemGroup>
+
+</Project>

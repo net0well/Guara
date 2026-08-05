@@ -26,6 +26,7 @@ public static class SchedulerServiceCollectionExtensions
         builder.Services.TryAddSingleton<RecurrenceCalculator>();
         builder.Services.TryAddSingleton(sp => new ContinuationPromoter(
             sp.GetRequiredService<IStorage>(),
+            sp.GetRequiredService<IQueueSignal>(),
             sp.GetRequiredService<TimeProvider>(),
             sp.GetService<ILogger<ContinuationPromoter>>() ?? NullLogger<ContinuationPromoter>.Instance));
         builder.Services.TryAddEnumerable(
@@ -35,6 +36,7 @@ public static class SchedulerServiceCollectionExtensions
         builder.Services.TryAddSingleton<IGuaraClient>(sp => new GuaraClient(
             sp.GetRequiredService<IStorage>(),
             sp.GetRequiredService<IEventPublisher>(),
+            sp.GetRequiredService<IQueueSignal>(),
             sp.GetRequiredService<RecurrenceCalculator>(),
             sp.GetRequiredService<ContinuationPromoter>(),
             sp.GetRequiredService<TimeProvider>(),

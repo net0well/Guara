@@ -54,7 +54,7 @@ Install only what you use — the core runs on its own and everything else is op
 | `Guara.SourceGenerators` | Reflection-free job registration and invocation | ✅ published |
 | `Guara.Analyzers` | Roslyn analyzers enforcing the dependency rules | ✅ published |
 | `Guara.Abstractions` / `Guara.Storage` | Contracts — for provider and extension authors | ✅ published |
-| `Guara.Redis` | Accelerator: pub/sub wakeup, locks and dashboard read cache | 🕓 planned |
+| `Guara.Redis` | Accelerator: carries the work signal across nodes over pub/sub | 🚧 in the repo, ships next preview |
 | `Guara.Authentication` | Authentication schemes (JWT, OIDC, cookie) | 🕓 planned |
 | `Guara.Cluster` / `Guara.Distributed` | Leader election, failover, distributed coordination | 🕓 planned |
 | `Guara.OpenTelemetry` | OpenTelemetry exporters | 🕓 planned |
@@ -301,7 +301,17 @@ builder.Services.AddGuara().UseMongoStorage(connectionString);      // productio
 
 Redis is **not shipping as a storage**, and that is a decision, not a gap. A scheduler cannot lose jobs: RDB loses the window since the last snapshot, and AOF `everysec` loses up to a second. On top of that, the dashboard needs filtering by state, queue, type, text and period, with pagination, counts and latency percentiles — in Redis that would mean half a dozen hand-maintained secondary indexes with no transaction keeping them consistent with each other.
 
-Redis ships as an **accelerator** instead (`Guara.Redis`, _planned_), doing what it is genuinely good at: pub/sub wakeup instead of polling, distributed locks and a dashboard read cache. The durable truth stays in the storage provider.
+Redis ships as an **accelerator** instead (`Guara.Redis`), doing what it is genuinely good at: delivering a notification to every node in milliseconds. Enqueuing on one node wakes every other node's dispatcher right away, without shortening the polling interval. The durable truth stays in the storage provider.
+
+```csharp
+builder.Services.AddGuara()
+    .UsePostgreSqlStorage(connectionString)  // the durable truth
+    .UseRedis("localhost:6379");             // the signal, across nodes
+```
+
+Nothing in it is durable, and nothing needs to be: the signal is best-effort and the polling cycle is the floor. With Redis down, the node that enqueued still wakes on its own and the others fall back to the configured interval — no job is lost. If your application already registers an `IConnectionMultiplexer`, Guará uses it and the connection string becomes unnecessary.
+
+**Distributed locks and a read cache were deliberately left out**: all four production storages already do distributed locking on their own, and a dashboard cache depends on an invalidation policy that does not exist yet — shipping it now would mean a dashboard showing the past. See [ADR-0013](docs/adr/0013-redis-como-acelerador.md).
 
 ## Dashboard (optional)
 
@@ -383,6 +393,8 @@ All configuration follows the .NET Options pattern under the `Guara` section (va
 }
 ```
 
+`Dispatcher.PollingInterval` is the **ceiling** of the wait, not the cadence: enqueuing signals the queue and the dispatcher wakes right away. The interval is the guarantee for what becomes eligible on its own — a retry that came due, a lease abandoned by a node that crashed. Raising it cuts idle load against the database without costing latency.
+
 ## Observability
 
 - **Logs**: structured, via `Microsoft.Extensions.Logging` — properties like `JobId`, `Queue`, `JobType`, `Attempt`, `DurationMs` on every record. The sample host writes JSON to stdout using the built-in console formatter; bring your own sink if you prefer.
@@ -416,8 +428,8 @@ All configuration follows the .NET Options pattern under the `Guara` section (va
 | SQL Server, MySQL and MongoDB providers (same conformance kit, 100% green) | ✅ Done |
 | `Guara.Analyzers`: `GUARA0001` and `GUARA0002` enabled across the repository | ✅ Done |
 | **`0.1.0-preview.2` release: four production storages and the analyzers** | ✅ Done |
-| Dispatcher push strategy (wake the worker without polling) | 🕓 Planned |
-| `Guara.Redis` accelerator, on top of the push strategy | 🕓 Planned |
+| Queue-signal wakeup: the dispatcher wakes on enqueue, without shortening the interval | ✅ Done |
+| `Guara.Redis`: the queue signal over pub/sub, waking every node's dispatcher | ✅ Done |
 | `Guara.Extensions`, `Guara.Authentication` | 🕓 Planned |
 | Cluster and distributed coordination, OpenTelemetry, CLI, benchmarks | 🕓 Planned |
 | User documentation and Hangfire migration guide | 🕓 Planned |

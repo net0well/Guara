@@ -36,8 +36,9 @@ public class GuaraClientTests
         var storage = new MemoryStorage(time);
         var events = new RecordingPublisher();
         var client = new GuaraClient(
-            storage, events, new RecurrenceCalculator(new GuaraCronParser()),
-            new ContinuationPromoter(storage, time, NullLogger<ContinuationPromoter>.Instance),
+            storage, events, new RecordingQueueSignal(), new RecurrenceCalculator(new GuaraCronParser()),
+            new ContinuationPromoter(
+                storage, new RecordingQueueSignal(), time, NullLogger<ContinuationPromoter>.Instance),
             time, NullLogger<GuaraClient>.Instance);
         return (client, storage, events);
     }

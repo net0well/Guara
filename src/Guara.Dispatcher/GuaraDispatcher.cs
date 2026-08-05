@@ -5,15 +5,23 @@ using Microsoft.Extensions.Logging;
 namespace Guara.Dispatcher;
 
 /// <summary>
-/// Implementação default de <see cref="IDispatcher"/>: laço de polling que
-/// adquire jobs elegíveis (aquisição atômica com lease — a fonte da verdade é o storage)
-/// e emite <see cref="WorkerRequested"/>. O backpressure vem do canal limitado do worker:
+/// Implementação default de <see cref="IDispatcher"/>: laço que adquire jobs elegíveis
+/// (aquisição atômica com lease — a fonte da verdade é o storage) e emite
+/// <see cref="WorkerRequested"/>. O backpressure vem do canal limitado do worker:
 /// publicar aguarda vaga, então o dispatcher nunca busca além da capacidade.
 /// Falha de storage não derruba o laço — back-off exponencial e retomada.
+/// <para>
+/// Com a fila vazia, o laço aguarda o aviso de <see cref="IQueueSignal"/> em vez de dormir
+/// um tempo fixo, e <see cref="DispatcherOptions.PollingInterval"/> passa a ser o teto
+/// dessa espera. O aviso é best-effort, então o ciclo periódico continua sendo o piso:
+/// jobs que se tornam elegíveis sozinhos (retentativa vencida, lease abandonado por um nó
+/// que caiu) não geram aviso nenhum e aparecem no ciclo seguinte.
+/// </para>
 /// </summary>
 internal sealed class GuaraDispatcher(
     IStorage storage,
     IEventPublisher events,
+    IQueueSignal signal,
     DispatcherOptions options,
     TimeProvider time,
     ILogger<GuaraDispatcher> logger) : IDispatcher
@@ -81,7 +89,7 @@ internal sealed class GuaraDispatcher(
 
             if (!dispatched)
             {
-                await DelayAsync(options.PollingInterval, ct); // fila vazia: dorme até o próximo ciclo, sem busy-loop
+                await WaitForWorkAsync(ct); // fila vazia: dorme até o aviso ou o teto, sem busy-loop
             }
         }
     }
@@ -109,6 +117,26 @@ internal sealed class GuaraDispatcher(
         }
 
         return dispatched;
+    }
+
+    private async Task WaitForWorkAsync(CancellationToken ct)
+    {
+        try
+        {
+            await signal.WaitAsync(options.Queues, options.PollingInterval, ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            // O aviso é uma otimização de latência: um transporte quebrado não pode
+            // parar o dispatcher, que volta a depender apenas do ciclo periódico.
+            logger.LogError(ex,
+                "Falha ao aguardar aviso de trabalho; o laço segue no ciclo de {Interval}",
+                options.PollingInterval);
+            await DelayAsync(options.PollingInterval, ct);
+        }
     }
 
     private async Task DelayAsync(TimeSpan delay, CancellationToken ct)

@@ -36,6 +36,23 @@ JobCompleted  (ou JobFailed → Retry)
 
 Eventos trafegam por filas internas baseadas em `Channel<T>` — ver [ADR-0004](adr/0004-channel-para-filas-internas.md).
 
+### Aviso de trabalho (wakeup)
+
+Paralelo ao fluxo de eventos, e no sentido inverso: quem torna um job **elegível agora** avisa a fila por `IQueueSignal`, e o `Dispatcher` — que estaria dormindo com a fila vazia — acorda na hora em vez de esperar o próximo ciclo de busca.
+
+```
+EnfileirarAsync  →  IQueueSignal.SignalAsync(fila)  →  Dispatcher acorda  →  busca
+```
+
+| Regra | Consequência |
+|---|---|
+| O aviso é **best-effort** | Perdê-lo atrasa a busca até o ciclo periódico, nunca perde o job |
+| `PollingInterval` é o **teto**, não o ritmo | O ciclo periódico é o piso que cobre o que se torna elegível sozinho (retentativa vencida, lease abandonado) |
+| Só se avisa o que já é elegível | Retentativa, reagendamento e continuação pendente têm data futura |
+| O aviso emitido sem ninguém aguardando é **retido** | Fecha a corrida entre a última busca e o início da espera |
+
+O padrão é `InProcessQueueSignal` (nó único, sem infraestrutura). Trocar o registro por um transporte externo dá alcance entre nós. Ver [ADR-0012](adr/0012-wakeup-por-sinal-de-fila.md).
+
 ## Pipeline do Job (dentro do Executor)
 
 Cada etapa é um **middleware**, no modelo do ASP.NET Core: recebe o contexto e um `next`. A ordem é fixa.
