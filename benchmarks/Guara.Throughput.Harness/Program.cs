@@ -31,11 +31,22 @@ Console.CancelKeyPress += (_, e) =>
 
 await using var infraestrutura = await Infraestrutura.SubirAsync(options.Storage, cancelamento.Token);
 
-Console.WriteLine($"Guará — vazão e latência");
+Console.WriteLine($"Máquina      : {Environment.ProcessorCount} núcleos lógicos, .NET {Environment.Version}");
 Console.WriteLine($"Storage      : {options.Storage}");
+
+if (options.Mode == HarnessMode.Probe)
+{
+    Console.WriteLine($"Modo         : decomposição do custo de aquisição");
+    Console.WriteLine($"Amostras     : {options.Jobs:N0} por medição");
+    Console.WriteLine();
+
+    await new StorageProbe(infraestrutura.ConnectionString!)
+        .RunAsync(options.Concurrencies, options.Jobs, cancelamento.Token);
+    return 0;
+}
+
 Console.WriteLine($"Jobs/rodada  : {options.Jobs:N0}");
 Console.WriteLine($"Concorrência : {string.Join(", ", options.Concurrencies)}");
-Console.WriteLine($"Máquina      : {Environment.ProcessorCount} núcleos lógicos, .NET {Environment.Version}");
 Console.WriteLine();
 
 var harness = new ThroughputHarness(options, infraestrutura.ConnectionString);

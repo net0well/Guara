@@ -13,8 +13,19 @@ internal enum StorageKind
     SqlServer,
 }
 
+/// <summary>O que a rodada mede.</summary>
+internal enum HarnessMode
+{
+    /// <summary>Vazão e latência com worker e dispatcher rodando.</summary>
+    Throughput,
+
+    /// <summary>Decomposição do custo de uma aquisição, para achar a causa do teto.</summary>
+    Probe,
+}
+
 /// <summary>Parâmetros da rodada, lidos da linha de comando.</summary>
 internal sealed record HarnessOptions(
+    HarnessMode Mode,
     StorageKind Storage,
     int Jobs,
     int[] Concurrencies,
@@ -29,6 +40,7 @@ internal sealed record HarnessOptions(
 
     public static HarnessOptions Parse(string[] args)
     {
+        var mode = HarnessMode.Throughput;
         var storage = StorageKind.Memory;
         var jobs = 5_000;
         int[] concurrencies = [1, 4, 16, 64];
@@ -38,6 +50,9 @@ internal sealed record HarnessOptions(
         {
             switch (args[i])
             {
+                case "--mode":
+                    mode = Enum.Parse<HarnessMode>(args[i + 1], ignoreCase: true);
+                    break;
                 case "--storage":
                     storage = Enum.Parse<StorageKind>(args[i + 1], ignoreCase: true);
                     break;
@@ -63,19 +78,29 @@ internal sealed record HarnessOptions(
             throw new ArgumentException("--concurrency precisa ser uma lista de inteiros >= 1.");
         }
 
-        return new HarnessOptions(storage, jobs, concurrencies, polling);
+        if (mode == HarnessMode.Probe && storage != StorageKind.PostgreSql)
+        {
+            throw new ArgumentException("--mode probe exige --storage postgresql.");
+        }
+
+        return new HarnessOptions(mode, storage, jobs, concurrencies, polling);
     }
 
     public static string Ajuda =>
         """
         Uso: dotnet run -c Release -- [opções]
 
+          --mode              throughput | probe                (padrão: throughput)
           --storage           memory | postgresql | sqlserver   (padrão: memory)
           --jobs              quantidade por rodada             (padrão: 5000)
           --concurrency       lista de MaxConcurrency           (padrão: 1,4,16,64)
           --polling-seconds   teto da espera do dispatcher      (padrão: 60)
 
-        Exemplo:
+        No modo probe, --concurrency vira a lista de profundidades da fila e --jobs
+        vira a quantidade de amostras por medição.
+
+        Exemplos:
           dotnet run -c Release -- --storage postgresql --jobs 20000 --concurrency 1,8,32
+          dotnet run -c Release -- --mode probe --storage postgresql --jobs 500 --concurrency 100,1000,10000
         """;
 }

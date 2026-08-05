@@ -38,7 +38,8 @@ Cada ADR usa o template mínimo:
 | [0012](0012-wakeup-por-sinal-de-fila.md) | Wakeup por sinal de fila (`IQueueSignal`), com o polling como piso | Aceito |
 | [0013](0013-redis-como-acelerador.md) | Redis como acelerador (`Guara.Redis`), não como storage — emenda o 0009 | Aceito |
 | [0014](0014-enfileiramento-transacional.md) | Enfileiramento dentro da transação do chamador; `BeginTransactionAsync` removido | Aceito |
+| [0015](0015-elegibilidade-como-instante-indexavel.md) | Elegibilidade materializada em `eligible_at`; ordem de início passa a ser por elegibilidade | Aceito |
 
 ## Próximo número
 
-O próximo ADR é **0015**. Numeração sequencial, sem lacunas.
+O próximo ADR é **0016**. Numeração sequencial, sem lacunas.

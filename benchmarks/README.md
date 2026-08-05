@@ -96,6 +96,20 @@ O parser cron próprio calcula o próximo disparo **sem alocar**, inclusive no p
 
 A latência é de fire-and-forget com a fila vazia, medida do enfileiramento ao início da execução, com o intervalo de busca em 60 s — ou seja, é o aviso de fila trabalhando. Sem ele, cada um desses números seria dezenas de segundos.
 
+### Progressão no PostgreSQL (10.000 jobs)
+
+Vazão de execução, jobs por segundo:
+
+| Etapa | 1 worker | 4 | 16 | 64 |
+|---|---:|---:|---:|---:|
+| Original | 141 | 149 | 136 | 151 |
+| Elegibilidade indexada ([ADR-0015](../docs/adr/0015-elegibilidade-como-instante-indexavel.md)) | 190 | 523 | 502 | 494 |
+| **+ preparação automática de comandos** | **207** | **671** | **650** | **639** |
+
+**4,5× acumulado** com 4 workers, e a vazão voltou a responder à concorrência — de 1 para 4 workers sobe 3,2×, contra 1,06× para 64× no começo.
+
+As duas mudanças atacaram gargalos diferentes: a primeira tirou do caminho um `Sort` proporcional à profundidade da fila; a segunda parou de fazer o servidor replanejar as mesmas consultas a cada chamada, o que o `EXPLAIN` mostrava custar 1,6 a 2,5 ms por aquisição.
+
 ## Achados
 
 **A vazão não escala com a concorrência do worker — o teto está na aquisição.** Multiplicar `MaxConcurrency` por 64 rendeu 1,06× no in-memory e 1,07× no PostgreSQL. Plano nos dois, e é isso que isola a causa: a escrita de estado do lado da execução roda em paralelo entre os workers, então, se ela dominasse, a concorrência teria escalado. Não moveu. O que sobra é a parte serial.

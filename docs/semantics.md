@@ -21,7 +21,9 @@ O Guará garante **pelo menos uma execução** por job (*at-least-once*). Um job
 
 ## Ordem de execução
 
-- **Início ~FIFO por fila** (por `CreatedAt`), *best-effort* — com N workers concorrentes, a ordem de **conclusão** não é garantida.
+- **Início ~FIFO por fila** (por **elegibilidade**), *best-effort* — com N workers concorrentes, a ordem de **conclusão** não é garantida. Ver [ADR-0015](adr/0015-elegibilidade-como-instante-indexavel.md).
+- Elegibilidade é o instante em que o job passa a poder ser adquirido: `CreatedAt` para enfileirado, `ScheduledFor` para agendado e retentativa, `LeaseUntil` para posse abandonada. Entre jobs enfileirados isso equivale à ordem de criação; um agendado que venceu entra pela hora em que ficou elegível, e um job abandonado volta pela hora em que a posse expirou — sem furar a fila.
+- Consequência de datar no futuro: um job **enfileirado** com `CreatedAt` adiante do relógio do nó que busca só fica elegível quando aquele instante chega. Com relógios dessincronizados entre nós, isso atrasa o job pela diferença.
 - **Nenhuma garantia de ordem global** entre filas ou entre nós. Precisa de ordem estrita? Encadeie com `ContinuarComAsync`.
 - Retentativas reentram na fila — um job que falhou pode concluir depois de jobs criados após ele.
 

@@ -23,7 +23,7 @@ internal sealed class PostgreSqlStorage : IStorage, IAsyncDisposable
         options.Validate();
 
         var time = timeProvider ?? TimeProvider.System;
-        _dataSource = NpgsqlDataSource.Create(options.ConnectionString);
+        _dataSource = NpgsqlDataSource.Create(ComPreparacaoAutomatica(options.ConnectionString));
         var schema = new PostgreSqlSchemaInitializer(_dataSource, options);
 
         Jobs = new PostgreSqlJobStorage(_dataSource, schema, options.Schema, time);
@@ -32,6 +32,32 @@ internal sealed class PostgreSqlStorage : IStorage, IAsyncDisposable
         Servers = new PostgreSqlServerRegistry(_dataSource, schema, options.Schema);
         Recurring = new PostgreSqlRecurringStorage(_dataSource, schema, options.Schema);
         Continuations = new PostgreSqlContinuationStorage(_dataSource, schema, options.Schema);
+    }
+
+    /// <summary>
+    /// Liga a preparação automática de comandos, salvo se a connection string já disser
+    /// o contrário.
+    /// <para>
+    /// O Guará repete um punhado pequeno de consultas — aquisição, transição de estado,
+    /// renovação de posse — milhares de vezes por minuto. Sem preparação, o servidor
+    /// analisa e planeja cada uma de novo a cada chamada, e o plano da aquisição sozinho
+    /// custa alguns milissegundos de planejamento contra pouco mais de execução.
+    /// </para>
+    /// </summary>
+    private static string ComPreparacaoAutomatica(string connectionString)
+    {
+        var construtor = new NpgsqlConnectionStringBuilder(connectionString);
+
+        // Zero é o default do driver, e é o único valor que distingue "não configurado"
+        // de escolha do usuário: quem quiser desligar de propósito pede outro caminho.
+        if (construtor.MaxAutoPrepare == 0)
+        {
+            // Folga sobre o punhado de consultas distintas do provider, sem inflar o
+            // cache de planos por conexão.
+            construtor.MaxAutoPrepare = 32;
+        }
+
+        return construtor.ConnectionString;
     }
 
     /// <inheritdoc />

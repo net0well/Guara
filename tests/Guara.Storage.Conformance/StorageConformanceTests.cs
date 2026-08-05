@@ -120,7 +120,10 @@ public abstract class StorageConformanceTests : IAsyncDisposable
         const int jobCount = 20;
         for (var i = 0; i < jobCount; i++)
         {
-            await storage.Jobs.CreateAsync(NewJob($"j{i}", createdAt: T0 + TimeSpan.FromSeconds(i)), CancellationToken.None);
+            // Carimbos no passado, distintos entre si: um job enfileirado fica elegível a
+            // partir da própria criação, então datar no futuro o deixaria fora da varredura.
+            await storage.Jobs.CreateAsync(
+                NewJob($"j{i}", createdAt: T0 - TimeSpan.FromSeconds(jobCount - i)), CancellationToken.None);
         }
 
         var acquired = new System.Collections.Concurrent.ConcurrentBag<JobId>();

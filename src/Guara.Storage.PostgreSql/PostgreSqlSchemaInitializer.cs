@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Guara.Abstractions;
 using Npgsql;
 
 namespace Guara.Storage.PostgreSql;
@@ -92,7 +93,24 @@ internal sealed class PostgreSqlSchemaInitializer(NpgsqlDataSource dataSource, P
             result        text NULL,
             error         text NULL
         );
-        CREATE INDEX IF NOT EXISTS ix_jobs_eligibility ON {s}.jobs (queue, state, created_at);
+        -- Elegibilidade materializada: o instante em que o job passa a poder ser adquirido.
+        -- Sem ela, a aquisição vira disjunção sobre estados, e o banco precisa unir três
+        -- faixas do índice e ordenar tudo para achar o primeiro — custo proporcional à
+        -- profundidade da fila. Com ela, é uma varredura ordenada que para na primeira linha.
+        ALTER TABLE {s}.jobs ADD COLUMN IF NOT EXISTS eligible_at timestamptz NULL;
+
+        UPDATE {s}.jobs SET eligible_at = CASE state
+            WHEN {(int)JobState.Enqueued} THEN created_at
+            WHEN {(int)JobState.Scheduled} THEN scheduled_for
+            WHEN {(int)JobState.Retrying} THEN scheduled_for
+            WHEN {(int)JobState.Processing} THEN lease_until
+            ELSE NULL END
+        WHERE eligible_at IS NULL AND state <> {(int)JobState.Succeeded} AND state <> {(int)JobState.Failed};
+
+        CREATE INDEX IF NOT EXISTS ix_jobs_due ON {s}.jobs (queue, eligible_at);
+        -- O índice antigo cobria a disjunção que deixou de existir: manter só custaria
+        -- escrita a cada transição de estado, sem servir a nenhuma consulta.
+        DROP INDEX IF EXISTS {s}.ix_jobs_eligibility;
         CREATE INDEX IF NOT EXISTS ix_jobs_purge ON {s}.jobs (state, finished_at);
 
         CREATE TABLE IF NOT EXISTS {s}.servers (
