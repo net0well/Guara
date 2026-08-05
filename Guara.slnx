@@ -12,6 +12,7 @@
     <Project Path="src/Guara.SourceGenerators/Guara.SourceGenerators.csproj" />
     <Project Path="src/Guara.Storage/Guara.Storage.csproj" />
     <Project Path="src/Guara.Storage.Memory/Guara.Storage.Memory.csproj" />
+    <Project Path="src/Guara.Storage.Mongo/Guara.Storage.Mongo.csproj" />
     <Project Path="src/Guara.Storage.MySql/Guara.Storage.MySql.csproj" />
     <Project Path="src/Guara.Storage.PostgreSql/Guara.Storage.PostgreSql.csproj" />
     <Project Path="src/Guara.Storage.SqlServer/Guara.Storage.SqlServer.csproj" />
@@ -35,6 +36,7 @@
     <Project Path="tests/Guara.SourceGenerators.Tests/Guara.SourceGenerators.Tests.csproj" />
     <Project Path="tests/Guara.Storage.Conformance/Guara.Storage.Conformance.csproj" />
     <Project Path="tests/Guara.Storage.Memory.Tests/Guara.Storage.Memory.Tests.csproj" />
+    <Project Path="tests/Guara.Storage.Mongo.Tests/Guara.Storage.Mongo.Tests.csproj" />
     <Project Path="tests/Guara.Storage.MySql.Tests/Guara.Storage.MySql.Tests.csproj" />
     <Project Path="tests/Guara.Storage.PostgreSql.Tests/Guara.Storage.PostgreSql.Tests.csproj" />
     <Project Path="tests/Guara.Storage.SqlServer.Tests/Guara.Storage.SqlServer.Tests.csproj" />

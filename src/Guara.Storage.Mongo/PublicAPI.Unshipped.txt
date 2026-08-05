@@ -1,0 +1,13 @@
+Guara.Storage.Mongo.MongoStorageOptions
+Guara.Storage.Mongo.MongoStorageOptions.AutoMigrate.get -> bool
+Guara.Storage.Mongo.MongoStorageOptions.AutoMigrate.set -> void
+Guara.Storage.Mongo.MongoStorageOptions.CollectionPrefix.get -> string!
+Guara.Storage.Mongo.MongoStorageOptions.CollectionPrefix.set -> void
+Guara.Storage.Mongo.MongoStorageOptions.ConnectionString.get -> string!
+Guara.Storage.Mongo.MongoStorageOptions.ConnectionString.set -> void
+Guara.Storage.Mongo.MongoStorageOptions.Database.get -> string!
+Guara.Storage.Mongo.MongoStorageOptions.Database.set -> void
+Guara.Storage.Mongo.MongoStorageOptions.MongoStorageOptions() -> void
+Microsoft.Extensions.DependencyInjection.MongoStorageExtensions
+static Microsoft.Extensions.DependencyInjection.MongoStorageExtensions.UseMongoStorage(this Guara.Abstractions.IGuaraBuilder! builder, string! connectionString, System.Action<Guara.Storage.Mongo.MongoStorageOptions!>? configure = null) -> Guara.Abstractions.IGuaraBuilder!
+static Microsoft.Extensions.DependencyInjection.MongoStorageExtensions.UseMongoStorage(this Guara.Abstractions.IGuaraBuilder! builder, System.Action<Guara.Storage.Mongo.MongoStorageOptions!>? configure = null) -> Guara.Abstractions.IGuaraBuilder!
