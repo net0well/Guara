@@ -12,6 +12,7 @@ namespace Guara.Scheduler;
 internal sealed class GuaraClient(
     IStorage storage,
     IEventPublisher events,
+    IQueueSignal signal,
     RecurrenceCalculator calculator,
     ContinuationPromoter continuations,
     TimeProvider time,
@@ -38,6 +39,9 @@ internal sealed class GuaraClient(
         }, ct);
 
         await events.PublishAsync(new JobCreated(id, now), ct);
+        // Depois de persistir: acordar o dispatcher antes do registro existir só o faria
+        // olhar uma fila que ainda não tem o job.
+        await SinalizarAsync(job.Queue, ct);
         return id;
     }
 
@@ -62,6 +66,14 @@ internal sealed class GuaraClient(
 
         await events.PublishAsync(new JobCreated(id, now), ct);
         await events.PublishAsync(new JobScheduled(id, now), ct);
+
+        // Só avisa o que já é elegível: com atraso, o job tem data futura e o aviso faria
+        // o dispatcher acordar para não achar nada.
+        if (atraso == TimeSpan.Zero)
+        {
+            await SinalizarAsync(job.Queue, ct);
+        }
+
         return id;
     }
 
@@ -339,6 +351,9 @@ internal sealed class GuaraClient(
 
         return await storage.Recurring.DeleteCalendarAsync(nome, ct);
     }
+
+    private ValueTask SinalizarAsync(string queue, CancellationToken ct)
+        => signal.SignalSafelyAsync(queue, logger, ct);
 
     private static JobId NewId() => new(Guid.NewGuid().ToString("n"));
 }

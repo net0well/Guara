@@ -33,6 +33,11 @@ public static class GuaraServiceCollectionExtensions
         });
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<JobStateMachine>();
+
+        // Sinal em processo por padrão: resolve o nó único sem infraestrutura externa.
+        // Um transporte distribuído substitui este registro e ganha alcance entre nós.
+        services.TryAddSingleton<IQueueSignal>(sp =>
+            new InProcessQueueSignal(sp.GetRequiredService<TimeProvider>()));
         services.TryAddSingleton<IEventPublisher>(sp => new InProcessEventPublisher(
             sp,
             sp.GetService<ILogger<InProcessEventPublisher>>() ?? NullLogger<InProcessEventPublisher>.Instance));

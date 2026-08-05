@@ -383,6 +383,8 @@ Toda a configuração segue o padrão Options do .NET, sob a seção `Guara` (va
 }
 ```
 
+`Dispatcher.PollingInterval` é o **teto** da espera, não o ritmo: enfileirar avisa a fila e o dispatcher acorda na hora. O intervalo é a garantia para o que volta a ser elegível sozinho — retentativa que venceu, posse abandonada por um nó que caiu. Aumentá-lo reduz a carga ociosa contra o banco sem custar latência.
+
 ## Observabilidade
 
 - **Logs**: estruturados, via `Microsoft.Extensions.Logging` — propriedades como `JobId`, `Queue`, `JobType`, `Attempt`, `DurationMs` em todo registro. O host de exemplo escreve JSON no stdout com o formatter nativo do console; use o sink que preferir.
@@ -416,8 +418,8 @@ Toda a configuração segue o padrão Options do .NET, sob a seção `Guara` (va
 | Providers SQL Server, MySQL e MongoDB (mesmo kit de conformidade, 100% verde) | ✅ Concluído |
 | `Guara.Analyzers`: `GUARA0001` e `GUARA0002` ligados em todo o repositório | ✅ Concluído |
 | **Publicação `0.1.0-preview.2`: quatro storages de produção e os analisadores** | ✅ Concluído |
-| Estratégia de push no Dispatcher (acorda o worker sem polling) | 🕓 Planejado |
-| `Guara.Redis` acelerador, em cima da estratégia de push | 🕓 Planejado |
+| Wakeup por sinal de fila: o dispatcher acorda ao enfileirar, sem baixar o intervalo | ✅ Concluído |
+| `Guara.Redis` acelerador: o sinal de fila por pub/sub, entre nós | 🕓 Planejado |
 | `Guara.Extensions`, `Guara.Authentication` | 🕓 Planejado |
 | Cluster e coordenação distribuída, OpenTelemetry, CLI, benchmarks | 🕓 Planejado |
 | Documentação de usuário e guia de migração do Hangfire | 🕓 Planejado |

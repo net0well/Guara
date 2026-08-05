@@ -97,6 +97,9 @@ Guara.Abstractions.IJobInvoker
 Guara.Abstractions.IJobInvoker.InvokeAsync(Guara.Abstractions.IJobContext! context, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
 Guara.Abstractions.IJobMiddleware
 Guara.Abstractions.IJobMiddleware.InvokeAsync(Guara.Abstractions.IJobContext! context, Guara.Abstractions.JobDelegate! next, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Abstractions.IQueueSignal
+Guara.Abstractions.IQueueSignal.SignalAsync(string! queue, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Abstractions.IQueueSignal.WaitAsync(System.Collections.Generic.IReadOnlyList<string!>! queues, System.TimeSpan timeout, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<bool>
 Guara.Abstractions.IRecurringJobBuilder
 Guara.Abstractions.IRecurringJobBuilder.ACada(System.TimeSpan intervalo) -> Guara.Abstractions.IRecurringJobBuilder!
 Guara.Abstractions.IRecurringJobBuilder.ComCalendario(string! nome) -> Guara.Abstractions.IRecurringJobBuilder!

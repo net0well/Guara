@@ -1,3 +1,8 @@
+Guara.Core.InProcessQueueSignal
+Guara.Core.InProcessQueueSignal.InProcessQueueSignal(System.TimeProvider! time) -> void
+Guara.Core.InProcessQueueSignal.Signal(string! queue) -> void
+Guara.Core.InProcessQueueSignal.SignalAsync(string! queue, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
+Guara.Core.InProcessQueueSignal.WaitAsync(System.Collections.Generic.IReadOnlyList<string!>! queues, System.TimeSpan timeout, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<bool>
 Guara.Core.RetryOptions
 Guara.Core.RetryOptions.Backoff.get -> System.Func<int, System.TimeSpan>!
 Guara.Core.RetryOptions.Backoff.set -> void

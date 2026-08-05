@@ -49,8 +49,9 @@ public class RecurringClientTests
     {
         var storage = new MemoryStorage(time);
         var client = new GuaraClient(
-            storage, new NullPublisher(), new RecurrenceCalculator(new GuaraCronParser()),
-            new ContinuationPromoter(storage, time, NullLogger<ContinuationPromoter>.Instance),
+            storage, new NullPublisher(), new RecordingQueueSignal(), new RecurrenceCalculator(new GuaraCronParser()),
+            new ContinuationPromoter(
+                storage, new RecordingQueueSignal(), time, NullLogger<ContinuationPromoter>.Instance),
             time, NullLogger<GuaraClient>.Instance);
         return (client, storage, time);
     }

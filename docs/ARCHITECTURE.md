@@ -206,6 +206,7 @@ Decisões arquiteturais são registradas e versionadas em [adr/](adr/README.md).
 | [0009](adr/0009-politica-de-dependencias.md) | Política de dependências (núcleo sem terceiros; drivers isolados; cron próprio) |
 | [0010](adr/0010-api-do-usuario-em-portugues.md) | API voltada ao usuário em português (métodos do `IGuaraClient`) |
 | [0011](adr/0011-licenca-apache-e-assinatura-de-assembly.md) | Core sob Apache-2.0 e assemblies com nome forte |
+| [0012](adr/0012-wakeup-por-sinal-de-fila.md) | Wakeup por sinal de fila (`IQueueSignal`), com o polling como piso |
 
 ---
 

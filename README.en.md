@@ -383,6 +383,8 @@ All configuration follows the .NET Options pattern under the `Guara` section (va
 }
 ```
 
+`Dispatcher.PollingInterval` is the **ceiling** of the wait, not the cadence: enqueuing signals the queue and the dispatcher wakes right away. The interval is the guarantee for what becomes eligible on its own — a retry that came due, a lease abandoned by a node that crashed. Raising it cuts idle load against the database without costing latency.
+
 ## Observability
 
 - **Logs**: structured, via `Microsoft.Extensions.Logging` — properties like `JobId`, `Queue`, `JobType`, `Attempt`, `DurationMs` on every record. The sample host writes JSON to stdout using the built-in console formatter; bring your own sink if you prefer.
@@ -416,8 +418,8 @@ All configuration follows the .NET Options pattern under the `Guara` section (va
 | SQL Server, MySQL and MongoDB providers (same conformance kit, 100% green) | ✅ Done |
 | `Guara.Analyzers`: `GUARA0001` and `GUARA0002` enabled across the repository | ✅ Done |
 | **`0.1.0-preview.2` release: four production storages and the analyzers** | ✅ Done |
-| Dispatcher push strategy (wake the worker without polling) | 🕓 Planned |
-| `Guara.Redis` accelerator, on top of the push strategy | 🕓 Planned |
+| Queue-signal wakeup: the dispatcher wakes on enqueue, without shortening the interval | ✅ Done |
+| `Guara.Redis` accelerator: the queue signal over pub/sub, across nodes | 🕓 Planned |
 | `Guara.Extensions`, `Guara.Authentication` | 🕓 Planned |
 | Cluster and distributed coordination, OpenTelemetry, CLI, benchmarks | 🕓 Planned |
 | User documentation and Hangfire migration guide | 🕓 Planned |
