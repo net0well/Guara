@@ -1,0 +1,11 @@
+Guara.Storage.MySql.MySqlStorageOptions
+Guara.Storage.MySql.MySqlStorageOptions.AutoMigrate.get -> bool
+Guara.Storage.MySql.MySqlStorageOptions.AutoMigrate.set -> void
+Guara.Storage.MySql.MySqlStorageOptions.ConnectionString.get -> string!
+Guara.Storage.MySql.MySqlStorageOptions.ConnectionString.set -> void
+Guara.Storage.MySql.MySqlStorageOptions.MySqlStorageOptions() -> void
+Guara.Storage.MySql.MySqlStorageOptions.TablePrefix.get -> string!
+Guara.Storage.MySql.MySqlStorageOptions.TablePrefix.set -> void
+Microsoft.Extensions.DependencyInjection.MySqlStorageExtensions
+static Microsoft.Extensions.DependencyInjection.MySqlStorageExtensions.UseMySqlStorage(this Guara.Abstractions.IGuaraBuilder! builder, string! connectionString, System.Action<Guara.Storage.MySql.MySqlStorageOptions!>? configure = null) -> Guara.Abstractions.IGuaraBuilder!
+static Microsoft.Extensions.DependencyInjection.MySqlStorageExtensions.UseMySqlStorage(this Guara.Abstractions.IGuaraBuilder! builder, System.Action<Guara.Storage.MySql.MySqlStorageOptions!>? configure = null) -> Guara.Abstractions.IGuaraBuilder!
