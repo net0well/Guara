@@ -19,7 +19,7 @@
 
 ---
 
-> **Project status.** Guará is under active development, published on NuGet as a **preview** (`0.1.0-preview.2`). The runtime, the full dashboard and four production storages — PostgreSQL, SQL Server, MySQL and MongoDB — are implemented and covered by tests. Being a prerelease, the public API may still change until 1.0 — anything not there yet is marked _planned_ throughout this document and in the [roadmap](#roadmap). Star and watch the repository to follow the progress.
+> **Project status.** Guará is under active development, published on NuGet as a **preview** (`0.1.0-preview.3`). The runtime, the full dashboard and four production storages — PostgreSQL, SQL Server, MySQL and MongoDB — are implemented and covered by tests. Being a prerelease, the public API may still change until 1.0 — anything not there yet is marked _planned_ throughout this document and in the [roadmap](#roadmap). Star and watch the repository to follow the progress.
 
 ## Installation
 
@@ -33,6 +33,8 @@ dotnet add package Guara.Dashboard --prerelease            # optional: web dashb
 ```
 
 Storage is a single choice: `Guara.Storage.PostgreSql`, `Guara.Storage.SqlServer`, `Guara.Storage.MySql` or `Guara.Storage.Mongo` in production; `Guara.Storage.Memory` for development and tests. They all pass the same conformance kit, and switching between them is one line.
+
+Running on several nodes and already have Redis? `Guara.Redis` is optional and carries the work signal between them — [details below](#what-about-redis).
 
 ## Packages
 
@@ -54,7 +56,7 @@ Install only what you use — the core runs on its own and everything else is op
 | `Guara.SourceGenerators` | Reflection-free job registration and invocation | ✅ published |
 | `Guara.Analyzers` | Roslyn analyzers enforcing the dependency rules | ✅ published |
 | `Guara.Abstractions` / `Guara.Storage` | Contracts — for provider and extension authors | ✅ published |
-| `Guara.Redis` | Accelerator: carries the work signal across nodes over pub/sub | 🚧 in the repo, ships next preview |
+| `Guara.Redis` | Accelerator: carries the work signal across nodes over pub/sub | ✅ published |
 | `Guara.Authentication` | Authentication schemes (JWT, OIDC, cookie) | 🕓 planned |
 | `Guara.Cluster` / `Guara.Distributed` | Leader election, failover, distributed coordination | 🕓 planned |
 | `Guara.OpenTelemetry` | OpenTelemetry exporters | 🕓 planned |
@@ -430,6 +432,7 @@ All configuration follows the .NET Options pattern under the `Guara` section (va
 | **`0.1.0-preview.2` release: four production storages and the analyzers** | ✅ Done |
 | Queue-signal wakeup: the dispatcher wakes on enqueue, without shortening the interval | ✅ Done |
 | `Guara.Redis`: the queue signal over pub/sub, waking every node's dispatcher | ✅ Done |
+| **`0.1.0-preview.3` release: queue-signal wakeup and the Redis accelerator** | ✅ Done |
 | `Guara.Extensions`, `Guara.Authentication` | 🕓 Planned |
 | Cluster and distributed coordination, OpenTelemetry, CLI, benchmarks | 🕓 Planned |
 | User documentation and Hangfire migration guide | 🕓 Planned |
