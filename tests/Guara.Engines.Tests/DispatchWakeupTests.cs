@@ -88,6 +88,49 @@ public class DispatchWakeupTests
         }
     }
 
+    /// <summary>
+    /// Parar e voltar a rodar precisa mesmo voltar a rodar. A guarda de idempotência do
+    /// <c>StartAsync</c> olha o laço registrado, então um <c>StopAsync</c> que não limpa
+    /// esse registro transforma o start seguinte num silêncio — nada falha, nada roda.
+    /// </summary>
+    [Fact]
+    public async Task WorkerAndDispatcher_ProcessAgainAfterStopAndStart()
+    {
+        await using var host = BuildHost();
+        host.GetRequiredService<JobHandlerRegistry>().Register("Relatorio", "Gerar",
+            static (_, _) => ValueTask.CompletedTask);
+
+        var worker = host.GetRequiredService<IWorker>();
+        var dispatcher = host.GetRequiredService<IDispatcher>();
+        var client = host.GetRequiredService<IGuaraClient>();
+        var storage = host.GetRequiredService<IStorage>();
+        var descriptor = new JobDescriptor("Relatorio", "Gerar", default, "relatorios");
+
+        await worker.StartAsync(Ct);
+        await dispatcher.StartAsync(Ct);
+        var antes = await client.EnfileirarAsync(descriptor, Ct);
+        Assert.Equal(JobState.Succeeded, (await WaitForTerminalStateAsync(storage, antes)).State);
+
+        await dispatcher.StopAsync(Ct);
+        await worker.StopAsync(Ct);
+
+        // Enfileirado com tudo parado: só roda se o ciclo seguinte realmente reiniciar.
+        var durante = await client.EnfileirarAsync(descriptor, Ct);
+
+        await worker.StartAsync(Ct);
+        await dispatcher.StartAsync(Ct);
+
+        try
+        {
+            Assert.Equal(JobState.Succeeded, (await WaitForTerminalStateAsync(storage, durante)).State);
+        }
+        finally
+        {
+            await dispatcher.StopAsync(Ct);
+            await worker.StopAsync(Ct);
+        }
+    }
+
     [Fact]
     public async Task DispatcherStopsPromptly_WhileWaitingForASignal()
     {

@@ -88,14 +88,14 @@ internal sealed class GuaraWorker : IWorker, IEventHandler<WorkerRequested>
     /// <inheritdoc />
     public async ValueTask StopAsync(CancellationToken ct)
     {
-        if (_acceptCts is null || _executionCts is null)
+        if (_acceptCts is not { } acceptCts || _executionCts is not { } executionCts)
         {
             return;
         }
 
         // 1) para de aceitar novos; jobs na fila interna não iniciados são descartados
         //    (a posse expira e eles voltam a ser elegíveis — nada se perde).
-        await _acceptCts.CancelAsync();
+        await acceptCts.CancelAsync();
 
         // 2) aguarda os em andamento até o timeout de drain…
         var drain = Task.WhenAll(_slots);
@@ -103,7 +103,7 @@ internal sealed class GuaraWorker : IWorker, IEventHandler<WorkerRequested>
         if (await Task.WhenAny(drain, timeout) == timeout)
         {
             // 3) …e cancela cooperativamente os excedentes.
-            await _executionCts.CancelAsync();
+            await executionCts.CancelAsync();
         }
 
         try
@@ -112,7 +112,19 @@ internal sealed class GuaraWorker : IWorker, IEventHandler<WorkerRequested>
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
+            // O chamador desistiu de esperar, mas os slots ainda estão terminando. Limpar
+            // o estado agora deixaria um StartAsync subir um segundo conjunto de slots em
+            // paralelo com este, dobrando a concorrência configurada.
+            return;
         }
+
+        // Sem isto, os slots parados continuariam registrados e o StartAsync seguinte
+        // cairia na guarda de idempotência: o worker nunca mais executaria job nenhum.
+        _slots = [];
+        acceptCts.Dispose();
+        executionCts.Dispose();
+        _acceptCts = null;
+        _executionCts = null;
     }
 
     private async Task SlotAsync(CancellationToken acceptCt, CancellationToken executionCt)
