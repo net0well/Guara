@@ -210,6 +210,7 @@ Decisões arquiteturais são registradas e versionadas em [adr/](adr/README.md).
 | [0011](adr/0011-licenca-apache-e-assinatura-de-assembly.md) | Core sob Apache-2.0 e assemblies com nome forte |
 | [0012](adr/0012-wakeup-por-sinal-de-fila.md) | Wakeup por sinal de fila (`IQueueSignal`), com o polling como piso |
 | [0013](adr/0013-redis-como-acelerador.md) | Redis como acelerador (`Guara.Redis`), não como storage |
+| [0014](adr/0014-enfileiramento-transacional.md) | Enfileiramento dentro da transação do chamador |
 
 ---
 
