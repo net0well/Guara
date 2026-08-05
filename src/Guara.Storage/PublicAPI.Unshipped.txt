@@ -184,6 +184,7 @@ Guara.Storage.JobSeriesQuery.Queue.init -> void
 Guara.Storage.JobSeriesQuery.To.get -> System.DateTimeOffset
 Guara.Storage.JobSeriesQuery.To.init -> void
 Guara.Storage.JobSeriesQuery.Validate() -> void
+Guara.Storage.JobEligibility
 Guara.Storage.RecurringJobRecord
 Guara.Storage.RecurringJobRecord.<Clone>$() -> Guara.Storage.RecurringJobRecord!
 Guara.Storage.RelationalTransaction
@@ -191,6 +192,8 @@ Guara.Storage.RelationalTransaction.RelationalTransaction(System.Data.Common.DbT
 Guara.Storage.RelationalTransaction.RequireConnection<TConnection>(string! provider) -> TConnection!
 Guara.Storage.RelationalTransaction.RequireTransaction<TTransaction>(string! provider) -> TTransaction!
 Guara.Storage.RelationalTransaction.Transaction.get -> System.Data.Common.DbTransaction!
+static Guara.Storage.JobEligibility.For(Guara.Abstractions.JobState state, System.DateTimeOffset createdAt, System.DateTimeOffset? scheduledFor, System.DateTimeOffset? leaseUntil) -> System.DateTimeOffset?
+static Guara.Storage.JobEligibility.For(Guara.Storage.JobRecord! record) -> System.DateTimeOffset?
 static Guara.Storage.RelationalTransaction.Require(Guara.Abstractions.IGuaraTransaction! transaction, string! provider) -> Guara.Storage.RelationalTransaction!
 Guara.Storage.RecurringJobRecord.CalendarName.get -> string?
 Guara.Storage.RecurringJobRecord.CalendarName.init -> void

@@ -33,10 +33,11 @@ internal sealed class PostgreSqlJobStorage(
         await schema.EnsureAsync(ct);
 
         await using var command = NewCommand($"""
-            INSERT INTO {s}.jobs ({Columns})
-            VALUES (@id, @descriptor, @state, @attempt, @queue, @createdAt, @scheduledFor, @leaseUntil, @finishedAt, @result, @error)
+            INSERT INTO {s}.jobs ({Columns}, eligible_at)
+            VALUES (@id, @descriptor, @state, @attempt, @queue, @createdAt, @scheduledFor, @leaseUntil, @finishedAt, @result, @error, @eligibleAt)
             ON CONFLICT (id) DO NOTHING
             """, transaction);
+        command.Parameters.AddWithValue("eligibleAt", (object?)JobEligibility.For(record) ?? DBNull.Value);
         command.Parameters.AddWithValue("id", record.Id.Value);
         command.Parameters.Add(new NpgsqlParameter("descriptor", NpgsqlDbType.Jsonb)
         {
@@ -81,16 +82,13 @@ internal sealed class PostgreSqlJobStorage(
         await using var command = dataSource.CreateCommand($"""
             WITH candidate AS (
                 SELECT id FROM {s}.jobs
-                WHERE queue = @queue
-                  AND (state = {(int)JobState.Enqueued}
-                       OR (state IN ({(int)JobState.Scheduled}, {(int)JobState.Retrying}) AND scheduled_for <= @now)
-                       OR (state = {(int)JobState.Processing} AND lease_until < @now))
-                ORDER BY created_at
+                WHERE queue = @queue AND eligible_at <= @now
+                ORDER BY eligible_at
                 LIMIT 1
                 FOR UPDATE SKIP LOCKED
             )
             UPDATE {s}.jobs jobs
-            SET state = {(int)JobState.Processing}, lease_until = @leaseUntil
+            SET state = {(int)JobState.Processing}, lease_until = @leaseUntil, eligible_at = @leaseUntil
             FROM candidate
             WHERE jobs.id = candidate.id
             RETURNING {Prefixed("jobs")}
@@ -107,7 +105,7 @@ internal sealed class PostgreSqlJobStorage(
     {
         await schema.EnsureAsync(ct);
         await using var command = dataSource.CreateCommand($"""
-            UPDATE {s}.jobs SET lease_until = @leaseUntil
+            UPDATE {s}.jobs SET lease_until = @leaseUntil, eligible_at = @leaseUntil
             WHERE id = @id AND state = {(int)JobState.Processing} AND lease_until IS NOT NULL
             """);
         command.Parameters.AddWithValue("id", id.Value);
@@ -121,7 +119,7 @@ internal sealed class PostgreSqlJobStorage(
         await using var command = dataSource.CreateCommand($"""
             UPDATE {s}.jobs
             SET state = {(int)JobState.Retrying}, error = @error, attempt = attempt + 1,
-                scheduled_for = @retryAt, lease_until = NULL
+                scheduled_for = @retryAt, lease_until = NULL, eligible_at = @retryAt
             WHERE id = @id
             """);
         command.Parameters.AddWithValue("id", id.Value);
@@ -135,7 +133,8 @@ internal sealed class PostgreSqlJobStorage(
         await schema.EnsureAsync(ct);
         await using var command = dataSource.CreateCommand($"""
             UPDATE {s}.jobs
-            SET state = {(int)JobState.Scheduled}, scheduled_for = @scheduledFor, lease_until = NULL
+            SET state = {(int)JobState.Scheduled}, scheduled_for = @scheduledFor, lease_until = NULL,
+                eligible_at = @scheduledFor
             WHERE id = @id
             """);
         command.Parameters.AddWithValue("id", id.Value);
@@ -153,7 +152,15 @@ internal sealed class PostgreSqlJobStorage(
                 error = CASE WHEN @state IN ({(int)JobState.Failed}, {(int)JobState.Retrying}) THEN @value ELSE error END,
                 lease_until = CASE WHEN @state = {(int)JobState.Processing} THEN lease_until ELSE NULL END,
                 finished_at = CASE WHEN @state IN ({(int)JobState.Succeeded}, {(int)JobState.Failed})
-                                   THEN COALESCE(finished_at, @now) ELSE finished_at END
+                                   THEN COALESCE(finished_at, @now) ELSE finished_at END,
+                -- As expressões do SET enxergam a linha antiga, então scheduled_for e
+                -- lease_until aqui são os valores que permanecem depois desta transição.
+                eligible_at = CASE @state
+                    WHEN {(int)JobState.Enqueued} THEN created_at
+                    WHEN {(int)JobState.Scheduled} THEN scheduled_for
+                    WHEN {(int)JobState.Retrying} THEN scheduled_for
+                    WHEN {(int)JobState.Processing} THEN lease_until
+                    ELSE NULL END
             WHERE id = @id
             """);
         command.Parameters.AddWithValue("id", id.Value);
