@@ -50,7 +50,7 @@ Instale só o que usar — o núcleo roda sozinho e todo o resto é opcional. A 
 | `Guara.Diagnostics` | Logs estruturados, métricas e traces | ✅ publicado |
 | `Guara.SourceGenerators` | Registro e invocação de jobs sem reflection | ✅ publicado |
 | `Guara.Abstractions` / `Guara.Storage` | Contratos — para autores de providers e extensões | ✅ publicado |
-| `Guara.Storage.SqlServer` | Storage SQL Server | 🕓 planejado |
+| `Guara.Storage.SqlServer` | Storage SQL Server 2016+ | 🟡 implementado, sai no próximo preview |
 | `Guara.Storage.MySql` | Storage MySQL 8+ | 🕓 planejado |
 | `Guara.Storage.Mongo` | Storage MongoDB | 🕓 planejado |
 | `Guara.Storage.Redis` | Storage Redis | 🕓 planejado |
@@ -58,7 +58,7 @@ Instale só o que usar — o núcleo roda sozinho e todo o resto é opcional. A 
 | `Guara.Cluster` / `Guara.Distributed` | Eleição de líder, failover, coordenação distribuída | 🕓 planejado |
 | `Guara.OpenTelemetry` | Exporters OpenTelemetry | 🕓 planejado |
 | `Guara.Cli` | Ferramenta de linha de comando (`dotnet tool`) | 🕓 planejado |
-| `Guara.Analyzers` | Analisadores Roslyn que enforçam as regras de dependência | 🕓 planejado |
+| `Guara.Analyzers` | Analisadores Roslyn que enforçam as regras de dependência | 🟡 implementado, sai no próximo preview |
 | `Guara.Pro.Batches` | Comercial: grupos de jobs com callback de conclusão | 🕓 planejado |
 
 ## O que é o Guará
@@ -92,10 +92,10 @@ O nome vem do **lobo-guará**, animal veloz e resiliente nativo do Brasil. Made 
 | Painel operável | Busca por texto/tipo/fila/estado/período, gráficos ao vivo de vazão e latência (p50/p95), gestão de recorrentes (pausar, retomar, disparar, editar agenda), edição de calendários em visão mensal e ações em massa |
 | Autenticação do dashboard | Regras fluentes (logados, papéis, claims, IPs internos, combináveis), regra customizada com `HttpContext`, login fixo e **página de login própria** com a identidade do Guará |
 | Permissões granulares | Cada ação do painel exige sua concessão (`guara:view`, `guara:retry`, `guara:trigger`, `guara:delete`, `guara:calendars`, `guara:view-payload`), sobre as policies do ASP.NET Core |
-| Storage plugável | Contratos comuns com kit de conformidade que todo provider herda. Hoje: PostgreSQL e In-Memory — troque com uma linha |
+| Storage plugável | Contratos comuns com kit de conformidade que todo provider herda. Hoje: PostgreSQL, SQL Server e In-Memory — troque com uma linha |
 | Observabilidade | Logs estruturados, métricas (`System.Diagnostics.Metrics`), traces (`ActivitySource`) |
 | Seguro por padrão | O dashboard nega acesso anônimo a menos que configurado explicitamente; o que não foi concedido é negado |
-| _Planejado_ | Processamento distribuído (eleição de líder, failover), demais providers de storage, exporters OpenTelemetry, CLI e analisadores Roslyn |
+| _Planejado_ | Processamento distribuído (eleição de líder, failover), demais providers de storage, exporters OpenTelemetry e CLI |
 
 ## Começando
 
@@ -264,6 +264,15 @@ Validation -> Authorization -> Serialization -> Middleware custom
 
 Cada etapa é um `IJobMiddleware`; o slot `Custom` é o ponto de extensão do usuário. A arquitetura completa — regras de dependência, convenções de nomenclatura, fluxos de execução e os ADRs por trás de cada decisão — está documentada em [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
+### Regras de arquitetura que quebram a build
+
+As regras de dependência não vivem só na documentação: `Guara.Analyzers` as transforma em erro de compilação, e todo pacote do Guará compila com ele ligado.
+
+| Regra | O que impede |
+|---|---|
+| `GUARA0001` | Dependência invertida — um componente referenciando outro de camada superior |
+| `GUARA0002` | Motor de execução alcançando um provider concreto em vez do contrato |
+
 ## Providers de storage
 
 O `Guara.Storage` define os contratos; cada provider os implementa usando as melhores primitivas do seu backend. Todos os providers precisam passar o mesmo **kit de testes de conformidade** (aquisição atômica sob concorrência, lease/visibility, idempotência, locks com TTL).
@@ -272,7 +281,7 @@ O `Guara.Storage` define os contratos; cada provider os implementa usando as mel
 |---|---|---|---|
 | PostgreSQL | `FOR UPDATE SKIP LOCKED` | Advisory locks | ✅ publicado, conformidade verde |
 | In-Memory | Exclusão mútua sobre o dicionário | Local ao processo | ✅ publicado, conformidade verde |
-| SQL Server | `READPAST + UPDLOCK` | `sp_getapplock` | 🕓 planejado |
+| SQL Server 2016+ | `READPAST + UPDLOCK` com `OUTPUT` | Tabela com TTL e dono | 🟡 conformidade verde, sai no próximo preview |
 | MySQL 8+ | `FOR UPDATE SKIP LOCKED` | `GET_LOCK` | 🕓 planejado |
 | MongoDB | `findAndModify` | Coleção com TTL | 🕓 planejado |
 | Redis | Scripts Lua | `SET NX PX` + TTL | 🕓 planejado (escopo em revisão) |
@@ -282,6 +291,7 @@ Trocar de provider é uma mudança de uma linha:
 ```csharp
 builder.Services.AddGuara().UseMemoryStorage();                    // dev/testes
 builder.Services.AddGuara().UsePostgreSqlStorage(connectionString); // produção
+builder.Services.AddGuara().UseSqlServerStorage(connectionString);  // produção
 ```
 
 ## Dashboard (opcional)
@@ -394,8 +404,10 @@ Toda a configuração segue o padrão Options do .NET, sob a seção `Guara` (va
 | Congelamento da API pública (`PublicApiAnalyzers`) | ✅ Concluído |
 | CI/CD: build multi-TFM, conformance por container, publicação por tag | ✅ Concluído |
 | **Primeira publicação no NuGet (`0.1.0-preview.1`)** | ✅ Concluído |
-| Providers restantes: SQL Server → MySQL → MongoDB → Redis | 🕓 Planejado |
-| `Guara.Analyzers`, `Guara.Extensions`, `Guara.Authentication` | 🕓 Planejado |
+| Provider SQL Server (mesmo kit de conformidade, 100% verde) | ✅ Concluído |
+| Providers restantes: MySQL → MongoDB → Redis | 🕓 Planejado |
+| `Guara.Analyzers`: `GUARA0001` e `GUARA0002` ligados em todo o repositório | ✅ Concluído |
+| `Guara.Extensions`, `Guara.Authentication` | 🕓 Planejado |
 | Cluster e coordenação distribuída, OpenTelemetry, CLI, benchmarks | 🕓 Planejado |
 | Documentação de usuário e guia de migração do Hangfire | 🕓 Planejado |
 | **1.0** | 🕓 Planejado |

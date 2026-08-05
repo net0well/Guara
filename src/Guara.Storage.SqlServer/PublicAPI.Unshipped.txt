@@ -1,0 +1,11 @@
+Guara.Storage.SqlServer.SqlServerStorageOptions
+Guara.Storage.SqlServer.SqlServerStorageOptions.AutoMigrate.get -> bool
+Guara.Storage.SqlServer.SqlServerStorageOptions.AutoMigrate.set -> void
+Guara.Storage.SqlServer.SqlServerStorageOptions.ConnectionString.get -> string!
+Guara.Storage.SqlServer.SqlServerStorageOptions.ConnectionString.set -> void
+Guara.Storage.SqlServer.SqlServerStorageOptions.Schema.get -> string!
+Guara.Storage.SqlServer.SqlServerStorageOptions.Schema.set -> void
+Guara.Storage.SqlServer.SqlServerStorageOptions.SqlServerStorageOptions() -> void
+Microsoft.Extensions.DependencyInjection.SqlServerStorageExtensions
+static Microsoft.Extensions.DependencyInjection.SqlServerStorageExtensions.UseSqlServerStorage(this Guara.Abstractions.IGuaraBuilder! builder, string! connectionString, System.Action<Guara.Storage.SqlServer.SqlServerStorageOptions!>? configure = null) -> Guara.Abstractions.IGuaraBuilder!
+static Microsoft.Extensions.DependencyInjection.SqlServerStorageExtensions.UseSqlServerStorage(this Guara.Abstractions.IGuaraBuilder! builder, System.Action<Guara.Storage.SqlServer.SqlServerStorageOptions!>? configure = null) -> Guara.Abstractions.IGuaraBuilder!
