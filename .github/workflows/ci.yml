@@ -56,6 +56,22 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
           restore-keys: nuget-${{ runner.os }}-
 
+      # A SPA é construída aqui, e não pelo build .NET, porque `dotnet build` da solution
+      # constrói o Guara.Dashboard em DUAS instâncias em paralelo: uma como projeto da
+      # solution (multi-target, passo externo) e outra pela negociação de TFM de quem o
+      # referencia. São instâncias com propriedades globais diferentes, então o alvo que
+      # serializa a construção dentro de uma delas não enxerga a outra — e as duas chamam
+      # `npm ci` sobre o mesmo node_modules. Uma apaga o diretório enquanto a outra o lê.
+      #
+      # Com o dist pronto antes, a checagem de incrementalidade do MSBuild acha a saída
+      # atual e nenhuma das instâncias chama o npm. Como efeito colateral, falha de build
+      # da SPA aparece como falha desta etapa, e não como um MSB3073 sem contexto.
+      - name: Constrói a SPA do painel
+        working-directory: src/guara-dashboard-angular
+        run: |
+          npm ci
+          npm run build
+
       - name: Restore
         run: dotnet restore Guara.slnx
 

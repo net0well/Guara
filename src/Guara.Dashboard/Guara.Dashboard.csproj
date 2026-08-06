@@ -40,14 +40,18 @@
   </ItemGroup>
 
   <!--
-    O projeto é multi-target, e os builds das duas TFMs rodam em paralelo sobre o MESMO
-    diretório da SPA. Construir a SPA dentro do build por TFM cria uma corrida: um deles
-    começa `npm ci`, que cria node_modules antes de instalar as ferramentas, e o outro vê
-    o diretório existindo, pula a instalação e chama `ng` que ainda não está lá.
+    A construção acontece uma vez no passo externo do multi-target, antes de as TFMs serem
+    despachadas: assim os builds internos encontram o dist pronto e apenas o embutem.
 
-    Por isso a construção acontece uma única vez, no passo externo do multi-target, antes
-    de as TFMs serem despachadas. Quando os builds internos chegam, o dist já está pronto
-    e eles apenas o embutem.
+    Isso NÃO elimina toda a concorrência. Num build da solution este projeto é construído
+    em várias instâncias com propriedades globais diferentes — a da solution (multi-target)
+    e uma por TFM negociada com quem o referencia —, e o alvo abaixo só serializa dentro de
+    uma delas. Com o dist ausente, todas chamam `npm ci` sobre o mesmo node_modules, e uma
+    apaga o diretório enquanto a outra lê dele.
+
+    Quem constrói do zero deve construir a SPA antes (`npm ci && npm run build` em
+    src/guara-dashboard-angular), que é o que os workflows fazem. Com o dist atual, a
+    checagem de incrementalidade faz todas as instâncias pularem e a corrida não existe.
   -->
   <Target Name="BuildAngularDashboardOnce"
           Condition="'$(TargetFramework)' == '' and '$(SkipAngularBuild)' != 'true'"
