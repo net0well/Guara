@@ -11,7 +11,7 @@ O Guará garante **pelo menos uma execução** por job (*at-least-once*). Um job
 | É idempotente (rodar 2x não faz mal) | Nada — é o caso ideal |
 | Tem efeito colateral irreversível (cobrança, e-mail) | `[GuaraRetentativas(0)]` + idempotência na ponta (chave de dedupe no destino) |
 | Não pode rodar em paralelo consigo mesmo | `[GuaraDesabilitarConcorrencia]` (mutex por chave, entre nós) |
-| Precisa de dedupe no enfileiramento | `IdempotencyKey` via `Guara.Distributed` (opt-in, spec 026) |
+| Precisa de dedupe no enfileiramento | `IdempotencyKey` — **pendente** no contrato de storage, onde a unicidade é restrição de índice ([ADR-0018](adr/0018-guara-distributed-nao-existe.md)) |
 
 **Exatamente-uma-vez não existe em sistemas distribuídos** — o Guará não finge oferecer; oferece as ferramentas acima.
 
@@ -95,5 +95,5 @@ Delayed/recorrentes disparam **na primeira varredura elegível após vencer** �
 
 ## Eventos e observabilidade
 
-- Eventos internos são **best-effort em processo**: falha de um handler não afeta os demais nem o job; entrega durável/entre nós é do `Guara.Distributed` (opt-in).
+- Eventos internos são **best-effort em processo**: falha de um handler não afeta os demais nem o job. Eles são notificação, não fonte da verdade — quem garante que o trabalho acontece é o storage, com posse e lease. **Entrega durável de evento entre nós está fora de escopo** ([ADR-0018](adr/0018-guara-distributed-nao-existe.md)): quem precisa disso publica do próprio job, no barramento que já usa.
 - `StateHistory` (opcional, default ligado) registra transições para a timeline do dashboard, com retenção própria.

@@ -32,7 +32,6 @@ Cada linha da tabela é um projeto em `src/`. **Um projeto = uma responsabilidad
 | `Guara.Configuration` | Binding e validação de opções | `Abstractions` | providers |
 | `Guara.Extensions` | Extensões utilitárias transversais | `Abstractions` | — |
 | `Guara.Cluster` | Eleição de líder com posse renovada, sobre o lock distribuído do storage ([ADR-0017](adr/0017-eleicao-de-lider.md)). Descoberta de nó e políticas de failover ainda não | `Abstractions`, `Storage` | storage concreto |
-| `Guara.Distributed` | Coordenação distribuída | `Cluster`, `Abstractions` | execução de Job |
 | `Guara.Cli` | Ferramenta de linha de comando | `Hosting`, `Abstractions` | internals de providers |
 | `Guara.Analyzers` | Analisadores Roslyn que enforçam as regras deste doc | — | runtime do framework |
 | `Guara.SourceGenerators` | Geram descoberta/registro sem reflection | — | runtime do framework |

@@ -16,8 +16,8 @@ namespace Guara.Server;
 /// </summary>
 internal sealed class GuaraServer : IGuaraServer
 {
-    private const string MaintenanceRole = "guara:maintenance";
-    private const string RecurringRole = "guara:recurring";
+    private const string MaintenanceRole = Guara.Cluster.ClusterRoles.Maintenance;
+    private const string RecurringRole = Guara.Cluster.ClusterRoles.Recurring;
 
     private readonly IStorage _storage;
     private readonly IDispatcher _dispatcher;

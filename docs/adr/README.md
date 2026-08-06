@@ -41,7 +41,8 @@ Cada ADR usa o template mínimo:
 | [0015](0015-elegibilidade-como-instante-indexavel.md) | Elegibilidade materializada em `eligible_at`; ordem de início passa a ser por elegibilidade | Aceito |
 | [0016](0016-aquisicao-em-lote.md) | Aquisição em lote dimensionada pela capacidade ociosa do worker | Aceito |
 | [0017](0017-eleicao-de-lider.md) | Eleição de líder com posse renovada; `ILockProvider` fica como está | Aceito |
+| [0018](0018-guara-distributed-nao-existe.md) | `Guara.Distributed` não será criado; suas duas responsabilidades vão para onde pertencem | Aceito |
 
 ## Próximo número
 
-O próximo ADR é **0018**. Numeração sequencial, sem lacunas.
+O próximo ADR é **0019**. Numeração sequencial, sem lacunas.

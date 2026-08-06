@@ -4,5 +4,9 @@ Guara.Cluster.ClusterOptions.LeadershipTtl.get -> System.TimeSpan
 Guara.Cluster.ClusterOptions.LeadershipTtl.set -> void
 Guara.Cluster.ClusterOptions.RenewInterval.get -> System.TimeSpan
 Guara.Cluster.ClusterOptions.RenewInterval.set -> void
+Guara.Cluster.ClusterRoles
 Microsoft.Extensions.DependencyInjection.ClusterServiceCollectionExtensions
+const Guara.Cluster.ClusterRoles.Maintenance = "guara:maintenance" -> string!
+const Guara.Cluster.ClusterRoles.Recurring = "guara:recurring" -> string!
+static Guara.Cluster.ClusterRoles.Todos.get -> System.Collections.Generic.IReadOnlyList<string!>!
 static Microsoft.Extensions.DependencyInjection.ClusterServiceCollectionExtensions.AddGuaraCluster(this Guara.Abstractions.IGuaraBuilder! builder, System.Action<Guara.Cluster.ClusterOptions!>? configure = null) -> Guara.Abstractions.IGuaraBuilder!
