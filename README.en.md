@@ -58,7 +58,7 @@ Install only what you use — the core runs on its own and everything else is op
 | `Guara.Abstractions` / `Guara.Storage` | Contracts — for provider and extension authors | ✅ published |
 | `Guara.Redis` | Accelerator: carries the work signal across nodes over pub/sub | ✅ published |
 | `Guara.Authentication` | Authentication schemes (JWT, OIDC, cookie) | 🕓 planned |
-| `Guara.Cluster` / `Guara.Distributed` | Leader election, failover, distributed coordination | 🕓 planned |
+| `Guara.Cluster` | Leader election with renewed ownership, for work that does not split across nodes | 🚧 in the repo, ships next preview |
 | `Guara.OpenTelemetry` | OpenTelemetry exporters | 🕓 planned |
 | `Guara.Cli` | Command-line tool (`dotnet tool`) | 🕓 planned |
 | `Guara.Pro.Batches` | Commercial: job groups with completion callbacks | 🕓 planned |
@@ -97,7 +97,8 @@ The name comes from the *lobo-guará* (maned wolf), a fast and resilient animal 
 | Pluggable storage | Shared contracts with a conformance kit every provider inherits. Today: PostgreSQL, SQL Server, MySQL, MongoDB and In-Memory — switch with one line |
 | Observability | Structured logs, metrics (`System.Diagnostics.Metrics`), traces (`ActivitySource`) |
 | Secure by default | Dashboard denies anonymous access unless explicitly configured otherwise; whatever was not granted is denied |
-| _Planned_ | Distributed processing (leader election, failover), remaining storage providers, OpenTelemetry exporters, CLI and Roslyn analyzers |
+| Multi-node | Distributed execution via lease ownership; work that does not split (recurring, maintenance) runs under leader election with renewed ownership, and the dashboard shows which node holds each role |
+| _Planned_ | OpenTelemetry exporters, CLI and authentication as its own package |
 
 ## Quick start
 
@@ -145,22 +146,30 @@ Enqueue from anywhere through `IGuaraClient`.
 | `ContinuarComAsync` | Continue with (continuation) |
 | `ExcluirAsync` | Delete |
 
+Mark the method with `[GuaraJob]` and a source generator produces the `{Type}Guara` descriptor factory. No lambdas, no reflection: queue and arguments are resolved at compile time, and a wrong signature is a build error rather than a production failure.
+
 ```csharp
 public sealed class ReportService(IGuaraClient jobs)
 {
     public async Task RequestAsync(int customerId, CancellationToken ct)
     {
         // Fire-and-forget: runs as soon as a worker is free
-        await jobs.EnfileirarAsync(() => GenerateReportAsync(customerId), ct);
+        await jobs.EnfileirarAsync(ReportServiceGuara.GenerateReport(customerId), ct);
 
         // Delayed: run once, 24 hours from now
-        await jobs.AgendarAsync(() => SendReminderAsync(customerId), TimeSpan.FromHours(24), ct);
+        await jobs.AgendarAsync(
+            ReportServiceGuara.SendReminder(customerId), TimeSpan.FromHours(24), ct);
     }
 
-    public Task GenerateReportAsync(int customerId) { /* ... */ }
-    public Task SendReminderAsync(int customerId) { /* ... */ }
+    [GuaraJob]
+    public Task GenerateReport(int customerId) { /* ... */ }
+
+    [GuaraJob]
+    public Task SendReminder(int customerId) { /* ... */ }
 }
 ```
+
+Registration is generated too: `builder.Services.AddGuara().AddGuaraJobs()` wires every marked job, with no runtime assembly scanning.
 
 ### Enqueuing together with your data (transactional)
 
@@ -198,7 +207,7 @@ Recurring jobs are configured through a **fluent builder** ([spec 038](spec/038-
 ```csharp
 await jobs.AdicionarOuAtualizarRecorrenteAsync(job => job
     .ComId("nightly-cleanup")
-    .Executa(() => CleanupExpiredRecordsAsync())
+    .Executa(MaintenanceServiceGuara.CleanupExpiredRecords())
     .ComCron("0 3 * * *")                                          // every day at 03:00
     .NoFusoHorario("America/Sao_Paulo")                            // accepts IANA or Windows ids
     .IniciaEm(GuaraDatas.SegundoExato(DateTimeOffset.UtcNow.AddSeconds(7)))
@@ -209,7 +218,7 @@ await jobs.AdicionarOuAtualizarRecorrenteAsync(job => job
 // Interval-based schedule (no cron), with a daily window
 await jobs.AdicionarOuAtualizarRecorrenteAsync(job => job
     .ComId("price-sync")
-    .Executa(() => SyncPricesAsync())
+    .Executa(PriceServiceGuara.SyncPrices())
     .ACada(TimeSpan.FromSeconds(10))
     .EntreHorarios(new TimeOnly(8, 0), new TimeOnly(18, 0)),
     ct);
@@ -235,8 +244,8 @@ Calendars can also be created and maintained **through the dashboard UI** — a 
 
 ```csharp
 // B runs automatically when A succeeds
-var export = await jobs.EnfileirarAsync(() => ExportOrdersAsync(month), ct);
-await jobs.ContinuarComAsync(export, () => NotifyExportFinishedAsync(month), ct);
+var export = await jobs.EnfileirarAsync(OrderServiceGuara.ExportOrders(month), ct);
+await jobs.ContinuarComAsync(export, OrderServiceGuara.NotifyExportFinished(month), ct);
 
 // Cancel/delete a job that has not run yet
 await jobs.ExcluirAsync(export, ct);
@@ -484,10 +493,11 @@ All configuration follows the .NET Options pattern under the `Guara` section (va
 | **`0.1.0-preview.3` release: queue-signal wakeup and the Redis accelerator** | ✅ Done |
 | Enqueuing inside the caller's transaction (PostgreSQL, SQL Server, MySQL) | ✅ Done |
 | Benchmarks: serialization, cron, enqueue and in-memory storage | ✅ Done |
-| `Guara.Extensions`, `Guara.Authentication` | 🕓 Planned |
-| Cluster and distributed coordination, OpenTelemetry, CLI, benchmarks | 🕓 Planned |
-| User documentation and Hangfire migration guide | 🕓 Planned |
+| Batch acquisition and indexed eligibility: 25× on PostgreSQL, 20× on MySQL, 10.6× on SQL Server | ✅ Done |
+| `Guara.Cluster`: leader election with renewed ownership, roles visible in the dashboard | ✅ Done |
+| User documentation, sample project and Hangfire migration guide | 🕓 Planned |
 | **1.0** — frozen API, transactions settled in the contract, real-world burn-in | 🕓 Planned |
+| `Guara.OpenTelemetry` (1.1) · `Guara.Cli` and `Guara.Authentication` (1.2) | 🕓 Planned |
 
 ## Semantics and guarantees
 

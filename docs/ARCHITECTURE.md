@@ -116,8 +116,7 @@ Guara.sln
 │   ├── Guara.Configuration         # binding de opções
 │   ├── Guara.Extensions            # extensões utilitárias
 │   │
-│   ├── Guara.Cluster               # leader election, heartbeat, node discovery, failover, locks distribuídos
-│   ├── Guara.Distributed           # coordenação distribuída
+│   ├── Guara.Cluster               # eleição de líder com posse renovada, sobre o lock distribuído do storage
 │   │
 │   ├── Guara.Cli                   # ferramenta de linha de comando
 │   ├── Guara.Analyzers             # analisadores Roslyn (enforçam as regras deste doc)
@@ -213,6 +212,8 @@ Decisões arquiteturais são registradas e versionadas em [adr/](adr/README.md).
 | [0014](adr/0014-enfileiramento-transacional.md) | Enfileiramento dentro da transação do chamador |
 | [0015](adr/0015-elegibilidade-como-instante-indexavel.md) | Elegibilidade materializada em `eligible_at` (ordem por elegibilidade) |
 | [0016](adr/0016-aquisicao-em-lote.md) | Aquisição em lote dimensionada pela capacidade ociosa do worker |
+| [0017](adr/0017-eleicao-de-lider.md) | Eleição de líder com posse renovada (`ILeaderElection`) |
+| [0018](adr/0018-guara-distributed-nao-existe.md) | `Guara.Distributed` não será criado |
 
 ---
 

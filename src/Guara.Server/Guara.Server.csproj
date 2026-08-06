@@ -6,6 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Os laços coordenados do servidor precisam de eleição de líder; quem liga o
+         servidor recebe a coordenação correta sem ter de saber que ela existe. -->
+    <ProjectReference Include="..\Guara.Cluster\Guara.Cluster.csproj" />
     <ProjectReference Include="..\Guara.Abstractions\Guara.Abstractions.csproj" />
     <ProjectReference Include="..\Guara.Configuration\Guara.Configuration.csproj" />
     <ProjectReference Include="..\Guara.Storage\Guara.Storage.csproj" />

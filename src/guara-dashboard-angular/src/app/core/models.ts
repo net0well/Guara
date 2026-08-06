@@ -40,6 +40,8 @@ export interface Server {
   lastHeartbeat: string;
   queues: string[];
   maxConcurrency: number;
+  /** Papéis coordenados que o nó lidera; vazio nos nós que só executam jobs. */
+  roles: string[];
 }
 
 export interface Recurring {

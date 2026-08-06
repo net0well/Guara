@@ -53,7 +53,7 @@ Trabalhamos de baixo para cima na pirâmide de dependências: contratos primeiro
 | 023 | Composição do dashboard | `Guara.Dashboard` | ✅ Approved (2026-07-16) |
 | 024 | SPA do dashboard | `Guara.Dashboard.Angular` | ✅ Approved (2026-07-16, revisada: React → Angular) |
 | 025 | Cluster (leader election/failover) | `Guara.Cluster` | ✅ Approved (2026-07-16) |
-| 026 | Coordenação distribuída | `Guara.Distributed` | ✅ Approved (2026-07-16) |
+| 026 | Coordenação distribuída | `Guara.Distributed` | ⛔ Superseded por [ADR-0018](../docs/adr/0018-guara-distributed-nao-existe.md) — coordenação é do `Guara.Cluster`; dedupe vira pendência de storage; evento durável sai de escopo |
 | 027 | CLI | `Guara.Cli` | ✅ Approved (2026-07-16) |
 | 028 | Analisadores Roslyn | `Guara.Analyzers` | ✅ Approved (2026-07-16) |
 | 029 | Source Generators | `Guara.SourceGenerators` | ✅ Approved (2026-07-16) |

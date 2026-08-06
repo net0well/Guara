@@ -11,13 +11,20 @@ namespace Guara.Server;
 /// Implementação default de <see cref="IGuaraServer"/>: anuncia o nó no storage,
 /// inicia Worker e Dispatcher, mantém o heartbeat (reanunciando-se se o registro
 /// sumir), promove ocorrências de recorrentes vencidos e roda a manutenção
-/// periódica — os laços coordenados rodam sob lock, então em múltiplos nós apenas
-/// um executa cada ciclo.
+/// periódica — os laços coordenados rodam sob liderança, então em múltiplos nós
+/// apenas um executa cada ciclo.
+/// <para>
+/// A liderança é <b>mantida entre ciclos</b>, não retomada a cada um: quem assume um
+/// papel continua com ele até parar ou perder a posse. Assumir e devolver a cada
+/// ciclo funcionaria igual para a exclusão mútua, mas deixaria o papel sem dono na
+/// maior parte do tempo — o registro do nó não teria o que informar, e cada ciclo
+/// pagaria uma disputa de lock que a renovação já resolve de graça.
+/// </para>
 /// </summary>
 internal sealed class GuaraServer : IGuaraServer
 {
-    private const string MaintenanceLockKey = "guara:maintenance";
-    private const string RecurringLockKey = "guara:recurring";
+    private const string MaintenanceRole = Guara.Cluster.ClusterRoles.Maintenance;
+    private const string RecurringRole = Guara.Cluster.ClusterRoles.Recurring;
 
     private readonly IStorage _storage;
     private readonly IDispatcher _dispatcher;
@@ -25,10 +32,14 @@ internal sealed class GuaraServer : IGuaraServer
     private readonly IGuaraClient _client;
     private readonly RecurrenceCalculator _calculator;
     private readonly ContinuationPromoter _continuations;
+    private readonly ILeaderElection _election;
     private readonly ServerOptions _options;
     private readonly TimeProvider _time;
     private readonly ILogger<GuaraServer> _logger;
     private readonly ServerNode _node;
+
+    private readonly object _papeisPortao = new();
+    private readonly SortedSet<string> _papeisDetidos = new(StringComparer.Ordinal);
 
     private CancellationTokenSource? _loopsCts;
     private Task[] _loops = [];
@@ -40,6 +51,7 @@ internal sealed class GuaraServer : IGuaraServer
     /// <param name="client">Enfileiramento das ocorrências promovidas.</param>
     /// <param name="calculator">Cálculo do próximo disparo dos recorrentes.</param>
     /// <param name="continuations">Varredura de recuperação das continuações.</param>
+    /// <param name="election">Coordenação entre nós dos laços que não se dividem.</param>
     /// <param name="options">Opções do servidor.</param>
     /// <param name="dispatcherOptions">Filas consumidas (exibidas na identidade do nó).</param>
     /// <param name="workerOptions">Concorrência máxima (exibida na identidade do nó).</param>
@@ -52,6 +64,7 @@ internal sealed class GuaraServer : IGuaraServer
         IGuaraClient client,
         RecurrenceCalculator calculator,
         ContinuationPromoter continuations,
+        ILeaderElection election,
         ServerOptions options,
         DispatcherOptions dispatcherOptions,
         WorkerOptions workerOptions,
@@ -64,6 +77,7 @@ internal sealed class GuaraServer : IGuaraServer
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(calculator);
         ArgumentNullException.ThrowIfNull(continuations);
+        ArgumentNullException.ThrowIfNull(election);
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(dispatcherOptions);
         ArgumentNullException.ThrowIfNull(workerOptions);
@@ -74,6 +88,7 @@ internal sealed class GuaraServer : IGuaraServer
         _client = client;
         _calculator = calculator;
         _continuations = continuations;
+        _election = election;
         _options = options;
         _time = time;
         _logger = logger;
@@ -98,7 +113,7 @@ internal sealed class GuaraServer : IGuaraServer
             return; // idempotente
         }
 
-        await _storage.Servers.AnnounceAsync(_node with { LastHeartbeat = _time.GetUtcNow() }, ct);
+        await AnunciarAsync(ct);
 
         // O worker inicia antes do dispatcher para já haver consumidores quando a busca começar.
         await _worker.StartAsync(ct);
@@ -109,8 +124,12 @@ internal sealed class GuaraServer : IGuaraServer
         _loops =
         [
             Task.Run(() => HeartbeatLoopAsync(token), CancellationToken.None),
-            Task.Run(() => RecurringLoopAsync(token), CancellationToken.None),
-            Task.Run(() => MaintenanceLoopAsync(token), CancellationToken.None),
+            Task.Run(
+                () => CoordinatedLoopAsync(RecurringRole, _options.RecurringPollInterval, RecurringCycleAsync, token),
+                CancellationToken.None),
+            Task.Run(
+                () => CoordinatedLoopAsync(MaintenanceRole, _options.MaintenanceInterval, MaintenanceCycleAsync, token),
+                CancellationToken.None),
         ];
 
         _logger.LogInformation(
@@ -165,7 +184,7 @@ internal sealed class GuaraServer : IGuaraServer
                 {
                     // O registro sumiu (removido por manutenção após indisponibilidade): reanuncia.
                     _logger.LogWarning("Registro do servidor {ServerId} não encontrado; reanunciando", _node.Id);
-                    await _storage.Servers.AnnounceAsync(_node with { LastHeartbeat = now }, ct);
+                    await AnunciarAsync(ct);
                 }
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -180,36 +199,76 @@ internal sealed class GuaraServer : IGuaraServer
         }
     }
 
-    private async Task RecurringLoopAsync(CancellationToken ct)
+    /// <summary>
+    /// Roda um trabalho que só pode acontecer em um nó por vez. Assume a liderança do papel
+    /// na primeira oportunidade e a mantém, retomando a disputa apenas depois de perdê-la.
+    /// </summary>
+    private async Task CoordinatedLoopAsync(
+        string role,
+        TimeSpan interval,
+        Func<CancellationToken, Task> ciclo,
+        CancellationToken ct)
     {
-        while (!ct.IsCancellationRequested)
+        ILeadership? lideranca = null;
+        try
         {
-            try
+            while (!ct.IsCancellationRequested)
             {
-                await Task.Delay(_options.RecurringPollInterval, _time, ct);
-
-                // Lock com TTL de um ciclo: entre vários nós, só um promove por vez.
-                await using var recurringLock = await _storage.Locks.TryAcquireAsync(
-                    RecurringLockKey, _options.RecurringPollInterval, ct);
-                if (recurringLock is null)
+                try
                 {
-                    continue;
-                }
+                    await Task.Delay(interval, _time, ct);
 
-                var now = _time.GetUtcNow();
-                foreach (var recurring in await _storage.Recurring.ListDueAsync(now, ct))
+                    // Descarta a liderança perdida antes de disputar de novo: enquanto o objeto
+                    // vive, a renovação em segundo plano continua tentando ressuscitá-la.
+                    if (lideranca is { Lost.IsCancellationRequested: true })
+                    {
+                        await DevolverAsync(lideranca, anunciar: true);
+                        lideranca = null;
+                    }
+
+                    lideranca ??= await AssumirAsync(role, ct);
+                    if (lideranca is null)
+                    {
+                        continue; // outro nó lidera o papel
+                    }
+
+                    // Perder a liderança no meio do ciclo interrompe o trabalho: quem deixou
+                    // de ser líder não pode continuar agindo como se fosse.
+                    using var cicloCts = CancellationTokenSource.CreateLinkedTokenSource(ct, lideranca.Lost);
+                    await ciclo(cicloCts.Token);
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
                 {
-                    await PromoteAsync(recurring, now, ct);
+                    return;
+                }
+                catch (OperationCanceledException)
+                {
+                    // Posse perdida durante o ciclo: o trabalho restante é de quem assumir.
+                    _logger.LogWarning("Liderança de {Role} perdida durante o ciclo", role);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Falha no ciclo do papel {Role}", role);
                 }
             }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        }
+        finally
+        {
+            if (lideranca is not null)
             {
-                return;
+                // No desligamento o registro do nó é removido logo em seguida: devolver o papel
+                // basta, anunciar seria uma escrita a mais no caminho de saída.
+                await DevolverAsync(lideranca, anunciar: false);
             }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Falha no ciclo de promoção de recorrentes");
-            }
+        }
+    }
+
+    private async Task RecurringCycleAsync(CancellationToken ct)
+    {
+        var now = _time.GetUtcNow();
+        foreach (var recurring in await _storage.Recurring.ListDueAsync(now, ct))
+        {
+            await PromoteAsync(recurring, now, ct);
         }
     }
 
@@ -257,49 +316,94 @@ internal sealed class GuaraServer : IGuaraServer
         }
     }
 
-    private async Task MaintenanceLoopAsync(CancellationToken ct)
+    private async Task MaintenanceCycleAsync(CancellationToken ct)
     {
-        while (!ct.IsCancellationRequested)
+        var now = _time.GetUtcNow();
+
+        // Continuações primeiro: pendências de pais já finalizados disparam antes
+        // de qualquer purga poder remover o pai.
+        await _continuations.SweepAsync(ct);
+
+        var deadServers = await _storage.Servers.RemoveExpiredAsync(now - _options.ServerTimeout, ct);
+        var purgedSucceeded = await _storage.Jobs.PurgeAsync(
+            JobState.Succeeded, now - _options.Retention.Succeeded, ct);
+        var purgedFailed = await _storage.Jobs.PurgeAsync(
+            JobState.Failed, now - _options.Retention.Failed, ct);
+
+        if (deadServers > 0 || purgedSucceeded > 0 || purgedFailed > 0)
+        {
+            _logger.LogInformation(
+                "Manutenção: {DeadServers} servidores mortos removidos, {PurgedSucceeded} jobs concluídos e {PurgedFailed} falhos purgados",
+                deadServers, purgedSucceeded, purgedFailed);
+        }
+    }
+
+    /// <summary>
+    /// Disputa o papel e, ao vencer, registra a posse no storage para que o painel possa
+    /// dizer qual nó responde por ele.
+    /// </summary>
+    private async ValueTask<ILeadership?> AssumirAsync(string role, CancellationToken ct)
+    {
+        var lideranca = await _election.TryAcquireAsync(role, ct);
+        if (lideranca is null)
+        {
+            return null;
+        }
+
+        lock (_papeisPortao)
+        {
+            _papeisDetidos.Add(role);
+        }
+
+        // Anúncio best-effort: a posse do papel é o lock, não esta linha. Falhar aqui deixa o
+        // painel desatualizado até o próximo reanúncio, e não pode custar a liderança.
+        try
+        {
+            await AnunciarAsync(ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Falha ao publicar a posse do papel {Role} no registro do nó", role);
+        }
+
+        _logger.LogInformation("Nó {ServerId} assumiu o papel {Role}", _node.Id, role);
+        return lideranca;
+    }
+
+    private async ValueTask DevolverAsync(ILeadership lideranca, bool anunciar)
+    {
+        var role = lideranca.Role;
+        await lideranca.DisposeAsync();
+
+        lock (_papeisPortao)
+        {
+            _papeisDetidos.Remove(role);
+        }
+
+        if (anunciar)
         {
             try
             {
-                await Task.Delay(_options.MaintenanceInterval, _time, ct);
-
-                // Lock com TTL de um ciclo: entre vários nós, só um executa a manutenção por vez.
-                await using var maintenanceLock = await _storage.Locks.TryAcquireAsync(
-                    MaintenanceLockKey, _options.MaintenanceInterval, ct);
-                if (maintenanceLock is null)
-                {
-                    continue;
-                }
-
-                var now = _time.GetUtcNow();
-
-                // Continuações primeiro: pendências de pais já finalizados disparam antes
-                // de qualquer purga poder remover o pai.
-                await _continuations.SweepAsync(ct);
-
-                var deadServers = await _storage.Servers.RemoveExpiredAsync(now - _options.ServerTimeout, ct);
-                var purgedSucceeded = await _storage.Jobs.PurgeAsync(
-                    JobState.Succeeded, now - _options.Retention.Succeeded, ct);
-                var purgedFailed = await _storage.Jobs.PurgeAsync(
-                    JobState.Failed, now - _options.Retention.Failed, ct);
-
-                if (deadServers > 0 || purgedSucceeded > 0 || purgedFailed > 0)
-                {
-                    _logger.LogInformation(
-                        "Manutenção: {DeadServers} servidores mortos removidos, {PurgedSucceeded} jobs concluídos e {PurgedFailed} falhos purgados",
-                        deadServers, purgedSucceeded, purgedFailed);
-                }
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                return;
+                await AnunciarAsync(CancellationToken.None);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Falha no ciclo de manutenção");
+                _logger.LogWarning(ex, "Falha ao publicar a devolução do papel {Role} no registro do nó", role);
             }
         }
+
+        _logger.LogInformation("Nó {ServerId} devolveu o papel {Role}", _node.Id, role);
+    }
+
+    private ValueTask AnunciarAsync(CancellationToken ct)
+    {
+        string[] papeis;
+        lock (_papeisPortao)
+        {
+            papeis = [.. _papeisDetidos];
+        }
+
+        return _storage.Servers.AnnounceAsync(
+            _node with { LastHeartbeat = _time.GetUtcNow(), Roles = papeis }, ct);
     }
 }

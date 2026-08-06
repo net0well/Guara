@@ -58,7 +58,7 @@ Instale só o que usar — o núcleo roda sozinho e todo o resto é opcional. A 
 | `Guara.Abstractions` / `Guara.Storage` | Contratos — para autores de providers e extensões | ✅ publicado |
 | `Guara.Redis` | Acelerador: leva o aviso de trabalho entre nós por pub/sub | ✅ publicado |
 | `Guara.Authentication` | Esquemas de autenticação (JWT, OIDC, cookie) | 🕓 planejado |
-| `Guara.Cluster` / `Guara.Distributed` | Eleição de líder, failover, coordenação distribuída | 🕓 planejado |
+| `Guara.Cluster` | Eleição de líder com posse renovada, para o trabalho que não se divide entre nós | 🚧 no repositório, sai no próximo preview |
 | `Guara.OpenTelemetry` | Exporters OpenTelemetry | 🕓 planejado |
 | `Guara.Cli` | Ferramenta de linha de comando (`dotnet tool`) | 🕓 planejado |
 | `Guara.Pro.Batches` | Comercial: grupos de jobs com callback de conclusão | 🕓 planejado |
@@ -97,7 +97,8 @@ O nome vem do **lobo-guará**, animal veloz e resiliente nativo do Brasil. Made 
 | Storage plugável | Contratos comuns com kit de conformidade que todo provider herda. Hoje: PostgreSQL, SQL Server, MySQL, MongoDB e In-Memory — troque com uma linha |
 | Observabilidade | Logs estruturados, métricas (`System.Diagnostics.Metrics`), traces (`ActivitySource`) |
 | Seguro por padrão | O dashboard nega acesso anônimo a menos que configurado explicitamente; o que não foi concedido é negado |
-| _Planejado_ | Processamento distribuído (eleição de líder, failover), demais providers de storage, exporters OpenTelemetry e CLI |
+| Multi-nó | Execução distribuída por posse com lease; o que não se divide (recorrentes, manutenção) roda sob eleição de líder com posse renovada, e o painel mostra qual nó responde por cada papel |
+| _Planejado_ | Exporters OpenTelemetry, CLI e autenticação em pacote próprio |
 
 ## Começando
 
@@ -137,22 +138,30 @@ Enfileire de qualquer lugar através do `IGuaraClient`.
 
 > **API em português.** O Guará é um projeto brasileiro e os métodos de operação de jobs são em português, por decisão de identidade ([ADR-0010](docs/adr/0010-api-do-usuario-em-portugues.md)). O restante (tipos, extensões de DI, options, rotas) segue as convenções do ecossistema .NET em inglês.
 
+Marque o método com `[GuaraJob]` e um source generator produz a fábrica de descritores `{Tipo}Guara`. Não há lambda nem reflection: fila e argumentos são resolvidos em compilação, e assinatura errada é erro de build, não falha em produção.
+
 ```csharp
 public sealed class RelatorioService(IGuaraClient jobs)
 {
     public async Task SolicitarAsync(int clienteId, CancellationToken ct)
     {
         // Fire-and-forget: roda assim que houver worker livre
-        await jobs.EnfileirarAsync(() => GerarRelatorioAsync(clienteId), ct);
+        await jobs.EnfileirarAsync(RelatorioServiceGuara.GerarRelatorio(clienteId), ct);
 
         // Com atraso: roda uma vez, daqui a 24 horas
-        await jobs.AgendarAsync(() => EnviarLembreteAsync(clienteId), TimeSpan.FromHours(24), ct);
+        await jobs.AgendarAsync(
+            RelatorioServiceGuara.EnviarLembrete(clienteId), TimeSpan.FromHours(24), ct);
     }
 
-    public Task GerarRelatorioAsync(int clienteId) { /* ... */ }
-    public Task EnviarLembreteAsync(int clienteId) { /* ... */ }
+    [GuaraJob]
+    public Task GerarRelatorio(int clienteId) { /* ... */ }
+
+    [GuaraJob]
+    public Task EnviarLembrete(int clienteId) { /* ... */ }
 }
 ```
+
+O registro também é gerado: `builder.Services.AddGuara().AddGuaraJobs()` liga todos os jobs marcados, sem varredura de assembly em runtime.
 
 ### Enfileirando junto com o seu dado (transacional)
 
@@ -190,7 +199,7 @@ Recorrentes são configurados com um **builder fluente** ([spec 038](spec/038-ag
 ```csharp
 await jobs.AdicionarOuAtualizarRecorrenteAsync(job => job
     .ComId("limpeza-noturna")
-    .Executa(() => LimparRegistrosExpiradosAsync())
+    .Executa(ManutencaoServiceGuara.LimparRegistrosExpirados())
     .ComCron("0 3 * * *")                                          // todo dia às 03:00
     .NoFusoHorario("America/Sao_Paulo")                            // aceita id IANA ou Windows
     .IniciaEm(GuaraDatas.SegundoExato(DateTimeOffset.UtcNow.AddSeconds(7)))
@@ -201,7 +210,7 @@ await jobs.AdicionarOuAtualizarRecorrenteAsync(job => job
 // Agenda por intervalo (sem cron), com janela diária
 await jobs.AdicionarOuAtualizarRecorrenteAsync(job => job
     .ComId("sincronizacao-precos")
-    .Executa(() => SincronizarPrecosAsync())
+    .Executa(PrecoServiceGuara.SincronizarPrecos())
     .ACada(TimeSpan.FromSeconds(10))
     .EntreHorarios(new TimeOnly(8, 0), new TimeOnly(18, 0)),
     ct);
@@ -227,8 +236,8 @@ Os calendários também podem ser criados e mantidos **pela interface do dashboa
 
 ```csharp
 // B roda automaticamente quando A concluir com sucesso
-var exportacao = await jobs.EnfileirarAsync(() => ExportarPedidosAsync(mes), ct);
-await jobs.ContinuarComAsync(exportacao, () => NotificarExportacaoConcluidaAsync(mes), ct);
+var exportacao = await jobs.EnfileirarAsync(PedidoServiceGuara.ExportarPedidos(mes), ct);
+await jobs.ContinuarComAsync(exportacao, PedidoServiceGuara.NotificarExportacaoConcluida(mes), ct);
 
 // Cancelar/excluir um job que ainda não rodou
 await jobs.ExcluirAsync(exportacao, ct);
@@ -484,10 +493,11 @@ Toda a configuração segue o padrão Options do .NET, sob a seção `Guara` (va
 | **Publicação `0.1.0-preview.3`: wakeup por sinal de fila e o acelerador Redis** | ✅ Concluído |
 | Enfileiramento dentro da transação do chamador (PostgreSQL, SQL Server, MySQL) | ✅ Concluído |
 | Benchmarks: serialização, cron, enfileiramento e storage in-memory | ✅ Concluído |
-| `Guara.Extensions`, `Guara.Authentication` | 🕓 Planejado |
-| Cluster e coordenação distribuída, OpenTelemetry, CLI, benchmarks | 🕓 Planejado |
-| Documentação de usuário e guia de migração do Hangfire | 🕓 Planejado |
+| Aquisição em lote e elegibilidade indexada: 25× no PostgreSQL, 20× no MySQL, 10,6× no SQL Server | ✅ Concluído |
+| `Guara.Cluster`: eleição de líder com posse renovada, papéis visíveis no painel | ✅ Concluído |
+| Documentação de usuário, projeto de exemplo e guia de migração do Hangfire | 🕓 Planejado |
 | **1.0** — API congelada, transações resolvidas no contrato, rodagem real | 🕓 Planejado |
+| `Guara.OpenTelemetry` (1.1) · `Guara.Cli` e `Guara.Authentication` (1.2) | 🕓 Planejado |
 
 ## Semântica e garantias
 

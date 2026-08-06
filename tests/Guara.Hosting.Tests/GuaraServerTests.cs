@@ -94,6 +94,78 @@ public class GuaraServerTests
         Assert.Empty(await storage.Servers.ListAsync(Ct));
     }
 
+    /// <summary>
+    /// Uma eleição que sempre concede e conta as disputas, para observar quantas vezes o
+    /// servidor precisa disputar um papel que já detém.
+    /// </summary>
+    private sealed class EleicaoQueConta : ILeaderElection
+    {
+        private int _disputas;
+
+        public int Disputas => Volatile.Read(ref _disputas);
+
+        public ValueTask<ILeadership?> TryAcquireAsync(string role, CancellationToken ct)
+        {
+            Interlocked.Increment(ref _disputas);
+            return ValueTask.FromResult<ILeadership?>(new Lideranca(role));
+        }
+
+        private sealed class Lideranca(string role) : ILeadership
+        {
+            public string Role => role;
+
+            public CancellationToken Lost => CancellationToken.None;
+
+            public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        }
+    }
+
+    /// <summary>
+    /// A liderança é mantida entre ciclos: cada papel é disputado uma vez só, e o nó publica
+    /// no próprio registro os papéis que detém. Retomar a cada ciclo funcionaria igual para a
+    /// exclusão mútua, mas deixaria o registro sem o que informar entre um ciclo e outro.
+    /// </summary>
+    [Fact]
+    public async Task CoordinatedLoops_HoldLeadershipAcrossCycles_AndPublishRoles()
+    {
+        var eleicao = new EleicaoQueConta();
+        var services = new ServiceCollection();
+        services.AddSingleton<ILeaderElection>(eleicao);
+        services.AddGuara(options => options.ApplicationName = "teste")
+            .UseMemoryStorage()
+            .AddGuaraDispatcher(d => d.PollingInterval = TimeSpan.FromMilliseconds(50))
+            .AddGuaraWorker(w => w.MaxConcurrency = 2)
+            .AddGuaraExecutor()
+            .AddGuaraServer(server =>
+            {
+                server.RecurringPollInterval = TimeSpan.FromMilliseconds(50);
+                server.MaintenanceInterval = TimeSpan.FromMilliseconds(50);
+            });
+        await using var provider = services.BuildServiceProvider();
+
+        var hosted = HostedService(provider);
+        var storage = provider.GetRequiredService<IStorage>();
+
+        await hosted.StartAsync(Ct);
+        try
+        {
+            // Janela larga o bastante para muitos ciclos de cada laço.
+            await Task.Delay(500, Ct);
+
+            // Um por papel. Retomar a cada ciclo daria dezenas.
+            Assert.Equal(2, eleicao.Disputas);
+
+            var node = Assert.Single(await storage.Servers.ListAsync(Ct));
+            Assert.Equal(
+                ["guara:maintenance", "guara:recurring"],
+                node.Roles.Order(StringComparer.Ordinal));
+        }
+        finally
+        {
+            await hosted.StopAsync(Ct);
+        }
+    }
+
     [Fact]
     public async Task Heartbeat_ReannouncesWhenRegistrationDisappears()
     {

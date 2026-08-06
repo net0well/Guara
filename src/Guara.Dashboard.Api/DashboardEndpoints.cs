@@ -129,7 +129,8 @@ public static partial class DashboardEndpoints
         var servers = await storage.Servers.ListAsync(ct);
         IReadOnlyList<ServerDto> dtos = servers
             .Select(node => new ServerDto(
-                node.Id, node.MachineName, node.StartedAt, node.LastHeartbeat, node.Queues, node.MaxConcurrency))
+                node.Id, node.MachineName, node.StartedAt, node.LastHeartbeat, node.Queues,
+                node.MaxConcurrency, node.Roles))
             .ToList();
         return TypedResults.Ok(dtos);
     }

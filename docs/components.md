@@ -31,8 +31,7 @@ Cada linha da tabela é um projeto em `src/`. **Um projeto = uma responsabilidad
 | `Guara.Dashboard.Angular` | SPA Angular | a API HTTP | qualquer detalhe interno |
 | `Guara.Configuration` | Binding e validação de opções | `Abstractions` | providers |
 | `Guara.Extensions` | Extensões utilitárias transversais | `Abstractions` | — |
-| `Guara.Cluster` | Leader election, heartbeat, node discovery, failover, locks distribuídos | `Abstractions` | storage concreto |
-| `Guara.Distributed` | Coordenação distribuída | `Cluster`, `Abstractions` | execução de Job |
+| `Guara.Cluster` | Eleição de líder com posse renovada e mantida entre ciclos, sobre o lock distribuído do storage; os papéis liderados aparecem em `ServerNode.Roles` e no painel ([ADR-0017](adr/0017-eleicao-de-lider.md)). Políticas de failover configuráveis ainda não | `Abstractions`, `Storage` | storage concreto |
 | `Guara.Cli` | Ferramenta de linha de comando | `Hosting`, `Abstractions` | internals de providers |
 | `Guara.Analyzers` | Analisadores Roslyn que enforçam as regras deste doc | — | runtime do framework |
 | `Guara.SourceGenerators` | Geram descoberta/registro sem reflection | — | runtime do framework |

@@ -154,8 +154,16 @@ internal sealed class SqlServerSchemaInitializer(string connectionString, SqlSer
                 started_at      datetimeoffset(7) NOT NULL,
                 last_heartbeat  datetimeoffset(7) NOT NULL,
                 queues          nvarchar(2000)    NOT NULL CONSTRAINT df_servers_queues DEFAULT N'[]',
-                max_concurrency int               NOT NULL CONSTRAINT df_servers_concurrency DEFAULT 0
+                max_concurrency int               NOT NULL CONSTRAINT df_servers_concurrency DEFAULT 0,
+                roles           nvarchar(2000)    NOT NULL CONSTRAINT df_servers_roles DEFAULT N'[]'
             );
+            """;
+
+        // Papéis coordenados que o nó lidera. O default cobre a tabela pré-existente: nó que
+        // ainda não reanunciou aparece sem papel, e o próximo anúncio corrige.
+        yield return $"""
+            IF COL_LENGTH('{s}.servers', 'roles') IS NULL
+            ALTER TABLE {s}.servers ADD roles nvarchar(2000) NOT NULL CONSTRAINT df_servers_roles DEFAULT N'[]';
             """;
 
         yield return $"""

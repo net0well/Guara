@@ -119,8 +119,13 @@ internal sealed class PostgreSqlSchemaInitializer(NpgsqlDataSource dataSource, P
             started_at      timestamptz NOT NULL,
             last_heartbeat  timestamptz NOT NULL,
             queues          text[] NOT NULL DEFAULT ARRAY[]::text[],
-            max_concurrency int NOT NULL DEFAULT 0
+            max_concurrency int NOT NULL DEFAULT 0,
+            roles           text[] NOT NULL DEFAULT ARRAY[]::text[]
         );
+
+        -- Papéis coordenados que o nó lidera. O default cobre a tabela pré-existente: nó que
+        -- ainda não reanunciou aparece sem papel, e o próximo anúncio corrige.
+        ALTER TABLE {s}.servers ADD COLUMN IF NOT EXISTS roles text[] NOT NULL DEFAULT ARRAY[]::text[];
 
         CREATE TABLE IF NOT EXISTS {s}.locks (
             key        text PRIMARY KEY,
