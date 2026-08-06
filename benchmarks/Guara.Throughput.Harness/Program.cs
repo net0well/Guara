@@ -1,6 +1,7 @@
 using System.Globalization;
 using Guara.Throughput.Harness;
 using Testcontainers.MsSql;
+using Testcontainers.MySql;
 using Testcontainers.PostgreSql;
 
 if (args.Contains("--help") || args.Contains("-h"))
@@ -133,6 +134,13 @@ file sealed class Infraestrutura : IAsyncDisposable
             case StorageKind.SqlServer:
             {
                 var container = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-CU14-ubuntu-22.04").Build();
+                await container.StartAsync(ct);
+                return new Infraestrutura(container.GetConnectionString(), container.DisposeAsync);
+            }
+
+            case StorageKind.MySql:
+            {
+                var container = new MySqlBuilder("mysql:8.4").Build();
                 await container.StartAsync(ct);
                 return new Infraestrutura(container.GetConnectionString(), container.DisposeAsync);
             }

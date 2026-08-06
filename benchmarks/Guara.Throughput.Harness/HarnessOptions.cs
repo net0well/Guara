@@ -11,6 +11,9 @@ internal enum StorageKind
 
     /// <summary>SQL Server em container.</summary>
     SqlServer,
+
+    /// <summary>MySQL em container.</summary>
+    MySql,
 }
 
 /// <summary>O que a rodada mede.</summary>
@@ -91,7 +94,7 @@ internal sealed record HarnessOptions(
         Uso: dotnet run -c Release -- [opções]
 
           --mode              throughput | probe                (padrão: throughput)
-          --storage           memory | postgresql | sqlserver   (padrão: memory)
+          --storage           memory | postgresql | sqlserver | mysql   (padrão: memory)
           --jobs              quantidade por rodada             (padrão: 5000)
           --concurrency       lista de MaxConcurrency           (padrão: 1,4,16,64)
           --polling-seconds   teto da espera do dispatcher      (padrão: 60)
