@@ -41,7 +41,7 @@ if (options.Mode == HarnessMode.Probe)
     Console.WriteLine($"Amostras     : {options.Jobs:N0} por medição");
     Console.WriteLine();
 
-    await new StorageProbe(infraestrutura.ConnectionString!)
+    await new StorageProbe(options.Storage, infraestrutura.ConnectionString!)
         .RunAsync(options.Concurrencies, options.Jobs, cancelamento.Token);
     return 0;
 }
