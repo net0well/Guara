@@ -414,14 +414,19 @@ Além de observar, o painel **opera**: busca por texto, tipo, fila, estado e per
 
 O Guará afirma coisas sobre performance — zero reflection, `ValueTask` no caminho crítico, baixa alocação — e essas afirmações têm número em [`benchmarks/`](benchmarks/README.md). Alguns de referência, num Xeon E5-2670 v3:
 
-| Operação | Tempo | Alocado |
-|---|---:|---:|
-| Cron: próximo disparo (`0 3 * * *`) | 467 ns | **0 B** |
-| Cron: pior caso (`0 0 29 2 *`, atravessa anos) | 1.571 ns | **0 B** |
-| `EnfileirarAsync` (storage in-memory) | 1.219 ns | 280 B |
-| Serializar 3 argumentos escalares | 898 ns | 984 B |
+**Vazão de execução ponta a ponta**, com worker e dispatcher rodando sobre banco real, 10.000 jobs e 64 workers:
 
-O parser cron próprio calcula sem alocar, inclusive no pior caso. O que **ainda não** é medido — pipeline de execução, providers persistentes, vazão ponta a ponta — está listado no mesmo lugar, junto com um achado sobre o storage in-memory sob backlog.
+| Provider | Jobs/s | Latência p50 | Alocado/job |
+|---|---:|---:|---:|
+| PostgreSQL | **3.821** | 6,1 ms | 16 KB |
+| SQL Server | **1.855** | 13,1 ms | 60 KB |
+| MySQL | **1.738** | 16,6 ms | 29 KB |
+
+A latência é de fire-and-forget com a fila vazia, do enfileiramento ao início da execução, com o ciclo de busca configurado em **60 segundos** — ou seja, é o [aviso de fila](docs/adr/0012-wakeup-por-sinal-de-fila.md) trabalhando, e não polling.
+
+Esses números vieram de três correções guiadas por medição, cada uma atacando o que a anterior expôs: [elegibilidade materializada](docs/adr/0015-elegibilidade-como-instante-indexavel.md), preparação automática de comandos e [aquisição em lote](docs/adr/0016-aquisicao-em-lote.md). O ponto de partida era 151 jobs/s no PostgreSQL e 87 no MySQL.
+
+O que os números **não** favorecem está registrado no mesmo lugar — entre outras coisas, o parser cron próprio é mais lento que o `Cronos`, que é o que o Hangfire internaliza.
 
 ## Configuração
 

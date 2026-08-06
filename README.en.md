@@ -414,14 +414,19 @@ Beyond observing, the panel **operates**: search by text, type, queue, state and
 
 Guará makes claims about performance — zero reflection, `ValueTask` on the hot path, low allocation — and those claims have numbers in [`benchmarks/`](benchmarks/README.md). A few, on a Xeon E5-2670 v3:
 
-| Operation | Time | Allocated |
-|---|---:|---:|
-| Cron: next occurrence (`0 3 * * *`) | 467 ns | **0 B** |
-| Cron: worst case (`0 0 29 2 *`, crosses years) | 1,571 ns | **0 B** |
-| `EnfileirarAsync` (in-memory storage) | 1,219 ns | 280 B |
-| Serialize 3 scalar arguments | 898 ns | 984 B |
+**End-to-end execution throughput**, with worker and dispatcher running against a real database, 10,000 jobs and 64 workers:
 
-The in-house cron parser computes without allocating, worst case included. What is **not** measured yet — execution pipeline, persistent providers, end-to-end throughput — is listed in the same place, along with a finding about the in-memory storage under backlog.
+| Provider | Jobs/s | p50 latency | Allocated/job |
+|---|---:|---:|---:|
+| PostgreSQL | **3,821** | 6.1 ms | 16 KB |
+| SQL Server | **1,855** | 13.1 ms | 60 KB |
+| MySQL | **1,738** | 16.6 ms | 29 KB |
+
+Latency is fire-and-forget on an empty queue, from enqueue to execution start, with the polling cycle set to **60 seconds** — meaning it is the [queue signal](docs/adr/0012-wakeup-por-sinal-de-fila.md) at work, not polling.
+
+These numbers came from three measurement-driven fixes, each attacking what the previous one exposed: [materialized eligibility](docs/adr/0015-elegibilidade-como-instante-indexavel.md), automatic command preparation and [batch acquisition](docs/adr/0016-aquisicao-em-lote.md). The starting point was 151 jobs/s on PostgreSQL and 87 on MySQL.
+
+What the numbers do **not** favour is recorded in the same place — among other things, the in-house cron parser is slower than `Cronos`, which is what Hangfire internalizes.
 
 ## Configuration
 
