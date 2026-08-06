@@ -125,6 +125,8 @@ Guara.Abstractions.ISerializer.DeserializeArgs(System.ReadOnlySpan<byte> data) -
 Guara.Abstractions.ISerializer.Serialize<T>(T value) -> System.ReadOnlyMemory<byte>
 Guara.Abstractions.ISerializer.SerializeArgs(System.ReadOnlySpan<object?> args) -> System.ReadOnlyMemory<byte>
 Guara.Abstractions.IWorker
+Guara.Abstractions.IWorkerCapacity
+Guara.Abstractions.IWorkerCapacity.Available.get -> int
 Guara.Abstractions.IWorker.StartAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
 Guara.Abstractions.IWorker.StopAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
 Guara.Abstractions.JobCompleted

@@ -34,6 +34,7 @@ public static class DispatcherServiceCollectionExtensions
             sp.GetRequiredService<Guara.Storage.IStorage>(),
             sp.GetRequiredService<IEventPublisher>(),
             sp.GetRequiredService<IQueueSignal>(),
+            sp.GetRequiredService<IWorkerCapacity>(),
             sp.GetRequiredService<DispatcherOptions>(),
             sp.GetRequiredService<TimeProvider>(),
             sp.GetService<ILogger<GuaraDispatcher>>() ?? NullLogger<GuaraDispatcher>.Instance));

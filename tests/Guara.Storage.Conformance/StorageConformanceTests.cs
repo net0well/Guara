@@ -175,6 +175,60 @@ public abstract class StorageConformanceTests : IAsyncDisposable
         Assert.Equal(["vencido", "antigo", "recente"], ordem);
     }
 
+    [Fact]
+    public async Task Acquire_Batch_TakesUpToMax_AndNeverRepeats()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        for (var i = 0; i < 10; i++)
+        {
+            await storage.Jobs.CreateAsync(
+                NewJob($"j{i}", createdAt: T0 - TimeSpan.FromSeconds(10 - i)), CancellationToken.None);
+        }
+
+        var primeiro = await storage.Jobs.AcquireNextDueAsync(
+            "default", 4, TimeSpan.FromMinutes(5), T0, CancellationToken.None);
+        var segundo = await storage.Jobs.AcquireNextDueAsync(
+            "default", 4, TimeSpan.FromMinutes(5), T0, CancellationToken.None);
+
+        Assert.Equal(4, primeiro.Count);
+        Assert.Equal(4, segundo.Count);
+        Assert.All(primeiro, job => Assert.Equal(JobState.Processing, job.State));
+
+        // Nenhum job sai duas vezes: é a mesma garantia da aquisição de um, aplicada ao lote.
+        Assert.Empty(primeiro.Select(j => j.Id).Intersect(segundo.Select(j => j.Id)));
+    }
+
+    [Fact]
+    public async Task Acquire_Batch_ReturnsOnlyWhatExists()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Jobs.CreateAsync(NewJob("unico"), CancellationToken.None);
+
+        var lote = await storage.Jobs.AcquireNextDueAsync(
+            "default", 50, TimeSpan.FromMinutes(5), T0, CancellationToken.None);
+
+        Assert.Equal("unico", Assert.Single(lote).Id.Value);
+    }
+
+    [Fact]
+    public async Task Acquire_Batch_EmptyQueue_ReturnsEmpty()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+
+        Assert.Empty(await storage.Jobs.AcquireNextDueAsync(
+            "default", 10, TimeSpan.FromMinutes(5), T0, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Acquire_Batch_RejectsNonPositiveMax()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
+            await storage.Jobs.AcquireNextDueAsync(
+                "default", 0, TimeSpan.FromMinutes(5), T0, CancellationToken.None));
+    }
+
     // --- Agendamento e lease/visibility ---
 
     [Fact]

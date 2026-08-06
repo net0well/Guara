@@ -22,6 +22,7 @@ internal sealed class GuaraDispatcher(
     IStorage storage,
     IEventPublisher events,
     IQueueSignal signal,
+    IWorkerCapacity capacity,
     DispatcherOptions options,
     TimeProvider time,
     ILogger<GuaraDispatcher> logger) : IDispatcher
@@ -113,16 +114,24 @@ internal sealed class GuaraDispatcher(
         {
             while (!ct.IsCancellationRequested)
             {
-                var job = await storage.Jobs.AcquireNextDueAsync(
-                    queue, options.LeaseDuration, time.GetUtcNow(), ct);
-                if (job is null)
+                // O lote é do tamanho do que cabe agora no worker. Pedir além disso não
+                // acelera nada — encheria o canal e deixaria job com posse esperando slot,
+                // que é justamente a janela que uma queda de nó transforma em espera pelo
+                // vencimento do lease.
+                var cabem = Math.Max(1, capacity.Available);
+                var jobs = await storage.Jobs.AcquireNextDueAsync(
+                    queue, cabem, options.LeaseDuration, time.GetUtcNow(), ct);
+                if (jobs.Count == 0)
                 {
                     break;
                 }
 
                 dispatched = true;
-                // Backpressure: se o canal do worker está cheio, aguarda aqui.
-                await events.PublishAsync(new WorkerRequested(job.Id, time.GetUtcNow()), ct);
+                for (var i = 0; i < jobs.Count; i++)
+                {
+                    // Backpressure: se o canal do worker está cheio, aguarda aqui.
+                    await events.PublishAsync(new WorkerRequested(jobs[i].Id, time.GetUtcNow()), ct);
+                }
             }
         }
 

@@ -212,6 +212,7 @@ Decisões arquiteturais são registradas e versionadas em [adr/](adr/README.md).
 | [0013](adr/0013-redis-como-acelerador.md) | Redis como acelerador (`Guara.Redis`), não como storage |
 | [0014](adr/0014-enfileiramento-transacional.md) | Enfileiramento dentro da transação do chamador |
 | [0015](adr/0015-elegibilidade-como-instante-indexavel.md) | Elegibilidade materializada em `eligible_at` (ordem por elegibilidade) |
+| [0016](adr/0016-aquisicao-em-lote.md) | Aquisição em lote dimensionada pela capacidade ociosa do worker |
 
 ---
 

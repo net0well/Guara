@@ -12,7 +12,7 @@ namespace Guara.Worker;
 /// execução (posse perdida → aborta local, evitando execução dupla) e faz drain
 /// gracioso no shutdown.
 /// </summary>
-internal sealed class GuaraWorker : IWorker, IEventHandler<WorkerRequested>
+internal sealed class GuaraWorker : IWorker, IWorkerCapacity, IEventHandler<WorkerRequested>
 {
     private readonly IStorage _storage;
     private readonly IExecutor _executor;
@@ -21,6 +21,10 @@ internal sealed class GuaraWorker : IWorker, IEventHandler<WorkerRequested>
     private readonly TimeProvider _time;
     private readonly ILogger<GuaraWorker> _logger;
     private readonly Channel<JobId> _channel;
+
+    // O canal não expõe a própria capacidade, e ela é o teto do que o dispatcher pode
+    // pedir sem encher a fila interna.
+    private readonly int _capacidade;
 
     private CancellationTokenSource? _acceptCts;
     private CancellationTokenSource? _executionCts;
@@ -54,13 +58,22 @@ internal sealed class GuaraWorker : IWorker, IEventHandler<WorkerRequested>
         _time = time;
         _logger = logger;
 
-        _channel = Channel.CreateBounded<JobId>(new BoundedChannelOptions(options.MaxConcurrency * 2)
+        _capacidade = options.MaxConcurrency * 2;
+        _channel = Channel.CreateBounded<JobId>(new BoundedChannelOptions(_capacidade)
         {
             FullMode = BoundedChannelFullMode.Wait, // cheio → o publisher (Dispatcher) aguarda
             SingleReader = false,
             SingleWriter = false,
         });
     }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// O que resta na fila interna antes de o publicador bloquear. É o número que o
+    /// dispatcher usa para dimensionar o lote: pedir além disso encheria o canal e
+    /// deixaria jobs com posse esperando slot.
+    /// </remarks>
+    public int Available => Math.Max(0, _capacidade - _channel.Reader.Count);
 
     /// <inheritdoc />
     public async ValueTask HandleAsync(WorkerRequested @event, CancellationToken ct)

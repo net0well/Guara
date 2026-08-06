@@ -45,8 +45,9 @@ internal sealed class RecordingJobStorage(IJobStorage inner) : IJobStorage
         return inner.CreateAsync(record, ct);
     }
 
-    public ValueTask<JobRecord?> AcquireNextDueAsync(string queue, TimeSpan lease, DateTimeOffset now, CancellationToken ct)
-        => inner.AcquireNextDueAsync(queue, lease, now, ct);
+    public ValueTask<IReadOnlyList<JobRecord>> AcquireNextDueAsync(
+        string queue, int max, TimeSpan lease, DateTimeOffset now, CancellationToken ct)
+        => inner.AcquireNextDueAsync(queue, max, lease, now, ct);
 
     public ValueTask<bool> RenewLeaseAsync(JobId id, TimeSpan lease, CancellationToken ct)
         => inner.RenewLeaseAsync(id, lease, ct);

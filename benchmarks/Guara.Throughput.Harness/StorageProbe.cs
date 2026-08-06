@@ -59,7 +59,7 @@ internal sealed class StorageProbe(StorageKind storage, string connectionString)
                 await jobs.Jobs.CreateAsync(NovoJob($"probe-{Guid.NewGuid():n}", futuro: true), ct));
 
             var aquisicao = await MedirAsync(amostras, async () =>
-                await jobs.Jobs.AcquireNextDueAsync(Queue, TimeSpan.FromMinutes(30), Agora, ct));
+                await jobs.Jobs.AcquireNextDueAsync(Queue, 1, TimeSpan.FromMinutes(30), Agora, ct));
 
             Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
                 $"| {profundidade:N0} | {piso:N0} µs | {criacao:N0} µs | {aquisicao:N0} µs | {aquisicao / piso:N1}× |"));

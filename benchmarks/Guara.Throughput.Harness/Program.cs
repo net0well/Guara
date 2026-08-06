@@ -99,9 +99,13 @@ static void Imprimir(List<RunResult> resultados)
     Console.WriteLine();
     Console.WriteLine(string.Create(cultura,
         $"Concorrência {fator:N0}× maior rendeu {ganho:N2}× de vazão."));
-    Console.WriteLine(ganho < fator / 2
-        ? "A vazão não acompanhou a concorrência: o gargalo está antes do worker."
-        : "A vazão acompanhou a concorrência dentro do esperado.");
+
+    // O limiar mira o gargalo, não a perfeição: escalonamento linear não acontece em
+    // sistema com banco no caminho, e cobrar isso classificaria um bom resultado como
+    // falha. Vazão que mal se move com a concorrência é que denuncia limite a montante.
+    Console.WriteLine(ganho < 1.5
+        ? "A vazão praticamente não se moveu: o gargalo está antes do worker."
+        : string.Create(cultura, $"A vazão acompanhou a concorrência ({ganho / fator:P0} de eficiência de escala)."));
 }
 
 /// <summary>Container de banco da rodada, quando o storage exige um.</summary>

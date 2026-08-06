@@ -77,7 +77,8 @@ Delayed/recorrentes disparam **na primeira varredura elegível após vencer** �
 ## Filas
 
 - **Prioridade estrita** pela ordem da lista (`["alta", "default"]`): o dispatcher drena `alta` antes de olhar `default`. **Starvation é possível por design** — se `alta` nunca esvazia, `default` espera; dimensione filas/workers de acordo (modelo Hangfire). Rodízio ponderado poderá vir como opção extend-only. *(Decisão 2026-07-17.)*
-- Backpressure: o dispatcher nunca adquire além da capacidade dos workers (canal limitado).
+- Backpressure: o dispatcher nunca adquire além da capacidade dos workers. O lote de aquisição é dimensionado pelas vagas livres no momento da busca ([ADR-0016](adr/0016-aquisicao-em-lote.md)), e o canal limitado continua sendo a garantia.
+- **Queda de nó com lote:** um nó que cai deixa para expirar a posse dos jobs que havia adquirido — até o tamanho do lote, não apenas um. Eles voltam a ser elegíveis quando o lease vence, como sempre; muda a quantidade, não o mecanismo. Como o lote é limitado pelas vagas livres, o número é da ordem da concorrência configurada do nó.
 
 ## Shutdown (drain)
 

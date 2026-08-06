@@ -156,7 +156,7 @@ public sealed class DashboardApiTests : IAsyncDisposable
         var (client, storage, _) = await StartAsync();
         await storage.Jobs.CreateAsync(NewJob("j1"), Ct);
         await storage.Jobs.CreateAsync(NewJob("rodando"), Ct);
-        await storage.Jobs.AcquireNextDueAsync("default", TimeSpan.FromMinutes(5), T0, Ct); // j1 (FIFO)
+        await storage.Jobs.AcquireNextDueAsync("default", 1, TimeSpan.FromMinutes(5), T0, Ct); // j1 (mais elegível)
 
         var running = await client.DeleteAsync("/api/v1/jobs/j1", Ct);
         Assert.Equal(HttpStatusCode.Conflict, running.StatusCode); // Processing

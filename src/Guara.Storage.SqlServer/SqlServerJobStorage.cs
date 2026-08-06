@@ -64,20 +64,23 @@ internal sealed class SqlServerJobStorage(
         return record.Id;
     }
 
-    public async ValueTask<JobRecord?> AcquireNextDueAsync(
-        string queue, TimeSpan lease, DateTimeOffset now, CancellationToken ct)
+    public async ValueTask<IReadOnlyList<JobRecord>> AcquireNextDueAsync(
+        string queue, int max, TimeSpan lease, DateTimeOffset now, CancellationToken ct)
     {
+        ArgumentOutOfRangeException.ThrowIfLessThan(max, 1);
+
         await schema.EnsureAsync(ct);
 
         await using var connection = await connections.OpenAsync(ct);
         await using var command = connection.CreateCommand();
 
-        // O candidato sai de uma CTE porque UPDATE TOP(1) não honra ORDER BY, e a ordem
-        // importa: a fila é ~FIFO por elegibilidade. READPAST faz o nó pular linhas já
-        // travadas por outro em vez de esperar — é o que troca contenção por vazão.
+        // Os candidatos saem de uma CTE porque UPDATE TOP(N) não honra ORDER BY, e a ordem
+        // importa na seleção: a fila é ~FIFO por elegibilidade. READPAST faz o nó pular
+        // linhas já travadas por outro em vez de esperar — é o que troca contenção por
+        // vazão, e o que permite o lote sem um nó bloquear o outro.
         command.CommandText = $"""
             WITH candidato AS (
-                SELECT TOP (1) {Columns}, eligible_at
+                SELECT TOP (@max) {Columns}, eligible_at
                 FROM {s}.jobs WITH (READPAST, UPDLOCK, ROWLOCK)
                 WHERE queue = @queue AND eligible_at <= @now
                 ORDER BY eligible_at
@@ -89,11 +92,18 @@ internal sealed class SqlServerJobStorage(
                    INSERTED.result, INSERTED.error;
             """;
         command.Parameters.AddWithValue("@queue", queue);
+        command.Parameters.AddWithValue("@max", max);
         command.Parameters.AddWithValue("@now", now);
         command.Parameters.AddWithValue("@leaseUntil", now + lease);
 
+        var adquiridos = new List<JobRecord>(max);
         await using var reader = await command.ExecuteReaderAsync(ct);
-        return await reader.ReadAsync(ct) ? ReadJob(reader) : null;
+        while (await reader.ReadAsync(ct))
+        {
+            adquiridos.Add(ReadJob(reader));
+        }
+
+        return adquiridos;
     }
 
     public async ValueTask<bool> RenewLeaseAsync(JobId id, TimeSpan lease, CancellationToken ct)

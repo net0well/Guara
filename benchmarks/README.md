@@ -110,6 +110,30 @@ Vazão de execução, jobs por segundo:
 
 As duas mudanças atacaram gargalos diferentes: a primeira tirou do caminho um `Sort` proporcional à profundidade da fila; a segunda parou de fazer o servidor replanejar as mesmas consultas a cada chamada, o que o `EXPLAIN` mostrava custar 1,6 a 2,5 ms por aquisição.
 
+### Vazão de execução, por etapa
+
+10.000 jobs, jobs por segundo, com 64 workers:
+
+| Etapa | PostgreSQL | SQL Server | MySQL |
+|---|---:|---:|---:|
+| Início | 151 | — | 87 |
+| Elegibilidade indexada ([ADR-0015](../docs/adr/0015-elegibilidade-como-instante-indexavel.md)) | 494 | 175 | 87 |
+| + preparação automática de comandos | 639 | — | — |
+| **+ aquisição em lote ([ADR-0016](../docs/adr/0016-aquisicao-em-lote.md))** | **3.821** | **1.855** | **1.738** |
+
+A primeira medição do SQL Server já foi feita depois da elegibilidade indexada, então não há número anterior a ela para esse provider.
+
+**Cada etapa atacou a camada que a medição anterior apontou**, e duas delas teriam sido escolhas erradas sem medir antes:
+
+- A elegibilidade indexada rendeu 3,5× no PostgreSQL e **nada** no MySQL. Lá o gargalo nunca foi o plano de consulta.
+- A aquisição em lote rendeu 20× no MySQL e 6× no PostgreSQL. Aplicada primeiro, teria dado quase nada no PostgreSQL, onde o `Sort` proporcional à fila dominava.
+
+O ganho do lote é proporcional ao **custo fixo por ida** de cada provider: quanto mais cara a ida-e-volta, mais há para amortizar. É por isso que o SQL Server, com piso de 2,1 ms, ganhou 10,6× com o lote sozinho.
+
+A alocação por job caiu nos três junto com a vazão — PostgreSQL de 22 para 16 KB, MySQL de 45 para 29 KB, SQL Server de 84 para 60 KB —, porque o custo fixo de cada chamada passou a ser dividido entre os jobs do lote.
+
+Com **um** worker o lote não muda nada (PostgreSQL: 207 antes, 200 depois). É o esperado, e é o que confirma que a mudança faz o que diz: ela amortiza custo fixo entre jobs paralelos, e sem paralelismo não há o que amortizar.
+
 ### Os três providers relacionais, depois da elegibilidade indexada
 
 10.000 jobs, mesma máquina, mesmo job trivial:

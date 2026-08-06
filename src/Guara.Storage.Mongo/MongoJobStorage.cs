@@ -38,14 +38,14 @@ internal sealed class MongoJobStorage(MongoCollections collections, TimeProvider
         return record.Id;
     }
 
-    public async ValueTask<JobRecord?> AcquireNextDueAsync(
-        string queue, TimeSpan lease, DateTimeOffset now, CancellationToken ct)
+    public async ValueTask<IReadOnlyList<JobRecord>> AcquireNextDueAsync(
+        string queue, int max, TimeSpan lease, DateTimeOffset now, CancellationToken ct)
     {
+        ArgumentOutOfRangeException.ThrowIfLessThan(max, 1);
+
         await collections.EnsureAsync(ct);
         var agora = now.UtcTicks;
 
-        // scheduledFor/leaseUntil nulos não casam com uma comparação numérica: o MongoDB só
-        // compara dentro do mesmo tipo BSON, então nulo fica de fora sem cláusula extra.
         // Elegibilidade materializada: um único intervalo ordenado no lugar da disjunção
         // sobre estados, que obrigava o servidor a reunir três faixas e ordenar tudo.
         // Nulo é de outro tipo BSON e fica de fora da comparação sem cláusula extra.
@@ -56,23 +56,37 @@ internal sealed class MongoJobStorage(MongoCollections collections, TimeProvider
         };
 
         var leaseUntil = (now + lease).UtcTicks;
-        var documento = await collections.Jobs.FindOneAndUpdateAsync<BsonDocument>(
-            filtro,
-            new BsonDocument("$set", new BsonDocument
-            {
-                ["state"] = (int)JobState.Processing,
-                ["leaseUntil"] = leaseUntil,
-                ["eligibleAt"] = leaseUntil,
-            }),
-            new FindOneAndUpdateOptions<BsonDocument>
-            {
-                // A fila é ~FIFO por elegibilidade; o documento volta já com o estado novo.
-                Sort = Builders<BsonDocument>.Sort.Ascending("eligibleAt"),
-                ReturnDocument = ReturnDocument.After,
-            },
-            ct);
+        var atualizacao = new BsonDocument("$set", new BsonDocument
+        {
+            ["state"] = (int)JobState.Processing,
+            ["leaseUntil"] = leaseUntil,
+            ["eligibleAt"] = leaseUntil,
+        });
+        var opcoes = new FindOneAndUpdateOptions<BsonDocument>
+        {
+            // A fila é ~FIFO por elegibilidade; o documento volta já com o estado novo.
+            Sort = Builders<BsonDocument>.Sort.Ascending("eligibleAt"),
+            ReturnDocument = ReturnDocument.After,
+        };
 
-        return documento is null ? null : MongoDocuments.ReadJob(documento);
+        // Um findAndModify por job, em laço. É a operação que o MongoDB oferece com
+        // seleção e marcação atômicas num passo só; uma variante em lote precisaria de
+        // transação, que exige replica set. O lote aqui organiza a chamada do dispatcher
+        // sem prometer ganho de ida-e-volta neste provider.
+        var adquiridos = new List<JobRecord>(max);
+        for (var i = 0; i < max; i++)
+        {
+            var documento = await collections.Jobs.FindOneAndUpdateAsync<BsonDocument>(
+                filtro, atualizacao, opcoes, ct);
+            if (documento is null)
+            {
+                break;
+            }
+
+            adquiridos.Add(MongoDocuments.ReadJob(documento));
+        }
+
+        return adquiridos;
     }
 
     public async ValueTask<bool> RenewLeaseAsync(JobId id, TimeSpan lease, CancellationToken ct)

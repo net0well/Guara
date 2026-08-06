@@ -75,16 +75,21 @@ internal sealed class PostgreSqlJobStorage(
         return command;
     }
 
-    public async ValueTask<JobRecord?> AcquireNextDueAsync(
-        string queue, TimeSpan lease, DateTimeOffset now, CancellationToken ct)
+    public async ValueTask<IReadOnlyList<JobRecord>> AcquireNextDueAsync(
+        string queue, int max, TimeSpan lease, DateTimeOffset now, CancellationToken ct)
     {
+        ArgumentOutOfRangeException.ThrowIfLessThan(max, 1);
+
         await schema.EnsureAsync(ct);
+
+        // SKIP LOCKED dentro da CTE é o que permite o lote sem contenção: cada nó pula as
+        // linhas que outro já reservou em vez de esperar por elas.
         await using var command = dataSource.CreateCommand($"""
             WITH candidate AS (
                 SELECT id FROM {s}.jobs
                 WHERE queue = @queue AND eligible_at <= @now
                 ORDER BY eligible_at
-                LIMIT 1
+                LIMIT @max
                 FOR UPDATE SKIP LOCKED
             )
             UPDATE {s}.jobs jobs
@@ -94,11 +99,18 @@ internal sealed class PostgreSqlJobStorage(
             RETURNING {Prefixed("jobs")}
             """);
         command.Parameters.AddWithValue("queue", queue);
+        command.Parameters.AddWithValue("max", max);
         command.Parameters.AddWithValue("now", now);
         command.Parameters.AddWithValue("leaseUntil", now + lease);
 
+        var adquiridos = new List<JobRecord>(max);
         await using var reader = await command.ExecuteReaderAsync(ct);
-        return await reader.ReadAsync(ct) ? ReadJob(reader) : null;
+        while (await reader.ReadAsync(ct))
+        {
+            adquiridos.Add(ReadJob(reader));
+        }
+
+        return adquiridos;
     }
 
     public async ValueTask<bool> RenewLeaseAsync(JobId id, TimeSpan lease, CancellationToken ct)
