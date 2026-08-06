@@ -65,7 +65,7 @@ Vivem em `Guara.Abstractions`, **exceto** a família Storage, que vive em `Guara
 | `IDispatcher` | `Guara.Abstractions` | `Guara.Dispatcher` | `Guara.Dispatcher` |
 | `IWorker` | `Guara.Abstractions` | `Guara.Worker` | `Guara.Worker` |
 | `IExecutor` | `Guara.Abstractions` | `Guara.Executor` | `Guara.Executor` |
-| `ISerializer` | `Guara.Abstractions` | `Guara.Serialization` | `Guara.Serialization` |
+| `ILeaderElection`, `ILeadership` | `Guara.Abstractions` | `Guara.Cluster` | `Guara.Cluster` |
 | `IEventPublisher`, `IEventHandler<TEvent>` | `Guara.Abstractions` | `Guara.Core` | `Guara.Core` |
 | `IQueueSignal` | `Guara.Abstractions` | `Guara.Dispatcher` | `Guara.Core` (em processo), transportes externos |
 | Logging/métricas/tracing | BCL (`Microsoft.Extensions.Logging`, `System.Diagnostics.Metrics`) | — | `Guara.Diagnostics`, `Guara.OpenTelemetry` |

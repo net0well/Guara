@@ -64,7 +64,7 @@ Dashboard  →  Api  →  Core  →  Abstractions
 Três leis:
 
 1. **Um projeto = uma responsabilidade.** Nunca misturar (ex.: `Storage + Scheduler`, `Scheduler + Worker`).
-2. **Componentes só conhecem interfaces.** `IStorage`, `IScheduler`, `IWorker`, `IExecutor`, `ISerializer`, `ILockProvider` — nunca a classe concreta.
+2. **Componentes só conhecem interfaces.** `IStorage`, `IScheduler`, `IWorker`, `IExecutor`, `ILockProvider`, `ILeaderElection` — nunca a classe concreta.
 3. **Nenhum componente conversa diretamente com outro.** Toda comunicação passa por contrato ou evento. `Scheduler` nunca chama `SqlServerStorage`; chama `IStorage`.
 
 ```
@@ -102,7 +102,6 @@ Guara.sln
 │   │
 │   ├── Guara.Redis                 # acelerador: leva o aviso de fila entre nós (não é storage)
 │   │
-│   ├── Guara.Serialization         # somente serialização
 │   ├── Guara.Diagnostics           # logging, metrics, tracing, healthchecks
 │   ├── Guara.OpenTelemetry         # exporters OTel
 │   │
@@ -165,7 +164,7 @@ JobCreated → Scheduler → JobScheduled → Dispatcher → WorkerRequested
 **Pipeline do Job** — cada etapa é um middleware (modelo ASP.NET Core):
 
 ```
-Validation → Authorization → Serialization → Middleware
+Validation → Authorization → Middleware
            → Metrics → Logging → Retry → Executor → Success → Notifications
 ```
 

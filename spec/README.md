@@ -30,7 +30,7 @@ Trabalhamos de baixo para cima na pirâmide de dependências: contratos primeiro
 |---|---|---|---|
 | 001 | Contratos, eventos e tipos-base | `Guara.Abstractions` | ✅ Approved (2026-07-16) |
 | 002 | Modelos internos, estados e pipeline | `Guara.Core` | ✅ Approved (2026-07-16) |
-| 003 | Serialização | `Guara.Serialization` | ✅ Approved (2026-07-16) |
+| 003 | Serialização | `Guara.Serialization` | ⛔ Superseded por [ADR-0019](../docs/adr/0019-guara-serialization-sai-do-catalogo.md) — publicado nos três previews sem nenhum consumidor; o generator resolve os tipos em compilação e dispensa o ponto de extensão |
 | 004 | Contratos de storage | `Guara.Storage` | ✅ Approved (2026-07-16) |
 | 005 | Cálculo de agendamento (cron/delay/recurring) | `Guara.Scheduler` | ✅ Approved (2026-07-16) |
 | 006 | Busca de jobs | `Guara.Dispatcher` | ✅ Approved (2026-07-16) |

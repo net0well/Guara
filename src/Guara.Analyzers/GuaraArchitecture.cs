@@ -27,7 +27,6 @@ internal static class GuaraArchitecture
             new System.Collections.Generic.KeyValuePair<string, int>("Guara.Core", 1),
             new System.Collections.Generic.KeyValuePair<string, int>("Guara.Storage", 1),
             new System.Collections.Generic.KeyValuePair<string, int>("Guara.Configuration", 1),
-            new System.Collections.Generic.KeyValuePair<string, int>("Guara.Serialization", 2),
             new System.Collections.Generic.KeyValuePair<string, int>("Guara.Diagnostics", 2),
             new System.Collections.Generic.KeyValuePair<string, int>("Guara.Redis", 2),
             new System.Collections.Generic.KeyValuePair<string, int>("Guara.Cluster", 3),

@@ -1,3 +1,0 @@
-Guara.Serialization.GuaraSerializationException
-Guara.Serialization.GuaraSerializationException.GuaraSerializationException(string! message) -> void
-Guara.Serialization.GuaraSerializationException.GuaraSerializationException(string! message, System.Exception! innerException) -> void

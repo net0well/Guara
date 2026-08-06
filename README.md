@@ -470,7 +470,6 @@ Toda a configuração segue o padrão Options do .NET, sob a seção `Guara` (va
 | Documentação de arquitetura e ADRs | ✅ Concluído |
 | Especificação completa (40 specs, uma por componente/feature) | ✅ Concluído |
 | Fundação: `Guara.Abstractions` + `Guara.Core` (pipeline, máquina de estados, eventos) | ✅ Concluído |
-| Serialização (`Guara.Serialization` — source-gen, allowlist) | ✅ Concluído |
 | Contratos de storage + provider In-Memory + kit de conformidade | ✅ Concluído |
 | Motores: Scheduler (cron próprio), Dispatcher, Worker, Executor | ✅ Concluído |
 | Hosting, Server e provider PostgreSQL | ✅ Concluído |
@@ -492,9 +491,10 @@ Toda a configuração segue o padrão Options do .NET, sob a seção `Guara` (va
 | `Guara.Redis`: o aviso de fila por pub/sub, acordando o dispatcher de todos os nós | ✅ Concluído |
 | **Publicação `0.1.0-preview.3`: wakeup por sinal de fila e o acelerador Redis** | ✅ Concluído |
 | Enfileiramento dentro da transação do chamador (PostgreSQL, SQL Server, MySQL) | ✅ Concluído |
-| Benchmarks: serialização, cron, enfileiramento e storage in-memory | ✅ Concluído |
+| Benchmarks: cron, enfileiramento e storage in-memory | ✅ Concluído |
 | Aquisição em lote e elegibilidade indexada: 25× no PostgreSQL, 20× no MySQL, 10,6× no SQL Server | ✅ Concluído |
 | `Guara.Cluster`: eleição de líder com posse renovada, papéis visíveis no painel | ✅ Concluído |
+| `Guara.Serialization` removido: publicado nos previews sem nenhum consumidor ([ADR-0019](docs/adr/0019-guara-serialization-sai-do-catalogo.md)) | ✅ Concluído |
 | Documentação de usuário, projeto de exemplo e guia de migração do Hangfire | 🕓 Planejado |
 | **1.0** — API congelada, transações resolvidas no contrato, rodagem real | 🕓 Planejado |
 | `Guara.OpenTelemetry` (1.1) · `Guara.Cli` e `Guara.Authentication` (1.2) | 🕓 Planejado |

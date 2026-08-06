@@ -61,7 +61,7 @@ Acesso controlado por credenciais da connection string (via `Guara.Configuration
 
 ## Integrations
 
-SQL Server (via `Microsoft.Data.SqlClient`); `ISerializer` para payloads.
+SQL Server (via `Microsoft.Data.SqlClient`). Payloads via `JsonSerializerContext` próprio do provider, source-gen ([ADR-0019](../docs/adr/0019-guara-serialization-sai-do-catalogo.md)).
 
 ## Acceptance Criteria
 

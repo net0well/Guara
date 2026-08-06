@@ -11,7 +11,7 @@ Num framework orientado a componentes, cada componente só pode conhecer os outr
 
 Quem depende disso:
 - **Componentes internos** do Guará (motores, hosting, providers).
-- **Autores de providers/extensões de terceiros** (quem escreve um `ISerializer` ou middleware customizado) — audiência **first-class** desde a v1.
+- **Autores de providers/extensões de terceiros** (quem escreve um `IJobStorage` ou middleware customizado) — audiência **first-class** desde a v1.
 
 Sucesso = superfície **mínima, estável, imutável e AOT-safe**, que raramente quebra e nunca arrasta uma dependência para dentro do ecossistema.
 
@@ -19,7 +19,7 @@ Sucesso = superfície **mínima, estável, imutável e AOT-safe**, que raramente
 
 ### In
 
-- **Contratos (interfaces)** dos motores e serviços transversais que atravessam componentes: `IScheduler`, `IDispatcher`, `IWorker`, `IExecutor`, `ISerializer`, `IEventPublisher`, `IEventHandler<TEvent>`, `IGuaraBuilder`.
+- **Contratos (interfaces)** dos motores e serviços transversais que atravessam componentes: `IScheduler`, `IDispatcher`, `IWorker`, `IExecutor`, `ILeaderElection`, `IEventPublisher`, `IEventHandler<TEvent>`, `IGuaraBuilder`.
 - **Value types centrais** (vocabulário): `JobId`, `JobState`, `JobDescriptor`, `ScheduleDescriptor`.
 - **Eventos** do fluxo entre componentes (`IGuaraEvent` + registros no passado).
 - **Abstrações do pipeline**: `IJobContext`, `JobDelegate`, `IJobMiddleware`.
@@ -47,7 +47,7 @@ Sucesso = superfície **mínima, estável, imutável e AOT-safe**, que raramente
 | `IDispatcher` | contrato de motor | Spec 006 (`Guara.Dispatcher`) |
 | `IWorker` | contrato de motor | Spec 007 (`Guara.Worker`) |
 | `IExecutor` | contrato de motor | Spec 008 (`Guara.Executor`) |
-| `ISerializer` | contrato transversal | Spec 003 (`Guara.Serialization`) |
+| `ILeaderElection`, `ILeadership` | coordenação entre nós | Spec 025 (`Guara.Cluster`) |
 | `IEventPublisher`, `IEventHandler<TEvent>` | contrato de eventos | Spec 002 (`Guara.Core`) |
 | `IGuaraBuilder` | raiz da API fluente | Spec 009 (`Guara.Hosting`) |
 | `IJobContext`, `JobDelegate`, `IJobMiddleware` | pipeline | Spec 002 (`Guara.Core`) — impl; forma aqui |
@@ -153,7 +153,7 @@ Nenhuma integração externa. Este pacote **define os eventos** que são os pont
 ## Deferred Decisions
 
 - **DD-1 — Representação de `JobId`.** *Fallback escolhido:* `readonly record struct JobId(string Value)` (agnóstico a provider). *Revisão:* Spec 004 (`Guara.Storage`), ao decidir a chave de persistência.
-- **DD-2 — Forma de `JobDescriptor`.** *Fallback:* `sealed record` com argumentos **já serializados** (`ReadOnlyMemory<byte>`/string) + dicionário de metadados. *Revisão:* Spec 003 (`Guara.Serialization`).
+- **DD-2 — Forma de `JobDescriptor`.** *Resolvido:* `sealed record` com argumentos **já serializados** (`ReadOnlyMemory<byte>`) + dicionário de metadados; quem os escreve é o código emitido a partir de `[GuaraJob]`, que conhece os tipos em compilação ([ADR-0019](../docs/adr/0019-guara-serialization-sai-do-catalogo.md)).
 - **DD-3 — Logging/métricas.** *Fallback:* reutilizar `Microsoft.Extensions.Logging` + `System.Diagnostics.Metrics`; Abstractions **não** define `ILogger`/`IMetrics` próprios (apesar de citados no `Filosofia.md`). *Revisão:* Spec 016 (`Guara.Diagnostics`).
 - **DD-4 — Local dos contratos de Storage.** *Resolvido:* ficam em `Guara.Storage` (pacote de contratos), conforme `Filosofia.md` — **não** em Abstractions. *Ação:* corrigir menção divergente em `components.md`.
 - **DD-5 — Principal/claims em `IJobContext`.** *Fallback:* incluir `ClaimsPrincipal? User { get; }` opcional em `IJobContext`. *Revisão:* Spec 021 (`Guara.Authorization`).

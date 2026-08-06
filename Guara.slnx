@@ -10,7 +10,6 @@
     <Project Path="src/Guara.Dashboard.Api/Guara.Dashboard.Api.csproj" />
     <Project Path="src/Guara.Diagnostics/Guara.Diagnostics.csproj" />
     <Project Path="src/Guara.Redis/Guara.Redis.csproj" />
-    <Project Path="src/Guara.Serialization/Guara.Serialization.csproj" />
     <Project Path="src/Guara.SourceGenerators/Guara.SourceGenerators.csproj" />
     <Project Path="src/Guara.Storage/Guara.Storage.csproj" />
     <Project Path="src/Guara.Storage.Memory/Guara.Storage.Memory.csproj" />
@@ -27,7 +26,6 @@
   </Folder>
   <Folder Name="/benchmarks/">
     <Project Path="benchmarks/Guara.Scheduler.Benchmarks/Guara.Scheduler.Benchmarks.csproj" />
-    <Project Path="benchmarks/Guara.Serialization.Benchmarks/Guara.Serialization.Benchmarks.csproj" />
     <Project Path="benchmarks/Guara.Storage.Memory.Benchmarks/Guara.Storage.Memory.Benchmarks.csproj" />
     <Project Path="benchmarks/Guara.Throughput.Harness/Guara.Throughput.Harness.csproj" />
   </Folder>
@@ -42,7 +40,6 @@
     <Project Path="tests/Guara.Dashboard.Api.Tests/Guara.Dashboard.Api.Tests.csproj" />
     <Project Path="tests/Guara.Dashboard.Tests/Guara.Dashboard.Tests.csproj" />
     <Project Path="tests/Guara.Redis.Tests/Guara.Redis.Tests.csproj" />
-    <Project Path="tests/Guara.Serialization.Tests/Guara.Serialization.Tests.csproj" />
     <Project Path="tests/Guara.SourceGenerators.Tests/Guara.SourceGenerators.Tests.csproj" />
     <Project Path="tests/Guara.Storage.Conformance/Guara.Storage.Conformance.csproj" />
     <Project Path="tests/Guara.Storage.Memory.Tests/Guara.Storage.Memory.Tests.csproj" />

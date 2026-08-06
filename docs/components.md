@@ -6,7 +6,7 @@ Cada linha da tabela é um projeto em `src/`. **Um projeto = uma responsabilidad
 
 | Componente | Responsabilidade | Conhece | Nunca conhece |
 |---|---|---|---|
-| `Guara.Abstractions` | Contratos transversais (`IScheduler`, `IWorker`, `IExecutor`, `IDispatcher`, `ISerializer`), eventos, value types e abstrações de pipeline | — (nada) | qualquer implementação |
+| `Guara.Abstractions` | Contratos transversais (`IScheduler`, `IWorker`, `IExecutor`, `IDispatcher`, `ILeaderElection`), eventos, value types e abstrações de pipeline | — (nada) | qualquer implementação |
 | `Guara.Core` | Modelos internos, estados de Job, pipeline, abstrações comuns | `Abstractions` | banco, ASP.NET, Dashboard |
 | `Guara.Hosting` | `AddGuara()`, configuração, DI, bootstrap, `HostedService`s | `Core`, `Abstractions` | providers concretos |
 | `Guara.Server` | Lifecycle do servidor: inicia workers e scheduler, heartbeat | `Core`, `Abstractions` | como um Job executa por dentro |
@@ -21,7 +21,6 @@ Cada linha da tabela é um projeto em `src/`. **Um projeto = uma responsabilidad
 | `Guara.Storage.MySql` | Implementa `IStorage` sobre MySQL | `Storage` | idem |
 | `Guara.Storage.Mongo` | Implementa `IStorage` sobre MongoDB | `Storage` | idem |
 | `Guara.Redis` | Implementa `IQueueSignal` sobre pub/sub — leva o aviso de trabalho entre nós. **Não é storage** ([ADR-0013](adr/0013-redis-como-acelerador.md)) | `Abstractions`, `Core` | storage, motores |
-| `Guara.Serialization` | **Somente** serialização | `Abstractions` | nada além |
 | `Guara.Diagnostics` | Logging, Metrics, Tracing, HealthChecks | `Abstractions` | providers de storage |
 | `Guara.OpenTelemetry` | Exporters OpenTelemetry | `Diagnostics`, `Abstractions` | lógica de negócio |
 | `Guara.Authorization` | Autorização de jobs e dashboard | `Abstractions` | autenticação concreta |

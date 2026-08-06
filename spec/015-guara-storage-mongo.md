@@ -60,7 +60,7 @@ Credenciais/TLS via configuração; filtros do servidor não aceitam expressões
 
 ## Integrations
 
-MongoDB via `MongoDB.Driver`; `ISerializer` para payloads (ou BSON nativo — DD-2).
+MongoDB via `MongoDB.Driver`. Documentos BSON nativos; o que vira JSON usa o `JsonSerializerContext` próprio do provider ([ADR-0019](../docs/adr/0019-guara-serialization-sai-do-catalogo.md)).
 
 ## Acceptance Criteria
 
@@ -74,7 +74,7 @@ MongoDB via `MongoDB.Driver`; `ISerializer` para payloads (ou BSON nativo — DD
 ## Deferred Decisions
 
 - **DD-1 — Transações vs atômico.** *Fallback:* usar `findAndModify` atômico como base; transações só quando `Capabilities` permitir. *Revisão:* nenhuma.
-- **DD-2 — BSON nativo vs `ISerializer`.** *Fallback:* payload de args via `ISerializer` (paridade); metadados como documento BSON nativo. *Revisão:* benchmarks.
+- **DD-2 — BSON nativo vs serializador único.** *Resolvido:* documentos BSON nativos, sem serializador plugável — ver [ADR-0019](../docs/adr/0019-guara-serialization-sai-do-catalogo.md).
 - **DD-3 — Versão/topologia mínima.** *Fallback:* MongoDB 5.0+, replica set recomendado para push/transações. *Revisão:* nenhuma.
 
 ## Open Questions

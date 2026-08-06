@@ -60,7 +60,7 @@ N/A.
 
 ## Integrations
 
-Nenhuma externa; usa `ISerializer` (Spec 003) como os demais para paridade de comportamento.
+Nenhuma externa. Guarda os registros como objetos, sem serializar ([ADR-0019](../docs/adr/0019-guara-serialization-sai-do-catalogo.md)).
 
 ## Acceptance Criteria
 
