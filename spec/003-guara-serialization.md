@@ -1,6 +1,8 @@
 # Spec 003: `Guara.Serialization` — Serialização
 
-**Status:** Approved (2026-07-16)
+> ⛔ **Superseded por [ADR-0019](../docs/adr/0019-guara-serialization-sai-do-catalogo.md) (2026-08-06).** O pacote foi implementado e publicado nos três previews, e nada no framework o chamava: o source generator emite leitor e escritor tipados por job, e cada provider serializa o descritor com o próprio `JsonSerializerContext`. `SerializeArgs` existia para o caminho de lambda, que nunca foi construído. O pacote e `ISerializer` saíram do catálogo. O documento fica como registro da decisão original.
+
+**Status:** ⛔ Superseded (2026-08-06)
 **Date:** 2026-07-16
 **Componente:** `Guara.Serialization`
 **Depende de:** [Spec 001](001-guara-abstractions.md)

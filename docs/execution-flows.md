@@ -58,7 +58,7 @@ O padrão é `InProcessQueueSignal` (nó único, sem infraestrutura). Trocar o r
 Cada etapa é um **middleware**, no modelo do ASP.NET Core: recebe o contexto e um `next`. A ordem é fixa.
 
 ```
-Validation → Authorization → Serialization → Middleware (custom)
+Validation → Authorization → Middleware (custom)
            → Metrics → Logging → Retry → Executor → Success → Notifications
 ```
 
@@ -66,7 +66,6 @@ Validation → Authorization → Serialization → Middleware (custom)
 |---|---|---|
 | Validation | `ValidationMiddleware` | Valida o payload/args do Job |
 | Authorization | `AuthorizationMiddleware` | Verifica permissão de execução |
-| Serialization | `SerializationMiddleware` | (De)serializa argumentos via `ISerializer` |
 | Middleware | *custom* | Ponto de extensão do usuário |
 | Metrics | `MetricsMiddleware` | Contadores/histogramas via `IMetrics` |
 | Logging | `LoggingMiddleware` | Log estruturado via `ILogger` |

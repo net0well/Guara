@@ -124,11 +124,6 @@ Guara.Abstractions.IRecurringJobBuilder.PularSeAnteriorEmExecucao() -> Guara.Abs
 Guara.Abstractions.IRecurringJobBuilder.TerminaEm(System.DateTimeOffset fim) -> Guara.Abstractions.IRecurringJobBuilder!
 Guara.Abstractions.IScheduler
 Guara.Abstractions.IScheduler.GetNextOccurrence(Guara.Abstractions.ScheduleDescriptor! schedule, System.DateTimeOffset after) -> System.DateTimeOffset?
-Guara.Abstractions.ISerializer
-Guara.Abstractions.ISerializer.Deserialize<T>(System.ReadOnlySpan<byte> data) -> T?
-Guara.Abstractions.ISerializer.DeserializeArgs(System.ReadOnlySpan<byte> data) -> object?[]!
-Guara.Abstractions.ISerializer.Serialize<T>(T value) -> System.ReadOnlyMemory<byte>
-Guara.Abstractions.ISerializer.SerializeArgs(System.ReadOnlySpan<object?> args) -> System.ReadOnlyMemory<byte>
 Guara.Abstractions.IWorker
 Guara.Abstractions.IWorkerCapacity
 Guara.Abstractions.IWorkerCapacity.Available.get -> int

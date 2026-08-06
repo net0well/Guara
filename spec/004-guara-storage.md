@@ -130,7 +130,7 @@ N/A no contrato. Providers **não** confiam no payload para resolver tipos (ver 
 
 ## Integrations
 
-Nenhuma direta. É o ponto de extensão para bancos; usa `ISerializer` (Spec 003) para (de)serializar `JobDescriptor`/resultado.
+Nenhuma direta. É o ponto de extensão para bancos; cada provider serializa `JobDescriptor` com o próprio `JsonSerializerContext` source-gen ([ADR-0019](../docs/adr/0019-guara-serialization-sai-do-catalogo.md)).
 
 ## Acceptance Criteria
 

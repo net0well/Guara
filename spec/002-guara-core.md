@@ -27,7 +27,7 @@ Quem depende: todos os motores (`Scheduler`, `Dispatcher`, `Worker`, `Executor`)
 
 - **Nenhuma** dependência de banco, ASP.NET, Dashboard, serialização concreta.
 - **Nenhuma** extensão `AddGuara...()` — o wiring é do `Guara.Hosting` ([Spec 009](README.md)).
-- Middlewares **de outros componentes**: `MetricsMiddleware`/`LoggingMiddleware` → `Guara.Diagnostics`; `AuthorizationMiddleware` → `Guara.Authorization`; `SerializationMiddleware` → `Guara.Serialization`; `ExecutionMiddleware` → `Guara.Executor`.
+- Middlewares **de outros componentes**: `MetricsMiddleware`/`LoggingMiddleware` → `Guara.Diagnostics`; `AuthorizationMiddleware` → `Guara.Authorization`; `ExecutionMiddleware` → `Guara.Executor`. Não há middleware de serialização: os argumentos chegam ao descritor já em bytes, escritos pelo código que o generator emite ([ADR-0019](../docs/adr/0019-guara-serialization-sai-do-catalogo.md)).
 - Cálculo de agendamento (`Guara.Scheduler`), busca (`Guara.Dispatcher`), execução do método do job (`Guara.Executor`).
 - Entrega **durável/distribuída** de eventos → `Guara.Cluster`/`Guara.Distributed`.
 

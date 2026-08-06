@@ -19,7 +19,6 @@ Documentos de referência de implementação, extraídos da análise dos reposit
 | Concorrência, filtros e listeners | `concorrencia-e-filtros.md` | ⏳ Pendente |
 | Cluster, locks, heartbeat/failover | `cluster-e-locks.md` | ⏳ Pendente |
 | Servidor, loop, thread pool, shutdown | `servidor-e-processamento.md` | ⏳ Pendente |
-| Serialização | `serializacao.md` | ⏳ Pendente |
 | Dashboard e autenticação | `dashboard.md` | ⏳ Pendente |
 | Observabilidade (OTel/logging) | `observabilidade.md` | ⏳ Pendente |
 | Saúde e estrutura dos repos | `saude-e-estrutura.md` | ⏳ Pendente |
@@ -51,7 +50,7 @@ Legenda: ✅ tem · ⚠️ parcial/planejado · ❌ não tem · 🟦 diferencial
 | Dashboard | ✅ (Razor, tempo real por polling) | ⚠️ `Quartz.Dashboard` (comunidade) | ⚠️ Angular SPA, **tempo real por SSE** (spec 022-024) 🟦 |
 | Autenticação do dashboard | ✅ `IDashboardAuthorizationFilter` | — | ⚠️ regras fluentes + `IDashboardAccessRule` + login próprio (spec 037) 🟦 |
 | Modelo de plugins | ❌ (filtros/`IBackgroundProcess`) | ✅ `ISchedulerPlugin` + listeners | ⚠️ event bus + middlewares + hosted services; `IGuaraPlugin` proposto (spec 039 futura) |
-| Serialização | System.Text.Json / Newtonsoft | System.Text.Json / Newtonsoft | ✅ STJ **source-gen** + allowlist (implementado) 🟦 AOT/segurança |
+| Serialização | System.Text.Json / Newtonsoft, plugável | System.Text.Json / Newtonsoft, plugável via `IObjectSerializer` | ✅ **não é ponto de extensão**: o generator emite leitor e escritor tipados por job, e cada provider serializa o descritor com o próprio contexto STJ source-gen ([ADR-0019](../adr/0019-guara-serialization-sai-do-catalogo.md)) 🟦 AOT |
 | Zero reflection / AOT | ❌ (reflection) | ⚠️ | ✅ source generators (spec 029) 🟦 |
 | OpenTelemetry | ⚠️ (métricas no dashboard) | ✅ `Quartz.OpenTelemetry.Instrumentation` | ⚠️ `Guara.OpenTelemetry` (spec 017) |
 | CLI | ❌ | ⚠️ `Quartz.Server` | ⚠️ `guara` (spec 027) |

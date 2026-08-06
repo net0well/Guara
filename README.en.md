@@ -470,7 +470,6 @@ All configuration follows the .NET Options pattern under the `Guara` section (va
 | Architecture documentation and ADRs | ✅ Done |
 | Full specification (40 specs, one per component/feature) | ✅ Done |
 | Foundation: `Guara.Abstractions` + `Guara.Core` (pipeline, state machine, events) | ✅ Done |
-| Serialization (`Guara.Serialization` — source-gen, allowlist) | ✅ Done |
 | Storage contracts + In-Memory provider + conformance kit | ✅ Done |
 | Engines: Scheduler (built-in cron), Dispatcher, Worker, Executor | ✅ Done |
 | Hosting, Server and PostgreSQL provider | ✅ Done |
@@ -492,9 +491,10 @@ All configuration follows the .NET Options pattern under the `Guara` section (va
 | `Guara.Redis`: the queue signal over pub/sub, waking every node's dispatcher | ✅ Done |
 | **`0.1.0-preview.3` release: queue-signal wakeup and the Redis accelerator** | ✅ Done |
 | Enqueuing inside the caller's transaction (PostgreSQL, SQL Server, MySQL) | ✅ Done |
-| Benchmarks: serialization, cron, enqueue and in-memory storage | ✅ Done |
+| Benchmarks: cron, enqueue and in-memory storage | ✅ Done |
 | Batch acquisition and indexed eligibility: 25× on PostgreSQL, 20× on MySQL, 10.6× on SQL Server | ✅ Done |
 | `Guara.Cluster`: leader election with renewed ownership, roles visible in the dashboard | ✅ Done |
+| `Guara.Serialization` removed: published in the previews with no consumer whatsoever ([ADR-0019](docs/adr/0019-guara-serialization-sai-do-catalogo.md)) | ✅ Done |
 | User documentation, sample project and Hangfire migration guide | 🕓 Planned |
 | **1.0** — frozen API, transactions settled in the contract, real-world burn-in | 🕓 Planned |
 | `Guara.OpenTelemetry` (1.1) · `Guara.Cli` and `Guara.Authentication` (1.2) | 🕓 Planned |

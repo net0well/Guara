@@ -133,7 +133,6 @@ Criar `guara/benchmarks/` (já previsto em spec 033/034) com um projeto `Guara.B
 | `CronExpressionBenchmarks` | `CronExpression.Parse` + `GetNextOccurrence` (com/sem timezone) | `CronExpressionBenchmark` |
 | `MemoryStorageBenchmarks` | `AcquireNextDueAsync` throughput + alocação (concorrência de N leitores) | `RAMJobStoreBenchmark` |
 | `PipelineBenchmarks` | `JobPipelineBuilder.Build` + execução de N middlewares; **prova o ganho do pool de `JobContext`** (alocação ~0) | `JobDispatchBenchmark`/`JobExecutionContextImplBenchmark` |
-| `SerializationBenchmarks` | `SerializeArgs`/`DeserializeArgs` round-trip (alocação; source-gen x reflection) | — (STJ source-gen) |
 | `EndToEndThroughputBenchmarks` | `EnfileirarAsync` → execução de N jobs (jobs/s), Memory storage; concurrent x `[GuaraDesabilitarConcorrencia]` | `SchedulerBenchmark` |
 | `JobIdBenchmarks` / `JobStateMachineBenchmarks` | Igualdade de `readonly record struct JobId`; transições | `KeyBenchmark` |
 

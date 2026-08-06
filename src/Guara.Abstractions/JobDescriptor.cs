@@ -2,7 +2,9 @@ namespace Guara.Abstractions;
 
 /// <summary>
 /// Descrição imutável e serializável do que executar: tipo-alvo, método,
-/// argumentos já serializados e metadados. Ver <c>Guara.Serialization</c>.
+/// argumentos já serializados e metadados. Os argumentos chegam aqui em bytes porque
+/// quem os produz — o código emitido a partir de <c>[GuaraJob]</c> — conhece os tipos em
+/// compilação; o descritor só os transporta.
 /// </summary>
 /// <param name="TypeName">Nome do tipo que contém o método do job.</param>
 /// <param name="MethodName">Nome do método a executar.</param>

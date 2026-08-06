@@ -42,7 +42,8 @@ Cada ADR usa o template mínimo:
 | [0016](0016-aquisicao-em-lote.md) | Aquisição em lote dimensionada pela capacidade ociosa do worker | Aceito |
 | [0017](0017-eleicao-de-lider.md) | Eleição de líder com posse renovada; `ILockProvider` fica como está | Aceito |
 | [0018](0018-guara-distributed-nao-existe.md) | `Guara.Distributed` não será criado; suas duas responsabilidades vão para onde pertencem | Aceito |
+| [0019](0019-guara-serialization-sai-do-catalogo.md) | `Guara.Serialization` sai do catálogo: publicado nos três previews sem nenhum consumidor; `ISerializer` sai junto | Aceito |
 
 ## Próximo número
 
-O próximo ADR é **0019**. Numeração sequencial, sem lacunas.
+O próximo ADR é **0020**. Numeração sequencial, sem lacunas.

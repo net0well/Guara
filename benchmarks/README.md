@@ -13,7 +13,7 @@ dotnet run --project benchmarks/Guara.Scheduler.Benchmarks -c Release -- --filte
 Durante o desenvolvimento, `--job short` troca precisão por tempo (3 iterações em vez do padrão):
 
 ```bash
-dotnet run --project benchmarks/Guara.Serialization.Benchmarks -c Release -- --filter "*" --job short
+dotnet run --project benchmarks/Guara.Scheduler.Benchmarks -c Release -- --filter "*" --job short
 ```
 
 Feche o que estiver disputando CPU antes de medir e desconfie de qualquer número colhido em máquina ocupada — o desvio padrão da saída denuncia.
@@ -22,7 +22,6 @@ Feche o que estiver disputando CPU antes de medir e desconfie de qualquer númer
 
 | Projeto | Mede | Por que importa |
 |---|---|---|
-| `Guara.Serialization.Benchmarks` | `SerializeArgs`/`DeserializeArgs` e o par tipado `Serialize<T>`/`Deserialize<T>` | Pago duas vezes por job: ao enfileirar e ao executar |
 | `Guara.Scheduler.Benchmarks` | `GetNextOccurrence` para expressões cron de custo crescente; `EnfileirarAsync`/`AgendarAsync` pela composição real | O cron roda por definição recorrente a cada ciclo; o enfileiramento é a linha que o usuário escreve |
 | `Guara.Storage.Memory.Benchmarks` | `CreateAsync`, `AcquireNextDueAsync` e `GetAsync` em três profundidades de fila | O provider in-memory não tem rede nem disco, então o que sobra é o custo do próprio Guará |
 | `Guara.Throughput.Harness` | Vazão e latência com worker e dispatcher rodando de verdade, sobre storage real | É o número que se pergunta primeiro: quantos jobs por segundo, e quanto demora até começar |

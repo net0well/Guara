@@ -61,7 +61,7 @@ Credenciais via connection string/segredos; comandos parametrizados (anti-injeç
 
 ## Integrations
 
-PostgreSQL via `Npgsql`; `ISerializer` para payloads.
+PostgreSQL via `Npgsql`. Payloads via `JsonSerializerContext` próprio do provider, source-gen ([ADR-0019](../docs/adr/0019-guara-serialization-sai-do-catalogo.md)).
 
 ## Acceptance Criteria
 
