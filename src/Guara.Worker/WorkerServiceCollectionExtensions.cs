@@ -38,6 +38,9 @@ public static class WorkerServiceCollectionExtensions
             sp.GetRequiredService<TimeProvider>(),
             sp.GetService<ILogger<GuaraWorker>>() ?? NullLogger<GuaraWorker>.Instance));
         builder.Services.TryAddSingleton<IWorker>(sp => sp.GetRequiredService<GuaraWorker>());
+        // O dispatcher enxerga a capacidade sem enxergar o worker inteiro: assim ele
+        // dimensiona o lote sem ganhar o poder de ligar e desligar quem executa.
+        builder.Services.TryAddSingleton<IWorkerCapacity>(sp => sp.GetRequiredService<GuaraWorker>());
         builder.Services.TryAddEnumerable(
             ServiceDescriptor.Singleton<IEventHandler<WorkerRequested>, WorkerRequestedForwarder>());
         return builder;

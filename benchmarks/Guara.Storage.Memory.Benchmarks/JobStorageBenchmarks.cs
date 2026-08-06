@@ -63,9 +63,18 @@ public class JobStorageBenchmarks
     /// profundidade se mantém constante do começo ao fim.
     /// </para>
     /// </summary>
-    [Benchmark(Description = "AcquireNextDueAsync — aquisição atômica com lease")]
-    public async ValueTask<JobRecord?> AcquireNextDue()
-        => await _storage.Jobs.AcquireNextDueAsync("default", Lease, T0.AddYears(1), CancellationToken.None);
+    [Benchmark(Description = "AcquireNextDueAsync — aquisição atômica com lease, um job")]
+    public async ValueTask<IReadOnlyList<JobRecord>> AcquireNextDue()
+        => await _storage.Jobs.AcquireNextDueAsync("default", 1, Lease, T0.AddYears(1), CancellationToken.None);
+
+    /// <summary>
+    /// O mesmo trabalho com lote: mostra quanto do custo é por job e quanto é por chamada.
+    /// No provider in-memory não há ida-e-volta a amortizar, então a diferença aqui é o
+    /// piso da comparação com os providers persistentes.
+    /// </summary>
+    [Benchmark(Description = "AcquireNextDueAsync — lote de 16")]
+    public async ValueTask<IReadOnlyList<JobRecord>> AcquireBatch()
+        => await _storage.Jobs.AcquireNextDueAsync("default", 16, Lease, T0.AddYears(1), CancellationToken.None);
 
     [Benchmark(Description = "GetAsync — leitura por id")]
     public async ValueTask<JobRecord?> Get()

@@ -32,17 +32,34 @@ public interface IJobStorage
     ValueTask<JobId> CreateAsync(JobRecord record, IGuaraTransaction transaction, CancellationToken ct);
 
     /// <summary>
-    /// Adquire atomicamente o próximo job elegível da fila: <c>Enqueued</c>, <c>Scheduled</c>
-    /// ou <c>Retrying</c> vencidos (<c>ScheduledFor &lt;= now</c>), ou <c>Processing</c> com
-    /// lease expirado. O job adquirido passa a <c>Processing</c> com
+    /// Adquire atomicamente <b>até</b> <paramref name="max"/> jobs elegíveis da fila, em
+    /// ordem de elegibilidade. É elegível o que está <c>Enqueued</c>, o que está
+    /// <c>Scheduled</c> ou <c>Retrying</c> e já venceu, e o que está <c>Processing</c> com
+    /// a posse expirada. Cada job adquirido passa a <c>Processing</c> com
     /// <c>LeaseUntil = now + lease</c>; o <c>Attempt</c> é preservado.
+    /// <para>
+    /// Nenhum job adquirido aqui é entregue a outro consumidor enquanto a posse valer,
+    /// mesmo entre nós — é a garantia que sustenta a entrega única.
+    /// </para>
+    /// <para>
+    /// O lote existe para dividir o custo fixo de ida-e-volta ao banco por N. Quem
+    /// precisa de um job só pede <c>max: 1</c>.
+    /// </para>
     /// </summary>
     /// <param name="queue">Fila a consumir.</param>
+    /// <param name="max">Teto de jobs a adquirir; precisa ser positivo.</param>
     /// <param name="lease">Duração da posse (renovável via <see cref="RenewLeaseAsync"/>).</param>
     /// <param name="now">Relógio do chamador (injetado — testável e consistente no cluster).</param>
     /// <param name="ct">Token de cancelamento.</param>
-    /// <returns>O job adquirido, ou <c>null</c> quando não há elegível.</returns>
-    ValueTask<JobRecord?> AcquireNextDueAsync(string queue, TimeSpan lease, DateTimeOffset now, CancellationToken ct);
+    /// <returns>
+    /// Os jobs adquiridos, ou vazio quando não há nenhum. A <b>seleção</b> segue a ordem
+    /// de elegibilidade — o lote traz os mais elegíveis —, mas a ordem <b>dentro</b> da
+    /// lista não é garantida: eles vão rodar em paralelo de qualquer forma, e exigi-la
+    /// obrigaria a ordenar de novo o que o banco já devolveu.
+    /// </returns>
+    /// <exception cref="ArgumentOutOfRangeException">Quando <paramref name="max"/> não é positivo.</exception>
+    ValueTask<IReadOnlyList<JobRecord>> AcquireNextDueAsync(
+        string queue, int max, TimeSpan lease, DateTimeOffset now, CancellationToken ct);
 
     /// <summary>
     /// Renova a posse de um job em execução. Retorna <c>false</c> quando a posse foi

@@ -81,9 +81,10 @@ internal sealed record HarnessOptions(
             throw new ArgumentException("--concurrency precisa ser uma lista de inteiros >= 1.");
         }
 
-        if (mode == HarnessMode.Probe && storage != StorageKind.PostgreSql)
+        if (mode == HarnessMode.Probe && storage == StorageKind.Memory)
         {
-            throw new ArgumentException("--mode probe exige --storage postgresql.");
+            throw new ArgumentException(
+                "--mode probe decompõe custo de banco: exige postgresql, sqlserver ou mysql.");
         }
 
         return new HarnessOptions(mode, storage, jobs, concurrencies, polling);

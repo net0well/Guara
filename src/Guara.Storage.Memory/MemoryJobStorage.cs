@@ -28,34 +28,40 @@ internal sealed class MemoryJobStorage(TimeProvider time) : IJobStorage
             "(Capabilities.SupportsTransactions = false): não há banco com que compartilhar " +
             "uma. Para enfileirar junto com a gravação do negócio, use um provider relacional.");
 
-    public ValueTask<JobRecord?> AcquireNextDueAsync(string queue, TimeSpan lease, DateTimeOffset now, CancellationToken ct)
+    public ValueTask<IReadOnlyList<JobRecord>> AcquireNextDueAsync(
+        string queue, int max, TimeSpan lease, DateTimeOffset now, CancellationToken ct)
     {
+        ArgumentOutOfRangeException.ThrowIfLessThan(max, 1);
+
         lock (_sync)
         {
-            JobRecord? eligible = null;
-            var elegivelEm = DateTimeOffset.MaxValue;
+            // Sem índice para percorrer: os elegíveis são coletados e ordenados aqui, o
+            // que mantém a mesma ordem dos providers persistentes ao custo de varredura.
+            var elegiveis = new List<(DateTimeOffset Quando, JobRecord Job)>();
             foreach (var job in _jobs.Values)
             {
-                if (job.Queue != queue || JobEligibility.For(job) is not { } quando || quando > now)
+                if (job.Queue == queue && JobEligibility.For(job) is { } quando && quando <= now)
                 {
-                    continue;
-                }
-
-                if (eligible is null || quando < elegivelEm)
-                {
-                    eligible = job; // ~FIFO por elegibilidade, igual aos providers persistentes
-                    elegivelEm = quando;
+                    elegiveis.Add((quando, job));
                 }
             }
 
-            if (eligible is null)
+            if (elegiveis.Count == 0)
             {
-                return ValueTask.FromResult<JobRecord?>(null);
+                return ValueTask.FromResult<IReadOnlyList<JobRecord>>([]);
             }
 
-            var acquired = eligible with { State = JobState.Processing, LeaseUntil = now + lease };
-            _jobs[acquired.Id] = acquired;
-            return ValueTask.FromResult<JobRecord?>(acquired);
+            elegiveis.Sort(static (a, b) => a.Quando.CompareTo(b.Quando));
+
+            var adquiridos = new List<JobRecord>(Math.Min(max, elegiveis.Count));
+            for (var i = 0; i < elegiveis.Count && adquiridos.Count < max; i++)
+            {
+                var acquired = elegiveis[i].Job with { State = JobState.Processing, LeaseUntil = now + lease };
+                _jobs[acquired.Id] = acquired;
+                adquiridos.Add(acquired);
+            }
+
+            return ValueTask.FromResult<IReadOnlyList<JobRecord>>(adquiridos);
         }
     }
 

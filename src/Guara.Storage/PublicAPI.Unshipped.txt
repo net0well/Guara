@@ -56,7 +56,7 @@ Guara.Storage.IContinuationStorage.ListByParentAsync(Guara.Abstractions.JobId pa
 Guara.Storage.IContinuationStorage.ListPendingAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Guara.Storage.ContinuationRecord!>!>
 Guara.Storage.IContinuationStorage.TryResolveAsync(Guara.Abstractions.JobId childId, Guara.Storage.ContinuationStatus status, string? reason, System.DateTimeOffset resolvedAt, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<bool>
 Guara.Storage.IJobStorage
-Guara.Storage.IJobStorage.AcquireNextDueAsync(string! queue, System.TimeSpan lease, System.DateTimeOffset now, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Storage.JobRecord?>
+Guara.Storage.IJobStorage.AcquireNextDueAsync(string! queue, int max, System.TimeSpan lease, System.DateTimeOffset now, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Guara.Storage.JobRecord!>!>
 Guara.Storage.IJobStorage.CountAsync(Guara.Storage.JobQuery! query, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<long>
 Guara.Storage.IJobStorage.CountByStateAsync(string? queue, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyDictionary<Guara.Abstractions.JobState, long>!>
 Guara.Storage.IJobStorage.CreateAsync(Guara.Storage.JobRecord! record, Guara.Abstractions.IGuaraTransaction! transaction, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Abstractions.JobId>

@@ -63,18 +63,21 @@ internal sealed class MySqlJobStorage(
         return record.Id;
     }
 
-    public async ValueTask<JobRecord?> AcquireNextDueAsync(
-        string queue, TimeSpan lease, DateTimeOffset now, CancellationToken ct)
+    public async ValueTask<IReadOnlyList<JobRecord>> AcquireNextDueAsync(
+        string queue, int max, TimeSpan lease, DateTimeOffset now, CancellationToken ct)
     {
+        ArgumentOutOfRangeException.ThrowIfLessThan(max, 1);
+
         await schema.EnsureAsync(ct);
         var leaseUntil = now + lease;
 
         await using var connection = await dataSource.OpenConnectionAsync(ct);
-        // O MySQL não tem RETURNING: a linha é travada num SELECT e marcada num UPDATE, e
-        // a transação é o que impede outro nó de ver a linha livre entre os dois passos.
+        // O MySQL não tem RETURNING: as linhas são travadas num SELECT e marcadas num
+        // UPDATE, e a transação é o que impede outro nó de vê-las livres entre os dois
+        // passos. É também o que o lote amortiza — uma transação passa a cobrir N jobs.
         await using var transaction = await connection.BeginTransactionAsync(ct);
 
-        JobRecord? candidato;
+        List<JobRecord> candidatos;
         // O reader vive no escopo do SELECT: a conexão só aceita o próximo comando depois
         // que ele fecha, então nada pode acontecer com a transação enquanto ele está aberto.
         await using (var select = connection.CreateCommand())
@@ -86,35 +89,48 @@ internal sealed class MySqlJobStorage(
                 SELECT {Columns} FROM {p}jobs
                 WHERE queue = @queue AND eligible_at <= @now
                 ORDER BY eligible_at
-                LIMIT 1
+                LIMIT @max
                 FOR UPDATE SKIP LOCKED
                 """;
             select.Parameters.AddWithValue("@queue", queue);
             select.Parameters.AddWithValue("@now", MySqlTime.ToDatabase(now));
+            select.Parameters.AddWithValue("@max", max);
 
+            candidatos = new List<JobRecord>(max);
             await using var reader = await select.ExecuteReaderAsync(ct);
-            candidato = await reader.ReadAsync(ct) ? ReadJob(reader) : null;
+            while (await reader.ReadAsync(ct))
+            {
+                candidatos.Add(ReadJob(reader));
+            }
         }
 
-        if (candidato is null)
+        if (candidatos.Count == 0)
         {
             await transaction.RollbackAsync(ct);
-            return null;
+            return [];
         }
 
         await using (var update = connection.CreateCommand())
         {
             update.Transaction = transaction;
+            // Um UPDATE para o lote inteiro: os ids entram como parâmetros nomeados, e não
+            // interpolados, para que a lista continue vindo do driver e não do texto.
+            var alvos = string.Join(", ", candidatos.Select((_, i) => $"@id{i}"));
             update.CommandText =
-                $"UPDATE {p}jobs SET state = @state, lease_until = @leaseUntil, eligible_at = @leaseUntil WHERE id = @id";
+                $"UPDATE {p}jobs SET state = @state, lease_until = @leaseUntil, eligible_at = @leaseUntil " +
+                $"WHERE id IN ({alvos})";
             update.Parameters.AddWithValue("@state", (int)JobState.Processing);
             update.Parameters.AddWithValue("@leaseUntil", MySqlTime.ToDatabase(leaseUntil));
-            update.Parameters.AddWithValue("@id", candidato.Id.Value);
+            for (var i = 0; i < candidatos.Count; i++)
+            {
+                update.Parameters.AddWithValue($"@id{i}", candidatos[i].Id.Value);
+            }
+
             await update.ExecuteNonQueryAsync(ct);
         }
 
         await transaction.CommitAsync(ct);
-        return candidato with { State = JobState.Processing, LeaseUntil = leaseUntil };
+        return [.. candidatos.Select(c => c with { State = JobState.Processing, LeaseUntil = leaseUntil })];
     }
 
     public async ValueTask<bool> RenewLeaseAsync(JobId id, TimeSpan lease, CancellationToken ct)

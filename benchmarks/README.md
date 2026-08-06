@@ -110,6 +110,30 @@ Vazão de execução, jobs por segundo:
 
 As duas mudanças atacaram gargalos diferentes: a primeira tirou do caminho um `Sort` proporcional à profundidade da fila; a segunda parou de fazer o servidor replanejar as mesmas consultas a cada chamada, o que o `EXPLAIN` mostrava custar 1,6 a 2,5 ms por aquisição.
 
+### Vazão de execução, por etapa
+
+10.000 jobs, jobs por segundo, com 64 workers:
+
+| Etapa | PostgreSQL | SQL Server | MySQL |
+|---|---:|---:|---:|
+| Início | 151 | — | 87 |
+| Elegibilidade indexada ([ADR-0015](../docs/adr/0015-elegibilidade-como-instante-indexavel.md)) | 494 | 175 | 87 |
+| + preparação automática de comandos | 639 | — | — |
+| **+ aquisição em lote ([ADR-0016](../docs/adr/0016-aquisicao-em-lote.md))** | **3.821** | **1.855** | **1.738** |
+
+A primeira medição do SQL Server já foi feita depois da elegibilidade indexada, então não há número anterior a ela para esse provider.
+
+**Cada etapa atacou a camada que a medição anterior apontou**, e duas delas teriam sido escolhas erradas sem medir antes:
+
+- A elegibilidade indexada rendeu 3,5× no PostgreSQL e **nada** no MySQL. Lá o gargalo nunca foi o plano de consulta.
+- A aquisição em lote rendeu 20× no MySQL e 6× no PostgreSQL. Aplicada primeiro, teria dado quase nada no PostgreSQL, onde o `Sort` proporcional à fila dominava.
+
+O ganho do lote é proporcional ao **custo fixo por ida** de cada provider: quanto mais cara a ida-e-volta, mais há para amortizar. É por isso que o SQL Server, com piso de 2,1 ms, ganhou 10,6× com o lote sozinho.
+
+A alocação por job caiu nos três junto com a vazão — PostgreSQL de 22 para 16 KB, MySQL de 45 para 29 KB, SQL Server de 84 para 60 KB —, porque o custo fixo de cada chamada passou a ser dividido entre os jobs do lote.
+
+Com **um** worker o lote não muda nada (PostgreSQL: 207 antes, 200 depois). É o esperado, e é o que confirma que a mudança faz o que diz: ela amortiza custo fixo entre jobs paralelos, e sem paralelismo não há o que amortizar.
+
 ### Os três providers relacionais, depois da elegibilidade indexada
 
 10.000 jobs, mesma máquina, mesmo job trivial:
@@ -121,6 +145,35 @@ As duas mudanças atacaram gargalos diferentes: a primeira tirou do caminho um `
 | MySQL | 79 | 85 | 84 | 87 | 1,10× | 145/s | 44 KB |
 
 **A elegibilidade indexada entregou vazão só no PostgreSQL.** Nos outros dois ela tirou o `Sort` do caminho — e a correção continua necessária, porque a ordem de execução precisa bater entre providers — mas revelou um gargalo maior embaixo.
+
+### Sonda: de onde vem o custo de uma aquisição
+
+`--mode probe` mede, em duas profundidades de fila, o piso de ida-e-volta (`SELECT 1` numa conexão já aberta), o custo de `CreateAsync` e o de `AcquireNextDueAsync`, e imprime o plano da consulta de elegibilidade. Medir em mais de uma profundidade é o que separa custo de plano — que cresce com a tabela — de custo de protocolo, que é constante.
+
+```bash
+dotnet run --project benchmarks/Guara.Throughput.Harness -c Release -- \
+    --mode probe --storage mysql --jobs 300 --concurrency 500,5000
+```
+
+| Provider | Profundidade | Piso | `CreateAsync` | `AcquireNextDueAsync` | ÷ piso |
+|---|---:|---:|---:|---:|---:|
+| SQL Server | 500 | 2.103 µs | 5.320 µs | 5.876 µs | 2,8× |
+| SQL Server | 5.000 | 2.073 µs | 5.296 µs | 5.609 µs | 2,7× |
+| MySQL | 500 | 1.506 µs | 7.308 µs | 12.582 µs | 8,4× |
+| MySQL | 5.000 | 1.481 µs | 7.243 µs | 11.596 µs | 7,8× |
+
+**Nenhum custo cresce com a profundidade.** Dez vezes mais fila, mesmo tempo — o que quer dizer que a elegibilidade indexada resolveu o plano de consulta em todos os providers, não só no PostgreSQL.
+
+O plano do MySQL confirma direto:
+
+```
+-> Limit: 1 row(s)                        (actual time=0.115..0.115 rows=1)
+    -> Filter: (queue = 'default' and eligible_at <= ...)
+        -> Covering index range scan using ix_..._jobs_due
+                                          (actual time=0.102..0.102 rows=1)
+```
+
+Índice coberto, uma linha, **0,1 ms**. A consulta não é o problema em lugar nenhum.
 
 ## Achados
 
@@ -144,7 +197,16 @@ O MySQL não tem `RETURNING`, então o provider precisa da transação explícit
 
 Isso torna a **aquisição em lote** uma medida com efeito previsível, e não mais uma hipótese: uma ida traz N jobs e divide o custo fixo por N. O ganho é maior justamente onde o custo por job é maior.
 
-**O SQL Server tem dois números que pedem sonda própria.** O enfileiramento é 3,3× mais lento que o do PostgreSQL para um `INSERT` simples — o candidato é o `WHERE NOT EXISTS (... WITH (UPDLOCK, SERIALIZABLE) ...)` que dá idempotência por id, já que `SERIALIZABLE` toma lock de intervalo e serializa inserções concorrentes por desenho. E a alocação é de 83 KB por job contra 22 KB do Npgsql, margem grande demais para atribuir só ao driver. Nenhum dos dois está diagnosticado: sem plano de execução na mão, seria chute.
+**O custo dominante é protocolo, e cada provider paga por um motivo diferente.** A sonda desfez as duas hipóteses que havia sobre o SQL Server e nomeou a do MySQL:
+
+| Provider | Onde vai o tempo |
+|---|---|
+| SQL Server | **O piso é alto: 2,1 ms para um `SELECT 1`.** Uma ida-e-volta vazia, em container local, custa o que deveria custar uma consulta inteira. O candidato é a criptografia por pacote — o `Microsoft.Data.SqlClient` 4.0+ usa `Encrypt=true` por padrão. Como é constante na profundidade, o `SERIALIZABLE` do `INSERT` idempotente está descartado: lock de intervalo apareceria como crescimento com a tabela, e não aparece. |
+| MySQL | **A transação explícita da aquisição.** A consulta custa 0,1 ms e a operação inteira custa 12,6 ms, ou 8,4× o piso. São `BEGIN`, `SELECT ... FOR UPDATE SKIP LOCKED`, `UPDATE` e `COMMIT`, mais o reset de sessão que o `MySqlConnector` manda ao tirar conexão do pool, mais o flush durável que o InnoDB faz no commit. A transação existe porque o MySQL não tem `RETURNING`, então o provider precisa segurar a linha entre a seleção e a atualização. |
+
+O piso do SQL Server é característica do ambiente de medição, não do Guará — mas contamina qualquer comparação entre providers feita nesta máquina, e por isso está registrado aqui em vez de virar "o SQL Server é mais lento".
+
+A captura de plano do SQL Server voltou vazia: `SET SHOWPLAN_TEXT ON` com comando parametrizado não devolveu linhas. Não foi perseguido porque a independência de profundidade já responde o que o plano responderia — varredura proporcional teria crescido dez vezes junto com a fila.
 
 **A alocação por job merece investigação.** 2,2 KB no in-memory e ~21 KB no PostgreSQL, por job executado. O driver e o JSON explicam parte da diferença, mas o número absoluto não está medido por etapa — é o benchmark de pipeline que ainda falta.
 
@@ -160,7 +222,6 @@ Registrado para não passar por cobertura completa:
 
 - **Pipeline de execução e pool de `JobContext`** — o custo que o framework acrescenta por job executado. É o número mais pedido e ainda não existe.
 - **Providers persistentes** — PostgreSQL, SQL Server, MySQL e MongoDB. Exigem container, o que não combina com o modelo de medição do BenchmarkDotNet; precisa de harness próprio.
-- **Sonda de diagnóstico para SQL Server e MySQL** — existe só para PostgreSQL (`--mode probe`). Sem ela, os dois achados do SQL Server acima continuam hipótese.
-- **MongoDB no harness** — o provider existe, o cenário não.
+- **MongoDB no harness e na sonda** — o provider existe, o cenário não.
 - **Comparação com Hangfire e Quartz** — o harness foi desenhado para receber um segundo cenário sem retrabalho, mas nenhum foi escrito.
 - **Comparação de baseline no CI.** Hoje os benchmarks rodam quando alguém os roda. Não há baseline versionado nem gate de regressão.

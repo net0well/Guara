@@ -39,7 +39,8 @@ Cada ADR usa o template mínimo:
 | [0013](0013-redis-como-acelerador.md) | Redis como acelerador (`Guara.Redis`), não como storage — emenda o 0009 | Aceito |
 | [0014](0014-enfileiramento-transacional.md) | Enfileiramento dentro da transação do chamador; `BeginTransactionAsync` removido | Aceito |
 | [0015](0015-elegibilidade-como-instante-indexavel.md) | Elegibilidade materializada em `eligible_at`; ordem de início passa a ser por elegibilidade | Aceito |
+| [0016](0016-aquisicao-em-lote.md) | Aquisição em lote dimensionada pela capacidade ociosa do worker | Aceito |
 
 ## Próximo número
 
-O próximo ADR é **0016**. Numeração sequencial, sem lacunas.
+O próximo ADR é **0017**. Numeração sequencial, sem lacunas.
