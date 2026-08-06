@@ -43,6 +43,10 @@ public static class ServerServiceCollectionExtensions
             options.Validate();
             return options;
         });
+        // Os laços coordenados dependem de eleição de líder: ligá-la aqui evita que quem
+        // usa o servidor precise descobrir sozinho que ela é obrigatória.
+        builder.AddGuaraCluster();
+
         builder.Services.TryAddSingleton<IGuaraServer>(sp => new GuaraServer(
             sp.GetRequiredService<IStorage>(),
             sp.GetRequiredService<IDispatcher>(),
@@ -50,6 +54,7 @@ public static class ServerServiceCollectionExtensions
             sp.GetRequiredService<IGuaraClient>(),
             sp.GetRequiredService<RecurrenceCalculator>(),
             sp.GetRequiredService<ContinuationPromoter>(),
+            sp.GetRequiredService<ILeaderElection>(),
             sp.GetRequiredService<ServerOptions>(),
             sp.GetRequiredService<DispatcherOptions>(),
             sp.GetRequiredService<WorkerOptions>(),

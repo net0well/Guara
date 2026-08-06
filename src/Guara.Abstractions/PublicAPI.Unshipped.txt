@@ -100,6 +100,11 @@ Guara.Abstractions.IJobInvoker.InvokeAsync(Guara.Abstractions.IJobContext! conte
 Guara.Abstractions.IJobMiddleware
 Guara.Abstractions.IJobMiddleware.InvokeAsync(Guara.Abstractions.IJobContext! context, Guara.Abstractions.JobDelegate! next, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
 Guara.Abstractions.IGuaraTransaction
+Guara.Abstractions.ILeaderElection
+Guara.Abstractions.ILeaderElection.TryAcquireAsync(string! role, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Abstractions.ILeadership?>
+Guara.Abstractions.ILeadership
+Guara.Abstractions.ILeadership.Lost.get -> System.Threading.CancellationToken
+Guara.Abstractions.ILeadership.Role.get -> string!
 Guara.Abstractions.IQueueSignal
 Guara.Abstractions.IQueueSignal.SignalAsync(string! queue, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
 Guara.Abstractions.IQueueSignal.WaitAsync(System.Collections.Generic.IReadOnlyList<string!>! queues, System.TimeSpan timeout, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<bool>

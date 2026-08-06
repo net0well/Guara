@@ -16,8 +16,8 @@ namespace Guara.Server;
 /// </summary>
 internal sealed class GuaraServer : IGuaraServer
 {
-    private const string MaintenanceLockKey = "guara:maintenance";
-    private const string RecurringLockKey = "guara:recurring";
+    private const string MaintenanceRole = "guara:maintenance";
+    private const string RecurringRole = "guara:recurring";
 
     private readonly IStorage _storage;
     private readonly IDispatcher _dispatcher;
@@ -25,6 +25,7 @@ internal sealed class GuaraServer : IGuaraServer
     private readonly IGuaraClient _client;
     private readonly RecurrenceCalculator _calculator;
     private readonly ContinuationPromoter _continuations;
+    private readonly ILeaderElection _election;
     private readonly ServerOptions _options;
     private readonly TimeProvider _time;
     private readonly ILogger<GuaraServer> _logger;
@@ -40,6 +41,7 @@ internal sealed class GuaraServer : IGuaraServer
     /// <param name="client">Enfileiramento das ocorrências promovidas.</param>
     /// <param name="calculator">Cálculo do próximo disparo dos recorrentes.</param>
     /// <param name="continuations">Varredura de recuperação das continuações.</param>
+    /// <param name="election">Coordenação entre nós dos laços que não se dividem.</param>
     /// <param name="options">Opções do servidor.</param>
     /// <param name="dispatcherOptions">Filas consumidas (exibidas na identidade do nó).</param>
     /// <param name="workerOptions">Concorrência máxima (exibida na identidade do nó).</param>
@@ -52,6 +54,7 @@ internal sealed class GuaraServer : IGuaraServer
         IGuaraClient client,
         RecurrenceCalculator calculator,
         ContinuationPromoter continuations,
+        ILeaderElection election,
         ServerOptions options,
         DispatcherOptions dispatcherOptions,
         WorkerOptions workerOptions,
@@ -64,6 +67,7 @@ internal sealed class GuaraServer : IGuaraServer
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(calculator);
         ArgumentNullException.ThrowIfNull(continuations);
+        ArgumentNullException.ThrowIfNull(election);
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(dispatcherOptions);
         ArgumentNullException.ThrowIfNull(workerOptions);
@@ -74,6 +78,7 @@ internal sealed class GuaraServer : IGuaraServer
         _client = client;
         _calculator = calculator;
         _continuations = continuations;
+        _election = election;
         _options = options;
         _time = time;
         _logger = logger;
@@ -188,18 +193,24 @@ internal sealed class GuaraServer : IGuaraServer
             {
                 await Task.Delay(_options.RecurringPollInterval, _time, ct);
 
-                // Lock com TTL de um ciclo: entre vários nós, só um promove por vez.
-                await using var recurringLock = await _storage.Locks.TryAcquireAsync(
-                    RecurringLockKey, _options.RecurringPollInterval, ct);
-                if (recurringLock is null)
+                // Entre vários nós, só o líder promove. A posse é renovada enquanto o
+                // ciclo roda: sem isso, um ciclo mais longo que a validade deixaria outro
+                // nó promover os mesmos recorrentes.
+                await using var lideranca = await _election.TryAcquireAsync(RecurringRole, ct);
+                if (lideranca is null)
                 {
                     continue;
                 }
 
+                // Perder a liderança no meio do ciclo interrompe o trabalho: quem deixou
+                // de ser líder não pode continuar promovendo.
+                using var cicloCts = CancellationTokenSource.CreateLinkedTokenSource(ct, lideranca.Lost);
+                var cicloCt = cicloCts.Token;
+
                 var now = _time.GetUtcNow();
-                foreach (var recurring in await _storage.Recurring.ListDueAsync(now, ct))
+                foreach (var recurring in await _storage.Recurring.ListDueAsync(now, cicloCt))
                 {
-                    await PromoteAsync(recurring, now, ct);
+                    await PromoteAsync(recurring, now, cicloCt);
                 }
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -265,25 +276,28 @@ internal sealed class GuaraServer : IGuaraServer
             {
                 await Task.Delay(_options.MaintenanceInterval, _time, ct);
 
-                // Lock com TTL de um ciclo: entre vários nós, só um executa a manutenção por vez.
-                await using var maintenanceLock = await _storage.Locks.TryAcquireAsync(
-                    MaintenanceLockKey, _options.MaintenanceInterval, ct);
-                if (maintenanceLock is null)
+                // Entre vários nós, só o líder faz manutenção. A posse é renovada
+                // enquanto o ciclo roda: purga de retenção longa pode passar da validade.
+                await using var lideranca = await _election.TryAcquireAsync(MaintenanceRole, ct);
+                if (lideranca is null)
                 {
                     continue;
                 }
+
+                using var cicloCts = CancellationTokenSource.CreateLinkedTokenSource(ct, lideranca.Lost);
+                var cicloCt = cicloCts.Token;
 
                 var now = _time.GetUtcNow();
 
                 // Continuações primeiro: pendências de pais já finalizados disparam antes
                 // de qualquer purga poder remover o pai.
-                await _continuations.SweepAsync(ct);
+                await _continuations.SweepAsync(cicloCt);
 
-                var deadServers = await _storage.Servers.RemoveExpiredAsync(now - _options.ServerTimeout, ct);
+                var deadServers = await _storage.Servers.RemoveExpiredAsync(now - _options.ServerTimeout, cicloCt);
                 var purgedSucceeded = await _storage.Jobs.PurgeAsync(
-                    JobState.Succeeded, now - _options.Retention.Succeeded, ct);
+                    JobState.Succeeded, now - _options.Retention.Succeeded, cicloCt);
                 var purgedFailed = await _storage.Jobs.PurgeAsync(
-                    JobState.Failed, now - _options.Retention.Failed, ct);
+                    JobState.Failed, now - _options.Retention.Failed, cicloCt);
 
                 if (deadServers > 0 || purgedSucceeded > 0 || purgedFailed > 0)
                 {

@@ -1,0 +1,8 @@
+Guara.Cluster.ClusterOptions
+Guara.Cluster.ClusterOptions.ClusterOptions() -> void
+Guara.Cluster.ClusterOptions.LeadershipTtl.get -> System.TimeSpan
+Guara.Cluster.ClusterOptions.LeadershipTtl.set -> void
+Guara.Cluster.ClusterOptions.RenewInterval.get -> System.TimeSpan
+Guara.Cluster.ClusterOptions.RenewInterval.set -> void
+Microsoft.Extensions.DependencyInjection.ClusterServiceCollectionExtensions
+static Microsoft.Extensions.DependencyInjection.ClusterServiceCollectionExtensions.AddGuaraCluster(this Guara.Abstractions.IGuaraBuilder! builder, System.Action<Guara.Cluster.ClusterOptions!>? configure = null) -> Guara.Abstractions.IGuaraBuilder!

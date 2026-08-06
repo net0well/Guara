@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Guara.Cluster</PackageId>
+    <Description>Coordenação entre nós do Guará: eleição de líder com posse renovada sobre o lock distribuído do storage, para que o trabalho que não se divide entre nós — promoção de recorrentes, manutenção — rode em um só.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Guara.Abstractions\Guara.Abstractions.csproj" />
+    <ProjectReference Include="..\Guara.Configuration\Guara.Configuration.csproj" />
+    <ProjectReference Include="..\Guara.Storage\Guara.Storage.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <!-- A eleição é alcançada por ILeaderElection; os testes a constroem direto. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Guara.Cluster.Tests" />
+  </ItemGroup>
+
+</Project>
