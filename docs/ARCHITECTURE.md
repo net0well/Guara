@@ -116,7 +116,7 @@ Guara.sln
 │   ├── Guara.Configuration         # binding de opções
 │   ├── Guara.Extensions            # extensões utilitárias
 │   │
-│   ├── Guara.Cluster               # leader election, heartbeat, node discovery, failover, locks distribuídos
+│   ├── Guara.Cluster               # eleição de líder com posse renovada, sobre o lock distribuído do storage
 │   │
 │   ├── Guara.Cli                   # ferramenta de linha de comando
 │   ├── Guara.Analyzers             # analisadores Roslyn (enforçam as regras deste doc)

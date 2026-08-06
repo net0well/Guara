@@ -23,6 +23,7 @@ import { InstantPipe } from '../../shared/instant.pipe';
               <th>{{ i18n.t('machine') }}</th>
               <th>{{ i18n.t('queues') }}</th>
               <th>{{ i18n.t('concurrency') }}</th>
+              <th>{{ i18n.t('roles') }}</th>
               <th>{{ i18n.t('startedAt') }}</th>
               <th>{{ i18n.t('heartbeat') }}</th>
             </tr>
@@ -34,16 +35,27 @@ import { InstantPipe } from '../../shared/instant.pipe';
                 <td>{{ s.machineName }}</td>
                 <td class="mono">{{ s.queues.join(', ') }}</td>
                 <td>{{ s.maxConcurrency }}</td>
+                <td class="papeis">
+                  @for (papel of s.roles; track papel) {
+                    <span class="badge papel">{{ rotuloPapel(papel) }}</span>
+                  } @empty {
+                    <span class="suave" aria-hidden="true">—</span>
+                  }
+                </td>
                 <td class="suave">{{ s.startedAt | instant }}</td>
                 <td class="suave">{{ s.lastHeartbeat | instant }}</td>
               </tr>
             } @empty {
-              <tr><td colspan="6" class="vazio">{{ servers.isLoading() ? i18n.t('loading') : i18n.t('empty') }}</td></tr>
+              <tr><td colspan="7" class="vazio">{{ servers.isLoading() ? i18n.t('loading') : i18n.t('empty') }}</td></tr>
             }
           </tbody>
         </table>
       </div>
     }
+  `,
+  styles: `
+    .papeis { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .papel { background: var(--cartao-2); color: var(--marca); border-color: var(--borda); }
   `,
 })
 export class ServersComponent {
@@ -53,6 +65,21 @@ export class ServersComponent {
   protected readonly describe = describeError;
 
   protected readonly servers = resource({ loader: () => this.api.servers() });
+
+  /**
+   * Traduz os papéis do framework. Papel de terceiro cai no próprio nome, que é melhor
+   * do que esconder um papel que o painel não conhece.
+   */
+  protected rotuloPapel(papel: string): string {
+    switch (papel) {
+      case 'guara:recurring':
+        return this.i18n.t('roleRecurring');
+      case 'guara:maintenance':
+        return this.i18n.t('roleMaintenance');
+      default:
+        return papel;
+    }
+  }
 
   constructor() {
     effect(() => {

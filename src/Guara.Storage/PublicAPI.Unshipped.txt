@@ -249,6 +249,8 @@ Guara.Storage.ServerNode.MaxConcurrency.get -> int
 Guara.Storage.ServerNode.MaxConcurrency.init -> void
 Guara.Storage.ServerNode.Queues.get -> string![]!
 Guara.Storage.ServerNode.Queues.init -> void
+Guara.Storage.ServerNode.Roles.get -> string![]!
+Guara.Storage.ServerNode.Roles.init -> void
 Guara.Storage.ServerNode.ServerNode() -> void
 Guara.Storage.ServerNode.StartedAt.get -> System.DateTimeOffset
 Guara.Storage.ServerNode.StartedAt.init -> void

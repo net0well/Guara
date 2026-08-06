@@ -107,4 +107,4 @@ Created → Enqueued → Scheduled → Processing → (Succeeded | Failed)
 - **`CancellationToken` sempre propagado** por todo o pipeline e chamadas de storage.
 - Efeito colateral externo já concluído **não** deve ser revertido por cancelamento tardio: a persistência de estado final usa um token não-cancelável quando o efeito já ocorreu (padrão análogo ao do domínio HTTP).
 - Recurring jobs: ao `JobCompleted`, o `Scheduler` recalcula o próximo `NextRun` e emite novo `JobScheduled`.
-- Cluster: apenas o nó líder despacha jobs de agendamento; ver `Guara.Cluster` em [components.md](components.md).
+- Cluster: a **execução de jobs é distribuída** — todo nó busca e executa, coordenado por posse individual (lease). Só o que não se divide roda sob liderança: promoção de recorrentes e manutenção. Ver `Guara.Cluster` em [components.md](components.md).

@@ -24,4 +24,10 @@ public sealed record ServerNode
 
     /// <summary>Máximo de jobs executando simultaneamente no nó.</summary>
     public int MaxConcurrency { get; init; }
+
+    /// <summary>
+    /// Papéis coordenados que este nó lidera no momento (ver <c>ClusterRoles</c>). Vazio
+    /// quando o nó só executa jobs — que é o caso de todos menos um, por papel.
+    /// </summary>
+    public string[] Roles { get; init; } = [];
 }

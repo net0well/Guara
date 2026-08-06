@@ -86,6 +86,14 @@ Delayed/recorrentes disparam **na primeira varredura elegível após vencer** �
 2. Em execução: terminam até `ShutdownDrainTimeout` (30s default); excedentes recebem cancelamento cooperativo.
 3. Sinalizados-mas-não-iniciados: descartados localmente — a posse expira e **outro nó (ou o restart) reprocessa**. Nada se perde no shutdown normal.
 
+## Coordenação entre nós
+
+- **Executar job é distribuído:** todo nó busca e executa; a exclusão entre nós é por job, via posse com lease.
+- **O que não se divide roda sob liderança:** promoção de recorrentes (`guara:recurring`) e manutenção (`guara:maintenance`). Um nó por papel, por vez.
+- A liderança é **mantida entre ciclos**, não retomada a cada um: quem assume segue com o papel até parar ou perder a posse. Um líder vivo mas lento **não** cede o papel espontaneamente — alternar de nó não aceleraria trabalho que não se divide ([ADR-0017](adr/0017-eleicao-de-lider.md)).
+- A posse é renovada em segundo plano. Quando a renovação falha — nó particionado, storage fora, pausa longa —, `ILeadership.Lost` é cancelado e o ciclo em andamento para. Mesmo contrato da posse de job: descobriu que não é mais dono, para de agir como dono.
+- **`ServerNode.Roles`** informa os papéis que cada nó detém no instante do último anúncio. É publicação best-effort: a posse é o lock, não a linha no registro, então a lista pode estar atrasada — e um cluster inteiro sem papel nenhum é sintoma de storage indisponível, não de ausência de trabalho.
+
 ## Relógio e fusos
 
 - Relógio via `TimeProvider` (testável); tempos persistidos em UTC.

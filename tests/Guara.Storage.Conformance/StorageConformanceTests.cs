@@ -510,6 +510,58 @@ public abstract class StorageConformanceTests : IAsyncDisposable
         Assert.Empty(await storage.Servers.ListAsync(CancellationToken.None));
     }
 
+    /// <summary>
+    /// Os papéis liderados vão e voltam do storage, e um reanúncio com menos papéis
+    /// <b>apaga</b> os que saíram. Um provider que só acrescentasse deixaria o painel
+    /// apontando para sempre um líder que já devolveu o papel.
+    /// </summary>
+    [Fact]
+    public async Task Servers_Announce_RoundTripsRolesAndClearsReleasedOnes()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        var node = new ServerNode
+        {
+            Id = "n1",
+            MachineName = "maquina",
+            StartedAt = T0,
+            LastHeartbeat = T0,
+            Queues = ["default"],
+            MaxConcurrency = 4,
+            Roles = ["guara:recurring", "guara:maintenance"],
+        };
+        await storage.Servers.AnnounceAsync(node, CancellationToken.None);
+
+        var comPapeis = Assert.Single(await storage.Servers.ListAsync(CancellationToken.None));
+        Assert.Equal(["guara:maintenance", "guara:recurring"], comPapeis.Roles.Order(StringComparer.Ordinal));
+
+        await storage.Servers.AnnounceAsync(node with { Roles = ["guara:recurring"] }, CancellationToken.None);
+
+        var apos = Assert.Single(await storage.Servers.ListAsync(CancellationToken.None));
+        Assert.Equal(["guara:recurring"], apos.Roles);
+
+        await storage.Servers.AnnounceAsync(node with { Roles = [] }, CancellationToken.None);
+
+        var semPapeis = Assert.Single(await storage.Servers.ListAsync(CancellationToken.None));
+        Assert.Empty(semPapeis.Roles);
+    }
+
+    /// <summary>
+    /// Nó anunciado sem papel nenhum lê de volta como lista vazia, nunca como <c>null</c> —
+    /// inclusive nos providers em que a coluna pode faltar num registro antigo.
+    /// </summary>
+    [Fact]
+    public async Task Servers_Announce_WithoutRoles_ReadsBackEmpty()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Servers.AnnounceAsync(new ServerNode
+        {
+            Id = "n1", MachineName = "maquina", StartedAt = T0, LastHeartbeat = T0,
+        }, CancellationToken.None);
+
+        var listed = Assert.Single(await storage.Servers.ListAsync(CancellationToken.None));
+        Assert.Empty(listed.Roles);
+    }
+
     [Fact]
     public async Task Servers_RemoveExpired_RemovesOnlyStaleNodes()
     {

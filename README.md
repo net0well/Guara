@@ -97,7 +97,8 @@ O nome vem do **lobo-guará**, animal veloz e resiliente nativo do Brasil. Made 
 | Storage plugável | Contratos comuns com kit de conformidade que todo provider herda. Hoje: PostgreSQL, SQL Server, MySQL, MongoDB e In-Memory — troque com uma linha |
 | Observabilidade | Logs estruturados, métricas (`System.Diagnostics.Metrics`), traces (`ActivitySource`) |
 | Seguro por padrão | O dashboard nega acesso anônimo a menos que configurado explicitamente; o que não foi concedido é negado |
-| _Planejado_ | Processamento distribuído (eleição de líder, failover), demais providers de storage, exporters OpenTelemetry e CLI |
+| Multi-nó | Execução distribuída por posse com lease; o que não se divide (recorrentes, manutenção) roda sob eleição de líder com posse renovada, e o painel mostra qual nó responde por cada papel |
+| _Planejado_ | Exporters OpenTelemetry, CLI e autenticação em pacote próprio |
 
 ## Começando
 
@@ -492,10 +493,11 @@ Toda a configuração segue o padrão Options do .NET, sob a seção `Guara` (va
 | **Publicação `0.1.0-preview.3`: wakeup por sinal de fila e o acelerador Redis** | ✅ Concluído |
 | Enfileiramento dentro da transação do chamador (PostgreSQL, SQL Server, MySQL) | ✅ Concluído |
 | Benchmarks: serialização, cron, enfileiramento e storage in-memory | ✅ Concluído |
-| `Guara.Extensions`, `Guara.Authentication` | 🕓 Planejado |
-| Cluster e coordenação distribuída, OpenTelemetry, CLI, benchmarks | 🕓 Planejado |
-| Documentação de usuário e guia de migração do Hangfire | 🕓 Planejado |
+| Aquisição em lote e elegibilidade indexada: 25× no PostgreSQL, 20× no MySQL, 10,6× no SQL Server | ✅ Concluído |
+| `Guara.Cluster`: eleição de líder com posse renovada, papéis visíveis no painel | ✅ Concluído |
+| Documentação de usuário, projeto de exemplo e guia de migração do Hangfire | 🕓 Planejado |
 | **1.0** — API congelada, transações resolvidas no contrato, rodagem real | 🕓 Planejado |
+| `Guara.OpenTelemetry` (1.1) · `Guara.Cli` e `Guara.Authentication` (1.2) | 🕓 Planejado |
 
 ## Semântica e garantias
 

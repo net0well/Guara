@@ -74,6 +74,7 @@ internal sealed class MySqlSchemaInitializer(MySqlDataSource dataSource, MySqlSt
             }
 
             await MigrarElegibilidadeAsync(connection, options.TablePrefix, ct);
+            await MigrarPapeisAsync(connection, options.TablePrefix, ct);
         }
         finally
         {
@@ -135,6 +136,24 @@ internal sealed class MySqlSchemaInitializer(MySqlDataSource dataSource, MySqlSt
         }
     }
 
+    /// <summary>
+    /// Acrescenta a coluna de papéis a uma tabela de nós já existente. O default cobre as
+    /// linhas antigas: nó que ainda não reanunciou aparece sem papel, e o próximo anúncio
+    /// corrige.
+    /// </summary>
+    private static async Task MigrarPapeisAsync(MySqlConnection connection, string p, CancellationToken ct)
+    {
+        if (await ExisteAsync(connection, ct,
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() " +
+                $"AND table_name = '{p}servers' AND column_name = 'roles'"))
+        {
+            return;
+        }
+
+        await ExecutarAsync(connection, ct,
+            $"ALTER TABLE {p}servers ADD COLUMN roles varchar(2000) NOT NULL DEFAULT '[]'");
+    }
+
     private static async Task<bool> ExisteAsync(MySqlConnection connection, CancellationToken ct, string consulta)
     {
         await using var command = connection.CreateCommand();
@@ -179,6 +198,7 @@ internal sealed class MySqlSchemaInitializer(MySqlDataSource dataSource, MySqlSt
                 last_heartbeat  datetime(6)   NOT NULL,
                 queues          varchar(2000) NOT NULL DEFAULT '[]',
                 max_concurrency int           NOT NULL DEFAULT 0,
+                roles           varchar(2000) NOT NULL DEFAULT '[]',
                 PRIMARY KEY (id)
             ) ENGINE=InnoDB
             """;

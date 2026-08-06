@@ -45,7 +45,8 @@ internal sealed record ServerDto(
     DateTimeOffset StartedAt,
     DateTimeOffset LastHeartbeat,
     string[] Queues,
-    int MaxConcurrency);
+    int MaxConcurrency,
+    string[] Roles);
 
 /// <summary>Definição recorrente para o painel.</summary>
 internal sealed record RecurringDto(

@@ -23,20 +23,22 @@ internal sealed class SqlServerServerRegistry(
                 started_at = @startedAt,
                 last_heartbeat = @lastHeartbeat,
                 queues = @queues,
-                max_concurrency = @maxConcurrency
+                max_concurrency = @maxConcurrency,
+                roles = @roles
             WHERE id = @id;
 
             IF @@ROWCOUNT = 0
-            INSERT INTO {s}.servers (id, machine_name, started_at, last_heartbeat, queues, max_concurrency)
-            SELECT @id, @machineName, @startedAt, @lastHeartbeat, @queues, @maxConcurrency
+            INSERT INTO {s}.servers (id, machine_name, started_at, last_heartbeat, queues, max_concurrency, roles)
+            SELECT @id, @machineName, @startedAt, @lastHeartbeat, @queues, @maxConcurrency, @roles
             WHERE NOT EXISTS (SELECT 1 FROM {s}.servers WITH (UPDLOCK, SERIALIZABLE) WHERE id = @id);
             """;
         command.Parameters.AddWithValue("@id", node.Id);
         command.Parameters.AddWithValue("@machineName", node.MachineName);
         command.Parameters.AddWithValue("@startedAt", node.StartedAt);
         command.Parameters.AddWithValue("@lastHeartbeat", node.LastHeartbeat);
-        command.Parameters.AddWithValue("@queues", SerializarFilas(node.Queues));
+        command.Parameters.AddWithValue("@queues", SerializarLista(node.Queues));
         command.Parameters.AddWithValue("@maxConcurrency", node.MaxConcurrency);
+        command.Parameters.AddWithValue("@roles", SerializarLista(node.Roles));
         await command.ExecuteNonQueryAsync(ct);
     }
 
@@ -67,7 +69,7 @@ internal sealed class SqlServerServerRegistry(
         await using var connection = await connections.OpenAsync(ct);
         await using var command = connection.CreateCommand();
         command.CommandText = $"""
-            SELECT id, machine_name, started_at, last_heartbeat, queues, max_concurrency
+            SELECT id, machine_name, started_at, last_heartbeat, queues, max_concurrency, roles
             FROM {s}.servers ORDER BY id
             """;
 
@@ -81,8 +83,9 @@ internal sealed class SqlServerServerRegistry(
                 MachineName = reader.GetString(1),
                 StartedAt = reader.GetFieldValue<DateTimeOffset>(2),
                 LastHeartbeat = reader.GetFieldValue<DateTimeOffset>(3),
-                Queues = DesserializarFilas(reader.GetString(4)),
+                Queues = DesserializarLista(reader.GetString(4)),
                 MaxConcurrency = reader.GetInt32(5),
+                Roles = DesserializarLista(reader.GetString(6)),
             });
         }
 
@@ -100,10 +103,10 @@ internal sealed class SqlServerServerRegistry(
     }
 
     // O SQL Server não tem coluna de array como o text[] do PostgreSQL. JSON preserva o
-    // nome exato de cada fila, inclusive vírgula e espaço, que um separador simples perderia.
-    private static string SerializarFilas(string[] queues)
-        => JsonSerializer.Serialize(queues, SqlServerJsonContext.Default.StringArray);
+    // nome exato de cada item, inclusive vírgula e espaço, que um separador simples perderia.
+    private static string SerializarLista(string[] itens)
+        => JsonSerializer.Serialize(itens, SqlServerJsonContext.Default.StringArray);
 
-    private static string[] DesserializarFilas(string payload)
+    private static string[] DesserializarLista(string payload)
         => JsonSerializer.Deserialize(payload, SqlServerJsonContext.Default.StringArray) ?? [];
 }

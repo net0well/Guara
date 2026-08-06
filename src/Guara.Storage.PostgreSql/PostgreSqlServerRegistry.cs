@@ -11,14 +11,15 @@ internal sealed class PostgreSqlServerRegistry(
     {
         await schema.EnsureAsync(ct);
         await using var command = dataSource.CreateCommand($"""
-            INSERT INTO {s}.servers (id, machine_name, started_at, last_heartbeat, queues, max_concurrency)
-            VALUES (@id, @machineName, @startedAt, @lastHeartbeat, @queues, @maxConcurrency)
+            INSERT INTO {s}.servers (id, machine_name, started_at, last_heartbeat, queues, max_concurrency, roles)
+            VALUES (@id, @machineName, @startedAt, @lastHeartbeat, @queues, @maxConcurrency, @roles)
             ON CONFLICT (id) DO UPDATE SET
                 machine_name = EXCLUDED.machine_name,
                 started_at = EXCLUDED.started_at,
                 last_heartbeat = EXCLUDED.last_heartbeat,
                 queues = EXCLUDED.queues,
-                max_concurrency = EXCLUDED.max_concurrency
+                max_concurrency = EXCLUDED.max_concurrency,
+                roles = EXCLUDED.roles
             """);
         command.Parameters.AddWithValue("id", node.Id);
         command.Parameters.AddWithValue("machineName", node.MachineName);
@@ -26,6 +27,7 @@ internal sealed class PostgreSqlServerRegistry(
         command.Parameters.AddWithValue("lastHeartbeat", node.LastHeartbeat);
         command.Parameters.AddWithValue("queues", node.Queues);
         command.Parameters.AddWithValue("maxConcurrency", node.MaxConcurrency);
+        command.Parameters.AddWithValue("roles", node.Roles);
         await command.ExecuteNonQueryAsync(ct);
     }
 
@@ -51,7 +53,7 @@ internal sealed class PostgreSqlServerRegistry(
     {
         await schema.EnsureAsync(ct);
         await using var command = dataSource.CreateCommand($"""
-            SELECT id, machine_name, started_at, last_heartbeat, queues, max_concurrency
+            SELECT id, machine_name, started_at, last_heartbeat, queues, max_concurrency, roles
             FROM {s}.servers ORDER BY id
             """);
 
@@ -67,6 +69,7 @@ internal sealed class PostgreSqlServerRegistry(
                 LastHeartbeat = reader.GetFieldValue<DateTimeOffset>(3),
                 Queues = reader.GetFieldValue<string[]>(4),
                 MaxConcurrency = reader.GetInt32(5),
+                Roles = reader.GetFieldValue<string[]>(6),
             });
         }
 

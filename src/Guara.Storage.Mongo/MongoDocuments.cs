@@ -174,6 +174,7 @@ internal static class MongoDocuments
         ["lastHeartbeat"] = Instant(node.LastHeartbeat),
         ["queues"] = new BsonArray(node.Queues),
         ["maxConcurrency"] = node.MaxConcurrency,
+        ["roles"] = new BsonArray(node.Roles),
     };
 
     public static ServerNode ReadServer(BsonDocument document) => new()
@@ -184,6 +185,12 @@ internal static class MongoDocuments
         LastHeartbeat = ReadInstant(document["lastHeartbeat"]),
         Queues = [.. document["queues"].AsBsonArray.Select(fila => fila.AsString)],
         MaxConcurrency = document["maxConcurrency"].AsInt32,
+
+        // Documento gravado antes da coluna existir não tem o campo: nó sem papel até
+        // reanunciar, em vez de erro de leitura.
+        Roles = document.TryGetValue("roles", out var papeis)
+            ? [.. papeis.AsBsonArray.Select(papel => papel.AsString)]
+            : [],
     };
 
     public static BsonDocument FromCalendar(CalendarRecord calendar) => new()

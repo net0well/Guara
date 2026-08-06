@@ -39,6 +39,22 @@ A implementação vive em **`Guara.Cluster`**, sobre `ILockProvider`, e faz o qu
 
 O `GuaraServer` deixa de adquirir lock direto e passa a pedir liderança pelos papéis `recurring` e `maintenance`.
 
+### A liderança é mantida, não retomada a cada ciclo
+
+Quem assume um papel **continua com ele** até parar ou perder a posse — não devolve no fim do ciclo para disputar de novo no próximo.
+
+Disputar a cada ciclo daria o mesmo resultado para a exclusão mútua, e por isso a diferença é fácil de não ver. Mas ela custa duas coisas. A primeira é que o papel fica **sem dono na maior parte do tempo**: entre um ciclo e outro ninguém lidera, então não há o que um nó informe sobre si, e "qual nó responde pelos recorrentes" deixa de ser uma pergunta respondível — o painel mostraria vazio quase sempre e piscaria no resto. A segunda é que cada ciclo paga uma disputa de lock que a renovação em segundo plano já mantém de graça.
+
+Manter a posse também torna o comportamento o que o nome promete: eleição de líder, e não exclusão mútua por ciclo.
+
+A contrapartida é que um líder vivo mas lento não cede o papel espontaneamente — só perde a posse se a renovação falhar. Isso é o comportamento correto para trabalho que não se divide: alternar de nó não acelera a promoção de recorrentes, e um líder estável evita que dois nós se revezem no meio de ciclos longos.
+
+### Os papéis liderados aparecem no registro do nó
+
+`ServerNode` ganha `Roles`, e o nó publica no próprio registro os papéis que detém no momento em que assume ou devolve cada um. É o que permite ao painel responder "quem lidera o quê" sem inventar um mecanismo de descoberta à parte, e o que torna visível um cluster em que ninguém lidera — sintoma de storage indisponível.
+
+A publicação é best-effort: a posse do papel é o lock, não a linha no registro. Falhar ao publicar deixa o painel desatualizado até o próximo anúncio, e nunca custa a liderança.
+
 ### Fencing token: não entra, e o motivo importa
 
 A suspeita que abriu este trabalho era que `ILockHandle` precisaria de um **fencing token** — um número monotônico que o recurso verifica, para barrar um líder que já perdeu a posse mas ainda não percebeu.
@@ -55,13 +71,13 @@ E o projeto já resolve exatamente esta classe de problema de outro jeito, em pr
 
 ### O que fica de fora
 
-Descoberta de nó no painel, políticas de failover configuráveis e `Guara.Distributed` são aditivos: não tocam contrato publicado e cabem depois do congelamento.
+Políticas de failover configuráveis — preferência de nó, cessão voluntária do papel, peso por capacidade. Nada disso tem caso de uso concreto hoje, e todas são aditivas sobre `ILeaderElection`.
 
 ## Consequências
 
-**Ganhos:** a janela de duplicação em ciclo longo fecha; a coordenação entre nós deixa de ser efeito colateral de um lock e vira conceito nomeado, com teste próprio; e o congelamento da API ganha a certeza de que `ILockProvider` está no formato final.
+**Ganhos:** a janela de duplicação em ciclo longo fecha; a coordenação entre nós deixa de ser efeito colateral de um lock e vira conceito nomeado, com teste próprio; o painel passa a mostrar qual nó responde por cada papel; e o congelamento da API ganha a certeza de que `ILockProvider` está no formato final.
 
-**Custos:** mais um pacote e mais um contrato em `Guara.Abstractions`; e quem liderar passa a manter uma tarefa de renovação em segundo plano por papel, que é custo pequeno e constante.
+**Custos:** mais um pacote e mais um contrato em `Guara.Abstractions`; quem liderar mantém uma tarefa de renovação em segundo plano por papel, que é custo pequeno e constante; e `ServerNode` ganha uma coluna, com migração idempotente nos cinco providers — a tabela pré-existente recebe o default vazio e o próximo anúncio a preenche.
 
 **Aceito conscientemente:** sem fencing token, um nó em pausa longa de GC pode, em teoria, agir por um instante depois de a posse ter expirado. É a mesma exposição que a posse de job já tem desde sempre, e fechá-la exigiria que todo caminho de escrita do storage verificasse token.
 

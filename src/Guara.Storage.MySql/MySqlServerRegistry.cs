@@ -16,21 +16,23 @@ internal sealed class MySqlServerRegistry(
         await using var connection = await dataSource.OpenConnectionAsync(ct);
         await using var command = connection.CreateCommand();
         command.CommandText = $"""
-            INSERT INTO {p}servers (id, machine_name, started_at, last_heartbeat, queues, max_concurrency)
-            VALUES (@id, @machineName, @startedAt, @lastHeartbeat, @queues, @maxConcurrency)
+            INSERT INTO {p}servers (id, machine_name, started_at, last_heartbeat, queues, max_concurrency, roles)
+            VALUES (@id, @machineName, @startedAt, @lastHeartbeat, @queues, @maxConcurrency, @roles)
             ON DUPLICATE KEY UPDATE
                 machine_name = VALUES(machine_name),
                 started_at = VALUES(started_at),
                 last_heartbeat = VALUES(last_heartbeat),
                 queues = VALUES(queues),
-                max_concurrency = VALUES(max_concurrency)
+                max_concurrency = VALUES(max_concurrency),
+                roles = VALUES(roles)
             """;
         command.Parameters.AddWithValue("@id", node.Id);
         command.Parameters.AddWithValue("@machineName", node.MachineName);
         command.Parameters.AddWithValue("@startedAt", MySqlTime.ToDatabase(node.StartedAt));
         command.Parameters.AddWithValue("@lastHeartbeat", MySqlTime.ToDatabase(node.LastHeartbeat));
-        command.Parameters.AddWithValue("@queues", SerializarFilas(node.Queues));
+        command.Parameters.AddWithValue("@queues", SerializarLista(node.Queues));
         command.Parameters.AddWithValue("@maxConcurrency", node.MaxConcurrency);
+        command.Parameters.AddWithValue("@roles", SerializarLista(node.Roles));
         await command.ExecuteNonQueryAsync(ct);
     }
 
@@ -61,7 +63,7 @@ internal sealed class MySqlServerRegistry(
         await using var connection = await dataSource.OpenConnectionAsync(ct);
         await using var command = connection.CreateCommand();
         command.CommandText = $"""
-            SELECT id, machine_name, started_at, last_heartbeat, queues, max_concurrency
+            SELECT id, machine_name, started_at, last_heartbeat, queues, max_concurrency, roles
             FROM {p}servers ORDER BY id
             """;
 
@@ -75,8 +77,9 @@ internal sealed class MySqlServerRegistry(
                 MachineName = reader.GetString(1),
                 StartedAt = MySqlTime.FromDatabase(reader.GetDateTime(2)),
                 LastHeartbeat = MySqlTime.FromDatabase(reader.GetDateTime(3)),
-                Queues = DesserializarFilas(reader.GetString(4)),
+                Queues = DesserializarLista(reader.GetString(4)),
                 MaxConcurrency = reader.GetInt32(5),
+                Roles = DesserializarLista(reader.GetString(6)),
             });
         }
 
@@ -94,10 +97,10 @@ internal sealed class MySqlServerRegistry(
     }
 
     // O MySQL não tem coluna de array como o text[] do PostgreSQL. JSON preserva o nome
-    // exato de cada fila, inclusive vírgula e espaço, que um separador simples perderia.
-    private static string SerializarFilas(string[] queues)
-        => JsonSerializer.Serialize(queues, MySqlJsonContext.Default.StringArray);
+    // exato de cada item, inclusive vírgula e espaço, que um separador simples perderia.
+    private static string SerializarLista(string[] itens)
+        => JsonSerializer.Serialize(itens, MySqlJsonContext.Default.StringArray);
 
-    private static string[] DesserializarFilas(string payload)
+    private static string[] DesserializarLista(string payload)
         => JsonSerializer.Deserialize(payload, MySqlJsonContext.Default.StringArray) ?? [];
 }
