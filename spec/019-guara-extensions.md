@@ -1,5 +1,7 @@
 # Spec 019: `Guara.Extensions` — Extensões Utilitárias
 
+> ⚠️ **A forma de enfileiramento descrita aqui foi substituída por [ADR-0020](../docs/adr/0020-enfileiramento-por-fabrica-tipada.md) (2026-08-06).** Onde a spec mostra `EnfileirarAsync(() => svc.FazerAlgo())`, o que existe é a fábrica que o source generator emite: `SvcGuara.FazerAlgo()`. Não há sobrecarga com lambda — capturar a expressão exigiria reflection em runtime. O resto da spec continua valendo.
+
 **Status:** Approved (2026-07-16)
 **Date:** 2026-07-16
 **Componente:** `Guara.Extensions`

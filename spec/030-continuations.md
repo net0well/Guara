@@ -1,5 +1,7 @@
 # Spec 030: Continuations — Encadeamento de Jobs
 
+> ⚠️ **A forma de enfileiramento nos exemplos foi substituída por [ADR-0020](../docs/adr/0020-enfileiramento-por-fabrica-tipada.md) (2026-08-06).** `ContinuarComAsync` recebe `JobDescriptor`, produzido pela fábrica que o source generator emite — não uma lambda. O comportamento de encadeamento descrito aqui continua valendo.
+
 **Status:** Approved (2026-07-16)
 **Date:** 2026-07-16
 **Escopo:** feature transversal — `Guara.Abstractions` (contrato), `Guara.Core`/`Guara.Scheduler` (comportamento), `Guara.Storage` (persistência do vínculo)

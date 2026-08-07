@@ -1,10 +1,19 @@
 using System.Security.Cryptography;
 using Guara.Core;
 using Guara.Host;
+using Guara.Host.Endpoints;
+using Guara.Host.Repositories;
+using Guara.Host.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-// App de exemplo do Guará: um único processo que executa os jobs (servidor) e serve o
-// dashboard em tempo real. É a referência de "como montar o Guará" ponta a ponta.
+// App de exemplo do Guará: uma API de pedidos que executa os jobs no próprio processo e
+// serve o dashboard em tempo real. É a referência de "como montar o Guará" ponta a ponta,
+// no layout que um projeto real teria — Controllers, Services, Repositories e Jobs.
+//
+// O fluxo que o exemplo demonstra:
+//   POST /api/pedidos  →  PedidosController  →  PedidoService  →  IPedidoRepository
+//                                             └→ enfileira confirmação e cobrança
+//                                                (a cobrança encadeia o aviso de recusa)
 //
 // Rode:  dotnet run --project samples/Guara.Host
 // Abra:  http://localhost:5080/guara   (a senha do login sai no log do boot)
@@ -54,12 +63,22 @@ var dashboardPassword = string.IsNullOrWhiteSpace(senhaConfigurada)
 guara.AddGuaraDashboard(dash => dash
     .UseGuaraAuthentication(auth => auth.ComLoginFixo(dashboardUser, dashboardPassword)));
 
-// Serviço e semeador dos dados de demonstração (jobs variados + atividade contínua).
-builder.Services.AddSingleton<DemoService>();
-builder.Services.AddHostedService<DemoSeeder>();
+// A aplicação de exemplo. As classes de job NÃO são registradas aqui: AddGuaraJobs() já
+// registrou cada uma a partir do [GuaraJob], com o código gerado em compilação.
+builder.Services.AddSingleton<IPedidoRepository, PedidoRepository>();
+builder.Services.AddScoped<PedidoService>();
+
+// Serialização dos contratos HTTP pelo contexto gerado, sem reflection: é o que permite ao
+// exemplo publicar em Native AOT como o resto do Guará.
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.TypeInfoResolverChain.Insert(0, PedidosJsonContext.Default));
+
+// Só para a demonstração ter movimento sem ninguém chamar a API na mão.
+builder.Services.AddHostedService<GeradorDeTrafego>();
 
 var app = builder.Build();
 
+app.MapPedidos();
 app.MapGuaraDashboard();
 
 app.Logger.LogInformation(

@@ -1,5 +1,7 @@
 # Spec 029: `Guara.SourceGenerators` — Source Generators
 
+> ⚠️ **O AC-3 ("Expressão compilada") foi substituído por [ADR-0020](../docs/adr/0020-enfileiramento-por-fabrica-tipada.md) (2026-08-06).** O gerador não interpreta expressões no call site: ele lê `[GuaraJob]` no método e emite uma fábrica tipada. Não existe sobrecarga com lambda. O resto da spec — registro sem reflection, invocação gerada, diagnósticos — continua valendo e está implementado.
+
 **Status:** Approved (2026-07-16)
 **Date:** 2026-07-16
 **Componente:** `Guara.SourceGenerators`

@@ -5,6 +5,18 @@
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <UserSecretsId>guara-host</UserSecretsId>
+
+    <!--
+      Os endpoints são Minimal API, e não controllers MVC, porque o MVC não suporta trimming
+      nem Native AOT — o exemplo do Guará não pode abrir exceção justamente na promessa que
+      o framework faz.
+
+      O Request Delegate Generator resolve o binding de cada endpoint em compilação. Sem ele,
+      MapGet/MapPost caem no caminho por reflection (IL2026/IL3050): é por isso que o
+      Guara.Dashboard.Api, sendo biblioteca, declara IsAotCompatible=false — o RDG só roda no
+      app consumidor, que é este projeto.
+    -->
+    <EnableRequestDelegateGenerator>true</EnableRequestDelegateGenerator>
   </PropertyGroup>
 
   <ItemGroup>

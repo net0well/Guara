@@ -67,6 +67,8 @@ Install only what you use — the core runs on its own and everything else is op
 
 Guará is an open source **job scheduler for .NET**, in the same problem space as Hangfire: fire-and-forget jobs, delayed execution, cron-based recurring jobs, automatic retries, distributed processing across nodes, and a real-time dashboard to observe and operate everything.
 
+> Coming from Hangfire? The [migration guide](docs/migracao-do-hangfire.md) (in pt-BR) maps the API and leads with the difference that surprises people the most: there is **no lambda** in enqueuing, and the reason is the AOT guarantee.
+
 What makes it different is the way it is built:
 
 - **Component-based architecture.** There are no traditional layers. Every responsibility — scheduling, dispatching, executing, storing, observing — is an independent component with its own contracts, package, tests, and lifecycle. Components communicate only through interfaces and events, never by referencing each other's implementations.
@@ -154,20 +156,22 @@ public sealed class ReportService(IGuaraClient jobs)
     public async Task RequestAsync(int customerId, CancellationToken ct)
     {
         // Fire-and-forget: runs as soon as a worker is free
-        await jobs.EnfileirarAsync(ReportServiceGuara.GenerateReport(customerId), ct);
+        await jobs.EnfileirarAsync(ReportServiceGuara.GenerateReportAsync(customerId), ct);
 
         // Delayed: run once, 24 hours from now
         await jobs.AgendarAsync(
-            ReportServiceGuara.SendReminder(customerId), TimeSpan.FromHours(24), ct);
+            ReportServiceGuara.SendReminderAsync(customerId), TimeSpan.FromHours(24), ct);
     }
 
     [GuaraJob]
-    public Task GenerateReport(int customerId) { /* ... */ }
+    public Task GenerateReportAsync(int customerId, CancellationToken ct) { /* ... */ }
 
     [GuaraJob]
-    public Task SendReminder(int customerId) { /* ... */ }
+    public Task SendReminderAsync(int customerId, CancellationToken ct) { /* ... */ }
 }
 ```
+
+The factory repeats the method name **exactly** — `Async` suffix included — and omits the `CancellationToken`, which Guará supplies at execution time.
 
 Registration is generated too: `builder.Services.AddGuara().AddGuaraJobs()` wires every marked job, with no runtime assembly scanning.
 
@@ -184,7 +188,7 @@ db.Orders.Add(order);
 await db.SaveChangesAsync(ct);
 
 await jobs.EnfileirarAsync(
-    () => SendConfirmationAsync(order.Id),
+    OrderServiceGuara.SendConfirmationAsync(order.Id),
     new RelationalTransaction(db.Database.GetDbTransaction()),
     ct);
 
@@ -207,7 +211,7 @@ Recurring jobs are configured through a **fluent builder** ([spec 038](spec/038-
 ```csharp
 await jobs.AdicionarOuAtualizarRecorrenteAsync(job => job
     .ComId("nightly-cleanup")
-    .Executa(MaintenanceServiceGuara.CleanupExpiredRecords())
+    .Executa(MaintenanceServiceGuara.CleanupExpiredRecordsAsync())
     .ComCron("0 3 * * *")                                          // every day at 03:00
     .NoFusoHorario("America/Sao_Paulo")                            // accepts IANA or Windows ids
     .IniciaEm(GuaraDatas.SegundoExato(DateTimeOffset.UtcNow.AddSeconds(7)))
@@ -218,7 +222,7 @@ await jobs.AdicionarOuAtualizarRecorrenteAsync(job => job
 // Interval-based schedule (no cron), with a daily window
 await jobs.AdicionarOuAtualizarRecorrenteAsync(job => job
     .ComId("price-sync")
-    .Executa(PriceServiceGuara.SyncPrices())
+    .Executa(PriceServiceGuara.SyncPricesAsync())
     .ACada(TimeSpan.FromSeconds(10))
     .EntreHorarios(new TimeOnly(8, 0), new TimeOnly(18, 0)),
     ct);
@@ -244,8 +248,8 @@ Calendars can also be created and maintained **through the dashboard UI** — a 
 
 ```csharp
 // B runs automatically when A succeeds
-var export = await jobs.EnfileirarAsync(OrderServiceGuara.ExportOrders(month), ct);
-await jobs.ContinuarComAsync(export, OrderServiceGuara.NotifyExportFinished(month), ct);
+var export = await jobs.EnfileirarAsync(OrderServiceGuara.ExportOrdersAsync(month), ct);
+await jobs.ContinuarComAsync(export, OrderServiceGuara.NotifyExportFinishedAsync(month), ct);
 
 // Cancel/delete a job that has not run yet
 await jobs.ExcluirAsync(export, ct);
@@ -495,7 +499,8 @@ All configuration follows the .NET Options pattern under the `Guara` section (va
 | Batch acquisition and indexed eligibility: 25× on PostgreSQL, 20× on MySQL, 10.6× on SQL Server | ✅ Done |
 | `Guara.Cluster`: leader election with renewed ownership, roles visible in the dashboard | ✅ Done |
 | `Guara.Serialization` removed: published in the previews with no consumer whatsoever ([ADR-0019](docs/adr/0019-guara-serialization-sai-do-catalogo.md)) | ✅ Done |
-| User documentation, sample project and Hangfire migration guide | 🕓 Planned |
+| Sample project with a real-world layout and Hangfire migration guide | ✅ Done |
+| Pre-release audit: documentation vs. code, engine review and performance | 🕓 Planned |
 | **1.0** — frozen API, transactions settled in the contract, real-world burn-in | 🕓 Planned |
 | `Guara.OpenTelemetry` (1.1) · `Guara.Cli` and `Guara.Authentication` (1.2) | 🕓 Planned |
 
