@@ -1,5 +1,7 @@
 # Spec 038: Agendamento Fluente — Builder, Calendários e GuaraDatas
 
+> ⚠️ **A forma passada a `Executa(...)` foi substituída por [ADR-0020](../docs/adr/0020-enfileiramento-por-fabrica-tipada.md) (2026-08-06).** O builder recebe `JobDescriptor` — `.Executa(ManutencaoServiceGuara.LimparRegistrosExpirados())` —, não uma lambda. O builder, os calendários e o `GuaraDatas` continuam como descritos.
+
 **Status:** Approved (2026-07-16)
 **Date:** 2026-07-16
 **Escopo:** feature — estende [Spec 005 (`Guara.Scheduler`)](005-guara-scheduler.md) e [Spec 019 (`Guara.Extensions`)](019-guara-extensions.md); persistência via [Spec 004](004-guara-storage.md)

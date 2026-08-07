@@ -46,6 +46,15 @@ jobs:
           cache: npm
           cache-dependency-path: src/guara-dashboard-angular/package-lock.json
 
+      # Construída aqui, e não pelo build .NET, pelo mesmo motivo do CI: `dotnet build` da
+      # solution cria duas instâncias paralelas do Guara.Dashboard, e ambas chamariam
+      # `npm ci` sobre o mesmo node_modules. Ver o comentário em ci.yml.
+      - name: Constrói a SPA do painel
+        working-directory: src/guara-dashboard-angular
+        run: |
+          npm ci
+          npm run build
+
       - name: Restore
         run: dotnet restore Guara.slnx
 

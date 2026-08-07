@@ -19,6 +19,7 @@ Este documento é o **hub da arquitetura**. Ele define os princípios e aponta p
 | [anti-patterns.md](anti-patterns.md) | O que **nunca** fazer no Guará |
 | [performance.md](performance.md) | Princípios de performance e regras de alocação |
 | [checklist.md](checklist.md) | Checklist obrigatório antes de commitar um novo componente |
+| [migracao-do-hangfire.md](migracao-do-hangfire.md) | Guia para quem vem do Hangfire: tradução da API e a diferença do enfileiramento sem lambda |
 | [adr/README.md](adr/README.md) | Architecture Decision Records |
 
 ---
