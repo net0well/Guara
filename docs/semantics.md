@@ -36,7 +36,7 @@ Delayed/recorrentes disparam **na primeira varredura elegível após vencer** �
 - Default: **3 retentativas** com back-off exponencial (`2^tentativa` segundos); por job: `[GuaraRetentativas(n)]`; `0` = nunca retenta.
 - Esgotou → `Failed` com o motivo da **última** falha.
 - **Retentativa persistente** *(implementada 2026-07-18)*: falha grava `Retrying` + reagendamento com back-off e `Attempt` incrementado **no storage** — sobrevive a restart do nó, a reexecução é adquirida como qualquer job vencido e o dashboard mostra a contagem real. O evento `JobRetryScheduled` sinaliza cada reagendamento; `JobFailed` só dispara na falha definitiva.
-- Retentativa **em processo** (sem tocar o storage) continua disponível como middleware opcional (`RetryMiddleware`) para oscilações rápidas dentro de uma mesma tentativa.
+- Retentativa **em processo** (sem tocar o storage) não existe como opção pública: o `RetryMiddleware` do `Guara.Core` é `internal` e não é registrado por nenhuma extensão. Quem quiser esse comportamento escreve o próprio `IJobMiddleware` e o registra.
 - Cancelamento (shutdown/posse perdida) **não conta como tentativa**.
 
 ## Cancelamento, tempo limite e efeitos colaterais
@@ -69,10 +69,21 @@ Delayed/recorrentes disparam **na primeira varredura elegível após vencer** �
 - Pai **excluído** (`ExcluirAsync`) → continuações pendentes **descartadas e registradas**.
 - Disparo **idempotente** entre nós (cada filho enfileira exatamente uma vez); registrar continuação em pai já finalizado avalia o gatilho imediatamente.
 
-## Exclusão
+## Exclusão de job (remoção)
 
 - `ExcluirAsync(jobId)` → `false` se inexistente **ou em execução** (`Processing`) — nunca "puxa o tapete" de um job rodando; cancele/aguarde antes.
 - Calendário em uso não pode ser excluído (erro com a lista de recorrentes).
+
+## Exclusão mútua (`[GuaraDesabilitarConcorrencia]`)
+
+Não confundir com a seção acima: aqui é "não rodar duas vezes ao mesmo tempo", não "remover".
+
+- **No máximo uma execução por chave, entre nós**, enquanto o dono estiver vivo. A chave é um lock com TTL, **renovado enquanto o job roda** — job longo não perde a exclusão.
+- **Chave ocupada** na hora de começar: o job volta à fila (`Processing → Scheduled`) **sem consumir tentativa** e sem bloquear o worker.
+- `EsperaSegundos > 0` muda isso: o job **ocupa a vaga do worker** enquanto espera pela chave, e só volta à fila se desistir. É troca deliberada — menos idas ao storage por menos vazão —, então mantenha o valor baixo em fila movimentada.
+- **Renovação falha** — nó particionado, storage fora, pausa longa: a execução local é **abandonada** sem consumir tentativa e sem marcar `Failed`; a posse do job expira e ele volta a ser elegível. Mesmo contrato da posse de job e da liderança: descobriu que não é mais dono, para de agir como dono. É o lado seguro entre parar um job e executá-lo em dobro.
+- **Crash do nó** libera a chave por expiração do TTL, não instantaneamente — outro nó espera o vencimento.
+- **Storage sem lock distribuído** (`SupportsDistributedLock = false`, como o in-memory): a exclusão vale **dentro do processo**, não entre nós. Confira `Capabilities` antes de contar com ela.
 
 ## Filas
 

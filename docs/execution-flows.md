@@ -55,24 +55,29 @@ O padrão é `InProcessQueueSignal` (nó único, sem infraestrutura). Trocar o r
 
 ## Pipeline do Job (dentro do Executor)
 
-Cada etapa é um **middleware**, no modelo do ASP.NET Core: recebe o contexto e um `next`. A ordem é fixa.
+O pipeline é **curto de propósito**: middlewares registrados como `IJobMiddleware`, e a invocação do job no fim. Tudo que precisa acontecer *em volta* da execução — exclusão mútua, tempo limite, persistência do desfecho, retentativa, eventos — é feito pelo próprio `GuaraExecutor`, e **não** como middleware.
 
 ```
-Validation → Authorization → Middleware (custom)
-           → Metrics → Logging → Retry → Executor → Success → Notifications
+[middlewares registrados, na ordem de registro] → invocação do job
 ```
 
-| Etapa | Middleware | Papel |
+O motivo é que essas etapas não são opcionais nem reordenáveis: um middleware de "persistir sucesso" que alguém removesse ou pusesse fora de ordem quebraria a garantia de entrega. O que é ponto de extensão fica no pipeline; o que é invariante fica no executor.
+
+| Registrado por | Middleware | Papel |
 |---|---|---|
-| Validation | `ValidationMiddleware` | Valida o payload/args do Job |
-| Authorization | `AuthorizationMiddleware` | Verifica permissão de execução |
-| Middleware | *custom* | Ponto de extensão do usuário |
-| Metrics | `MetricsMiddleware` | Contadores/histogramas via `IMetrics` |
-| Logging | `LoggingMiddleware` | Log estruturado via `ILogger` |
-| Retry | `RetryMiddleware` | Política de retentativa/back-off |
-| Executor | `ExecutionMiddleware` | Invoca o método do Job |
-| Success | `SuccessMiddleware` | Marca estado final de sucesso |
-| Notifications | `NotificationMiddleware` | Dispara notificações pós-execução |
+| `UseGuaraDiagnostics()` | `TracingMiddleware` | `Activity` por execução |
+| `UseGuaraDiagnostics()` | `LoggingMiddleware` | Log estruturado via `ILogger` |
+| `UseGuaraDiagnostics()` | `MetricsMiddleware` | Contadores/histogramas |
+| você | *custom* | Qualquer `IJobMiddleware` que você registre |
+
+O que o **executor** faz em volta do pipeline, na ordem:
+
+1. Carrega o job e seus metadados declarados (atributos lidos em compilação).
+2. Adquire a chave de `[GuaraDesabilitarConcorrencia]`, se houver, e **renova enquanto o job roda**; perder a chave aborta a execução local.
+3. Aplica `[GuaraTempoLimite]` cancelando o token do job.
+4. Roda o pipeline.
+5. Persiste o desfecho com token **não-cancelável** e publica o evento.
+6. Em falha, decide entre `Retrying` (reagendado com back-off) e `Failed`, pela política do job.
 
 Assinatura conceitual (ver exemplo completo em [patterns.md](patterns.md)):
 
@@ -87,8 +92,10 @@ public interface IJobMiddleware
 
 ```
 Created → Enqueued → Scheduled → Processing → (Succeeded | Failed)
-                                        ↑            │
-                                        └── Retrying ┘   (se RetryMiddleware permitir)
+                          ↑             ↑            │
+                          │             └── Retrying ┘   (tentativas restantes)
+                          └───────────────────────────   (chave de exclusão ocupada:
+                                                          volta à fila sem consumir tentativa)
 ```
 
 | Estado | Significado |

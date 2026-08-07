@@ -23,7 +23,7 @@ Os **métodos que o usuário chama** para operar jobs são em **português**; to
 | Contrato de recurso | `I{Recurso}{Papel}` | `IJobStorage`, `IQueueStorage`, `ILockProvider`, `IQueueSignal` |
 | Provider (implementação) | `{Tecnologia}{Contrato}` | `SqlServerStorage`, `MySqlLockProvider`, `MongoJobStorage`, `RedisQueueSignal` |
 | Opções de configuração | `{Componente}Options` | `SchedulerOptions`, `WorkerOptions`, `StorageOptions` |
-| Middleware do pipeline | `{Etapa}Middleware` | `ValidationMiddleware`, `RetryMiddleware`, `MetricsMiddleware` |
+| Middleware do pipeline | `{Etapa}Middleware` | `TracingMiddleware`, `LoggingMiddleware`, `MetricsMiddleware` |
 | Evento | `{Substantivo}{ParticípioPassado}` | `JobCreated`, `JobScheduled`, `JobCompleted`, `WorkerRequested` |
 | Estado de Job | `{Nome}State` ou enum `JobState` | `JobState.Enqueued`, `JobState.Processing` |
 | Builder fluente | `{Componente}Builder` | `GuaraBuilder`, `StorageBuilder` |

@@ -145,7 +145,7 @@ Regra: **`Guara.Storage` define, `Guara.Storage.*` implementa.** O mesmo vale pa
 | Namespace das extensões | `Microsoft.Extensions.DependencyInjection` | integra-se ao ecossistema .NET |
 | Evento | `{Substantivo}{ParticípioPassado}` | `JobCreated`, `JobScheduled`, `JobCompleted` |
 | Opções | `{Componente}Options` | `SchedulerOptions`, `WorkerOptions` |
-| Middleware | `{Etapa}Middleware` | `RetryMiddleware`, `MetricsMiddleware` |
+| Middleware | `{Etapa}Middleware` | `TracingMiddleware`, `MetricsMiddleware` |
 
 Regra de ouro: **toda API pública deve ser pequena.** Cada pacote expõe **um** método `AddGuara...()`.
 
@@ -162,11 +162,10 @@ JobCreated → Scheduler → JobScheduled → Dispatcher → WorkerRequested
            → ExecutorStarted → JobCompleted
 ```
 
-**Pipeline do Job** — cada etapa é um middleware (modelo ASP.NET Core):
+**Pipeline do Job** — curto de propósito: só o que é ponto de extensão passa por middleware; o que é invariante (exclusão mútua, tempo limite, persistência do desfecho, retentativa) fica no `GuaraExecutor`, onde ninguém pode remover nem reordenar. Detalhe em [execution-flows.md](execution-flows.md).
 
 ```
-Validation → Authorization → Middleware
-           → Metrics → Logging → Retry → Executor → Success → Notifications
+[IJobMiddleware registrados] → invocação do job
 ```
 
 Filas internas usam `Channel<T>`; toda API assíncrona propaga `CancellationToken`. Ver [ADR-0002](adr/0002-comunicacao-por-eventos.md) e [ADR-0004](adr/0004-channel-para-filas-internas.md).

@@ -25,12 +25,108 @@ public class JobMetadataExecutionTests
     private static (GuaraExecutor Executor, MemoryStorage Storage) Setup(JobHandlerRegistry registry)
     {
         var storage = new MemoryStorage();
+        return (Build(registry, storage, TimeProvider.System), storage);
+    }
+
+    private static GuaraExecutor Build(JobHandlerRegistry registry, IStorage storage, TimeProvider time)
+    {
         var services = new ServiceCollection().BuildServiceProvider();
-        var executor = new GuaraExecutor(
+        return new GuaraExecutor(
             storage, new NullPublisher(), new RegistryJobInvoker(registry, services), registry,
             new RetryOptions { MaxAttempts = 3, Backoff = static _ => TimeSpan.Zero },
-            TimeProvider.System, [], NullLogger<GuaraExecutor>.Instance);
-        return (executor, storage);
+            time, [], NullLogger<GuaraExecutor>.Instance);
+    }
+
+    /// <summary>
+    /// Relógio cujos timers disparam de imediato. Deixa uma espera longa do produto — o
+    /// intervalo de renovação do mutex — acontecer sem o teste esperar em tempo real.
+    /// </summary>
+    private sealed class TempoAcelerado : TimeProvider
+    {
+        public override ITimer CreateTimer(
+            TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+            => base.CreateTimer(
+                callback,
+                state,
+                dueTime == Timeout.InfiniteTimeSpan ? dueTime : TimeSpan.FromMilliseconds(1),
+                period == Timeout.InfiniteTimeSpan ? period : TimeSpan.FromMilliseconds(1));
+    }
+
+    /// <summary>Storage real com os locks trocados, para simular a perda da chave.</summary>
+    private sealed class StorageComLocks(IStorage inner, ILockProvider locks) : IStorage
+    {
+        public StorageCapabilities Capabilities => inner.Capabilities;
+
+        public IJobStorage Jobs => inner.Jobs;
+
+        public IQueueStorage Queues => inner.Queues;
+
+        public ILockProvider Locks => locks;
+
+        public IServerRegistry Servers => inner.Servers;
+
+        public IRecurringStorage Recurring => inner.Recurring;
+
+        public IContinuationStorage Continuations => inner.Continuations;
+    }
+
+    /// <summary>Concede a chave e depois recusa renovar — a posse expirou para outro dono.</summary>
+    private sealed class LockQueRecusaRenovar : ILockProvider
+    {
+        public ValueTask<ILockHandle?> TryAcquireAsync(string key, TimeSpan ttl, CancellationToken ct)
+            => ValueTask.FromResult<ILockHandle?>(new Handle(key));
+
+        private sealed class Handle(string key) : ILockHandle
+        {
+            public string Key => key;
+
+            public ValueTask<bool> RenewAsync(TimeSpan ttl, CancellationToken ct)
+                => ValueTask.FromResult(false);
+
+            public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        }
+    }
+
+    /// <summary>
+    /// Um job mais longo que o TTL do mutex não pode seguir rodando depois de perder a
+    /// chave: outro nó já pode tê-la adquirido, e os dois estariam executando em paralelo —
+    /// exatamente o que <c>[GuaraDesabilitarConcorrencia]</c> promete impedir. Perder a
+    /// chave abandona a execução sem consumir tentativa e sem marcar falha, como na perda
+    /// da posse do job.
+    /// </summary>
+    [Fact]
+    public async Task ConcurrencyGate_LostKeyDuringExecution_AbandonsWithoutConsumingAttempt()
+    {
+        var cancelado = false;
+        var registry = new JobHandlerRegistry().Register(
+            "Teste", "Longo",
+            new JobExecutionMetadata { ConcurrencyKey = static _ => "chave-longa" },
+            async (_, _, jobCt) =>
+            {
+                try
+                {
+                    await Task.Delay(Timeout.InfiniteTimeSpan, jobCt);
+                }
+                catch (OperationCanceledException)
+                {
+                    cancelado = true;
+                    throw;
+                }
+            });
+
+        var storage = new MemoryStorage();
+        var executor = Build(
+            registry, new StorageComLocks(storage, new LockQueRecusaRenovar()), new TempoAcelerado());
+        var id = await CreateJobAsync(storage, "Longo");
+
+        await executor.ExecuteAsync(id, Ct);
+
+        Assert.True(cancelado, "a execução deveria ter sido cancelada ao perder a chave");
+
+        var job = await storage.Jobs.GetAsync(id, Ct);
+        Assert.NotEqual(JobState.Failed, job!.State);
+        Assert.NotEqual(JobState.Succeeded, job.State);
+        Assert.Equal(0, job.Attempt);
     }
 
     private static async Task<JobId> CreateJobAsync(
