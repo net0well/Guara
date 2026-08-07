@@ -15,6 +15,8 @@ O Guará garante **pelo menos uma execução** por job (*at-least-once*). Um job
 
 **Exatamente-uma-vez não existe em sistemas distribuídos** — o Guará não finge oferecer; oferece as ferramentas acima.
 
+**A posse tem duas configurações que precisam ser coerentes.** Ela nasce na aquisição, com `DispatcherOptions.LeaseDuration`, e só depois passa a ser renovada pelo worker a cada `WorkerOptions.LeaseRenewInterval`. Se a primeira for menor que a segunda, a posse vence antes da primeira renovação: outro nó adquire o job e os dois executam em paralelo, sem que a renovação tenha chance de perceber a tempo. O servidor recusa subir nessa combinação, com mensagem dizendo qual valor mexer.
+
 ## Deduplicação de enfileiramento
 
 **Nenhuma por padrão**: cada `EnfileirarAsync`/`AgendarAsync` cria um job novo com id novo — chamar 3x = 3 jobs. Dedupe é opt-in (`IdempotencyKey`, spec 026). Recorrentes são a exceção: `AdicionarOuAtualizarRecorrenteAsync` é **upsert** por `ComId`.

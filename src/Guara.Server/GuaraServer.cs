@@ -82,6 +82,20 @@ internal sealed class GuaraServer : IGuaraServer
         ArgumentNullException.ThrowIfNull(dispatcherOptions);
         ArgumentNullException.ThrowIfNull(workerOptions);
 
+        // A posse é criada pelo dispatcher e só depois renovada pelo worker. Se ela vencer
+        // antes da primeira renovação, outro nó adquire o job e os dois executam em paralelo
+        // — e a renovação só descobre isso quando finalmente roda, com a duplicata já em
+        // andamento. Cada pacote valida a própria coerência; esta relação atravessa os dois,
+        // então é aqui, onde as duas opções se encontram, que ela pode ser verificada.
+        if (dispatcherOptions.LeaseDuration <= workerOptions.LeaseRenewInterval)
+        {
+            throw new InvalidOperationException(
+                $"DispatcherOptions.LeaseDuration ({dispatcherOptions.LeaseDuration}) precisa exceder " +
+                $"WorkerOptions.LeaseRenewInterval ({workerOptions.LeaseRenewInterval}) — senão a posse " +
+                "criada na aquisição vence antes da primeira renovação, e o job pode ser executado " +
+                "em dobro por outro nó.");
+        }
+
         _storage = storage;
         _dispatcher = dispatcher;
         _worker = worker;

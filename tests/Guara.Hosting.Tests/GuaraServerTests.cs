@@ -166,6 +166,32 @@ public class GuaraServerTests
         }
     }
 
+    /// <summary>
+    /// A posse nasce na aquisição e só depois é renovada. Uma duração menor que o intervalo
+    /// de renovação a faria vencer antes da primeira renovação: outro nó adquiriria o job e
+    /// os dois executariam em paralelo, com a renovação só descobrindo depois. Cada pacote
+    /// valida a própria coerência, e esta relação atravessa dois — então falha ao subir, com
+    /// mensagem que diz qual valor mexer.
+    /// </summary>
+    [Fact]
+    public async Task Boot_LeaseShorterThanRenewInterval_FailsWithActionableMessage()
+    {
+        var services = new ServiceCollection();
+        services.AddGuara(options => options.ApplicationName = "teste")
+            .UseMemoryStorage()
+            .AddGuaraDispatcher(d => d.LeaseDuration = TimeSpan.FromSeconds(30))
+            .AddGuaraWorker(w => w.LeaseRenewInterval = TimeSpan.FromMinutes(2))
+            .AddGuaraExecutor()
+            .AddGuaraServer();
+        await using var provider = services.BuildServiceProvider();
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => HostedService(provider).StartAsync(Ct));
+
+        Assert.Contains("DispatcherOptions.LeaseDuration", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("WorkerOptions.LeaseRenewInterval", ex.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task Heartbeat_ReannouncesWhenRegistrationDisappears()
     {
