@@ -65,6 +65,14 @@ E o projeto já resolve exatamente esta classe de problema de outro jeito, em pr
 
 **Consequência para o congelamento: `ILockProvider` e `ILockHandle` não mudam.** Era o que este trabalho precisava descobrir.
 
+> **Adendo (2026-08-09) — a premissa acima estava errada, a conclusão não.**
+>
+> O argumento apoiava-se em que a posse de job "já resolve exatamente esta classe de problema de outro jeito, em produção e coberto por testes". A auditoria pré-1.0 mostrou que não resolvia: `RenewLeaseAsync` renovava qualquer job em `Processing` com posse não nula, **sem verificar de quem era a posse**. Um nó que travasse além do vencimento, e cujo job tivesse sido legitimamente readquirido por outro, renovava a posse alheia, recebia confirmação e seguia executando em paralelo — o mecanismo de "aborta ao perder a posse" nunca disparava.
+>
+> A correção foi transformar a renovação num **compare-and-swap sobre o instante de vencimento**: renova só se o valor gravado for o que o chamador apresenta. É o papel de um fencing token, sobre uma coluna que já existia — sem coluna de dono e sem mudança de esquema.
+>
+> A conclusão sobre `ILockProvider` continua valendo, e agora por um motivo mais forte: o padrão que o lock deveria imitar passou a existir de verdade. A liderança segue o mesmo contrato — renova, e cede quando não consegue provar que ainda é dona.
+
 ### Onde o pacote vive
 
 `Guara.Server` passa a referenciar `Guara.Cluster`, e `AddGuaraServer()` registra a eleição por lock. Quem liga o servidor recebe a coordenação correta sem precisar saber que ela existe — não há configuração nova para acertar, e não há caminho de código alternativo para o caso de o pacote não estar presente.

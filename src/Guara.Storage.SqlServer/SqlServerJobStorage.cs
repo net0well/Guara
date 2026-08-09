@@ -12,7 +12,7 @@ namespace Guara.Storage.SqlServer;
 /// (nunca o do banco) — mesma semântica dos demais providers.
 /// </summary>
 internal sealed class SqlServerJobStorage(
-    SqlServerConnections connections, SqlServerSchemaInitializer schema, string s, TimeProvider time) : IJobStorage
+    SqlServerConnectionFactory connections, SqlServerSchemaInitializer schema, string s, TimeProvider time) : IJobStorage
 {
     private const string Columns =
         "id, descriptor, state, attempt, queue, created_at, scheduled_for, lease_until, finished_at, result, error";
@@ -106,18 +106,24 @@ internal sealed class SqlServerJobStorage(
         return adquiridos;
     }
 
-    public async ValueTask<bool> RenewLeaseAsync(JobId id, TimeSpan lease, CancellationToken ct)
+    public async ValueTask<DateTimeOffset?> RenewLeaseAsync(
+        JobId id, DateTimeOffset expectedLeaseUntil, TimeSpan lease, CancellationToken ct)
     {
         await schema.EnsureAsync(ct);
         await using var connection = await connections.OpenAsync(ct);
         await using var command = connection.CreateCommand();
+
+        // A comparação com o vencimento esperado é o que separa a própria posse da de outro
+        // nó: se alguém readquiriu o job, lease_until já é outro e nada é atualizado.
         command.CommandText = $"""
             UPDATE {s}.jobs SET lease_until = @leaseUntil, eligible_at = @leaseUntil
-            WHERE id = @id AND state = {(int)JobState.Processing} AND lease_until IS NOT NULL
+            WHERE id = @id AND state = {(int)JobState.Processing} AND lease_until = @expected
             """;
+        var leaseUntil = time.GetUtcNow() + lease;
         command.Parameters.AddWithValue("@id", id.Value);
-        command.Parameters.AddWithValue("@leaseUntil", time.GetUtcNow() + lease);
-        return await command.ExecuteNonQueryAsync(ct) > 0;
+        command.Parameters.AddWithValue("@expected", expectedLeaseUntil);
+        command.Parameters.AddWithValue("@leaseUntil", leaseUntil);
+        return await command.ExecuteNonQueryAsync(ct) > 0 ? leaseUntil : null;
     }
 
     public async ValueTask ScheduleRetryAsync(JobId id, string error, DateTimeOffset retryAt, CancellationToken ct)

@@ -12,7 +12,7 @@ internal sealed class MongoServerRegistry(MongoCollections collections) : IServe
         ArgumentNullException.ThrowIfNull(node);
         await collections.EnsureAsync(ct);
 
-        var documento = MongoDocuments.FromServer(node);
+        var documento = MongoDocumentMapper.FromServer(node);
         documento.Remove("_id");
         await collections.Servers.UpdateOneAsync(
             Builders<BsonDocument>.Filter.Eq("_id", node.Id),
@@ -44,7 +44,7 @@ internal sealed class MongoServerRegistry(MongoCollections collections) : IServe
             .Find(new BsonDocument())
             .Sort(Builders<BsonDocument>.Sort.Ascending("_id"))
             .ToListAsync(ct);
-        return [.. documentos.Select(MongoDocuments.ReadServer)];
+        return [.. documentos.Select(MongoDocumentMapper.ReadServer)];
     }
 
     public async ValueTask<int> RemoveExpiredAsync(DateTimeOffset heartbeatBefore, CancellationToken ct)

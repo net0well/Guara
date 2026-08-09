@@ -61,18 +61,18 @@ internal sealed class MySqlRecurringStorage(
         command.Parameters.AddWithValue("@windowStartTicks", (object?)record.WindowStart?.Ticks ?? DBNull.Value);
         command.Parameters.AddWithValue("@windowEndTicks", (object?)record.WindowEnd?.Ticks ?? DBNull.Value);
         command.Parameters.AddWithValue("@timeZone", (object?)record.TimeZoneId ?? DBNull.Value);
-        command.Parameters.AddWithValue("@notBefore", MySqlTime.ToDatabaseOrNull(record.NotBefore));
-        command.Parameters.AddWithValue("@notAfter", MySqlTime.ToDatabaseOrNull(record.NotAfter));
+        command.Parameters.AddWithValue("@notBefore", MySqlTimeConverter.ToDatabaseOrNull(record.NotBefore));
+        command.Parameters.AddWithValue("@notAfter", MySqlTimeConverter.ToDatabaseOrNull(record.NotAfter));
         command.Parameters.AddWithValue("@description", (object?)record.Description ?? DBNull.Value);
         command.Parameters.AddWithValue("@queue", record.Queue);
         command.Parameters.AddWithValue("@calendarName", (object?)record.CalendarName ?? DBNull.Value);
         command.Parameters.AddWithValue("@skipIfPreviousRunning", record.SkipIfPreviousRunning);
         command.Parameters.AddWithValue("@paused", record.Paused);
-        command.Parameters.AddWithValue("@createdAt", MySqlTime.ToDatabase(record.CreatedAt));
-        command.Parameters.AddWithValue("@lastRunAt", MySqlTime.ToDatabaseOrNull(record.LastRunAt));
+        command.Parameters.AddWithValue("@createdAt", MySqlTimeConverter.ToDatabase(record.CreatedAt));
+        command.Parameters.AddWithValue("@lastRunAt", MySqlTimeConverter.ToDatabaseOrNull(record.LastRunAt));
         command.Parameters.AddWithValue("@lastRunJobId", (object?)record.LastRunJobId?.Value ?? DBNull.Value);
-        command.Parameters.AddWithValue("@nextRunAt", MySqlTime.ToDatabaseOrNull(record.NextRunAt));
-        command.Parameters.AddWithValue("@lastSkippedAt", MySqlTime.ToDatabaseOrNull(record.LastSkippedAt));
+        command.Parameters.AddWithValue("@nextRunAt", MySqlTimeConverter.ToDatabaseOrNull(record.NextRunAt));
+        command.Parameters.AddWithValue("@lastSkippedAt", MySqlTimeConverter.ToDatabaseOrNull(record.LastSkippedAt));
         await command.ExecuteNonQueryAsync(ct);
     }
 
@@ -117,7 +117,7 @@ internal sealed class MySqlRecurringStorage(
             WHERE paused = 0 AND next_run_at IS NOT NULL AND next_run_at <= @now
             ORDER BY next_run_at
             """;
-        command.Parameters.AddWithValue("@now", MySqlTime.ToDatabase(now));
+        command.Parameters.AddWithValue("@now", MySqlTimeConverter.ToDatabase(now));
         return await ReadAllAsync(command, ct);
     }
 
@@ -203,17 +203,17 @@ internal sealed class MySqlRecurringStorage(
         WindowStart = reader.IsDBNull(4) ? null : new TimeOnly(reader.GetInt64(4)),
         WindowEnd = reader.IsDBNull(5) ? null : new TimeOnly(reader.GetInt64(5)),
         TimeZoneId = reader.IsDBNull(6) ? null : reader.GetString(6),
-        NotBefore = reader.IsDBNull(7) ? null : MySqlTime.FromDatabase(reader.GetDateTime(7)),
-        NotAfter = reader.IsDBNull(8) ? null : MySqlTime.FromDatabase(reader.GetDateTime(8)),
+        NotBefore = reader.IsDBNull(7) ? null : MySqlTimeConverter.FromDatabase(reader.GetDateTime(7)),
+        NotAfter = reader.IsDBNull(8) ? null : MySqlTimeConverter.FromDatabase(reader.GetDateTime(8)),
         Description = reader.IsDBNull(9) ? null : reader.GetString(9),
         Queue = reader.GetString(10),
         CalendarName = reader.IsDBNull(11) ? null : reader.GetString(11),
         SkipIfPreviousRunning = reader.GetBoolean(12),
         Paused = reader.GetBoolean(13),
-        CreatedAt = MySqlTime.FromDatabase(reader.GetDateTime(14)),
-        LastRunAt = reader.IsDBNull(15) ? null : MySqlTime.FromDatabase(reader.GetDateTime(15)),
+        CreatedAt = MySqlTimeConverter.FromDatabase(reader.GetDateTime(14)),
+        LastRunAt = reader.IsDBNull(15) ? null : MySqlTimeConverter.FromDatabase(reader.GetDateTime(15)),
         LastRunJobId = reader.IsDBNull(16) ? null : new JobId(reader.GetString(16)),
-        NextRunAt = reader.IsDBNull(17) ? null : MySqlTime.FromDatabase(reader.GetDateTime(17)),
-        LastSkippedAt = reader.IsDBNull(18) ? null : MySqlTime.FromDatabase(reader.GetDateTime(18)),
+        NextRunAt = reader.IsDBNull(17) ? null : MySqlTimeConverter.FromDatabase(reader.GetDateTime(17)),
+        LastSkippedAt = reader.IsDBNull(18) ? null : MySqlTimeConverter.FromDatabase(reader.GetDateTime(18)),
     };
 }

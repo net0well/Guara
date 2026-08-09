@@ -27,7 +27,7 @@ public sealed class MemoryStorage : IStorage
         Locks = new MemoryLockProvider(time);
         Servers = new MemoryServerRegistry();
         Recurring = new MemoryRecurringStorage();
-        Continuations = new MemoryContinuationStorage();
+        Continuations = new MemoryContinuationStorage(_jobs);
     }
 
     /// <inheritdoc />

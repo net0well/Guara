@@ -5,7 +5,7 @@ namespace Guara.Storage.SqlServer;
 
 /// <summary>Introspecção de filas derivada da tabela de jobs.</summary>
 internal sealed class SqlServerQueueStorage(
-    SqlServerConnections connections, SqlServerSchemaInitializer schema, string s) : IQueueStorage
+    SqlServerConnectionFactory connections, SqlServerSchemaInitializer schema, string s) : IQueueStorage
 {
     public async ValueTask<IReadOnlyList<string>> GetQueuesAsync(CancellationToken ct)
     {

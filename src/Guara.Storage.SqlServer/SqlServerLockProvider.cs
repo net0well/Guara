@@ -7,7 +7,7 @@ namespace Guara.Storage.SqlServer;
 /// validade — crash do dono libera pela expiração, e só o dono renova/libera.
 /// </summary>
 internal sealed class SqlServerLockProvider(
-    SqlServerConnections connections, SqlServerSchemaInitializer schema, string s, TimeProvider time) : ILockProvider
+    SqlServerConnectionFactory connections, SqlServerSchemaInitializer schema, string s, TimeProvider time) : ILockProvider
 {
     public async ValueTask<ILockHandle?> TryAcquireAsync(string key, TimeSpan ttl, CancellationToken ct)
     {
@@ -50,7 +50,7 @@ internal sealed class SqlServerLockProvider(
     }
 
     private sealed class SqlServerLockHandle(
-        SqlServerConnections connections, string s, TimeProvider time, string key, string owner) : ILockHandle
+        SqlServerConnectionFactory connections, string s, TimeProvider time, string key, string owner) : ILockHandle
     {
         public string Key => key;
 

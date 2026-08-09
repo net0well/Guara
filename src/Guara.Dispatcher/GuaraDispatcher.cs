@@ -129,8 +129,13 @@ internal sealed class GuaraDispatcher(
                 dispatched = true;
                 for (var i = 0; i < jobs.Count; i++)
                 {
+                    // A posse recém-criada viaja com o pedido: é o valor que o worker vai
+                    // apresentar para renovar, e o que prova que a posse continua sendo a
+                    // mesma que este lote adquiriu.
+                    var posse = jobs[i].LeaseUntil ?? time.GetUtcNow() + options.LeaseDuration;
+
                     // Backpressure: se o canal do worker está cheio, aguarda aqui.
-                    await events.PublishAsync(new WorkerRequested(jobs[i].Id, time.GetUtcNow()), ct);
+                    await events.PublishAsync(new WorkerRequested(jobs[i].Id, time.GetUtcNow(), posse), ct);
                 }
             }
         }

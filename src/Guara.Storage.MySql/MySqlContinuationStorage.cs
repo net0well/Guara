@@ -31,8 +31,8 @@ internal sealed class MySqlContinuationStorage(
         command.Parameters.AddWithValue("@status", (int)record.Status);
         command.Parameters.AddWithValue("@reason", (object?)record.Reason ?? DBNull.Value);
         command.Parameters.AddWithValue("@depth", record.Depth);
-        command.Parameters.AddWithValue("@createdAt", MySqlTime.ToDatabase(record.CreatedAt));
-        command.Parameters.AddWithValue("@resolvedAt", MySqlTime.ToDatabaseOrNull(record.ResolvedAt));
+        command.Parameters.AddWithValue("@createdAt", MySqlTimeConverter.ToDatabase(record.CreatedAt));
+        command.Parameters.AddWithValue("@resolvedAt", MySqlTimeConverter.ToDatabaseOrNull(record.ResolvedAt));
         await command.ExecuteNonQueryAsync(ct);
     }
 
@@ -59,18 +59,47 @@ internal sealed class MySqlContinuationStorage(
         return await ReadAllAsync(command, ct);
     }
 
-    public async ValueTask<IReadOnlyList<ContinuationRecord>> ListPendingAsync(CancellationToken ct)
+    public async ValueTask<IReadOnlyList<ResolvableContinuation>> ListResolvablePendingAsync(
+        int max, CancellationToken ct)
     {
+        ArgumentOutOfRangeException.ThrowIfLessThan(max, 1);
+
         await schema.EnsureAsync(ct);
         await using var connection = await dataSource.OpenConnectionAsync(ct);
         await using var command = connection.CreateCommand();
+
+        // O LEFT JOIN traz o desfecho do pai na mesma consulta, e o filtro já descarta o
+        // pendente cujo pai ainda está rodando — que é a maioria. Sem isso a varredura leria
+        // a fila inteira para descobrir que quase nada mudou.
         command.CommandText = $"""
-            SELECT {Columns} FROM {p}continuations
-            WHERE status = {(int)ContinuationStatus.Pending}
-            ORDER BY created_at
+            SELECT {Prefixed("c")}, j.state
+            FROM {p}continuations c
+            LEFT JOIN {p}jobs j ON j.id = c.parent_id
+            WHERE c.status = {(int)ContinuationStatus.Pending}
+              AND (j.id IS NULL
+                   OR j.state = {(int)JobState.Succeeded}
+                   OR j.state = {(int)JobState.Failed})
+            ORDER BY c.created_at
+            LIMIT @max
             """;
-        return await ReadAllAsync(command, ct);
+        command.Parameters.AddWithValue("@max", max);
+
+        var resolviveis = new List<ResolvableContinuation>(max);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            resolviveis.Add(new ResolvableContinuation
+            {
+                Continuation = ReadContinuation(reader),
+                ParentState = await reader.IsDBNullAsync(8, ct) ? null : (JobState)reader.GetInt32(8),
+            });
+        }
+
+        return resolviveis;
     }
+
+    private static string Prefixed(string alias)
+        => string.Join(", ", Columns.Split(", ").Select(c => $"{alias}.{c}"));
 
     public async ValueTask<bool> TryResolveAsync(
         JobId childId, ContinuationStatus status, string? reason, DateTimeOffset resolvedAt, CancellationToken ct)
@@ -86,7 +115,7 @@ internal sealed class MySqlContinuationStorage(
         command.Parameters.AddWithValue("@childId", childId.Value);
         command.Parameters.AddWithValue("@status", (int)status);
         command.Parameters.AddWithValue("@reason", (object?)reason ?? DBNull.Value);
-        command.Parameters.AddWithValue("@resolvedAt", MySqlTime.ToDatabase(resolvedAt));
+        command.Parameters.AddWithValue("@resolvedAt", MySqlTimeConverter.ToDatabase(resolvedAt));
         return await command.ExecuteNonQueryAsync(ct) > 0;
     }
 
@@ -111,7 +140,7 @@ internal sealed class MySqlContinuationStorage(
         Status = (ContinuationStatus)reader.GetInt32(3),
         Reason = reader.IsDBNull(4) ? null : reader.GetString(4),
         Depth = reader.GetInt32(5),
-        CreatedAt = MySqlTime.FromDatabase(reader.GetDateTime(6)),
-        ResolvedAt = reader.IsDBNull(7) ? null : MySqlTime.FromDatabase(reader.GetDateTime(7)),
+        CreatedAt = MySqlTimeConverter.FromDatabase(reader.GetDateTime(6)),
+        ResolvedAt = reader.IsDBNull(7) ? null : MySqlTimeConverter.FromDatabase(reader.GetDateTime(7)),
     };
 }

@@ -7,7 +7,7 @@ namespace Guara.Storage.SqlServer;
 /// um objeto de fonte de dados como o Npgsql: o pooling é do próprio driver e vem da
 /// connection string, então abrir por operação é o caminho barato e correto.
 /// </summary>
-internal sealed class SqlServerConnections(string connectionString)
+internal sealed class SqlServerConnectionFactory(string connectionString)
 {
     public async ValueTask<SqlConnection> OpenAsync(CancellationToken ct)
     {

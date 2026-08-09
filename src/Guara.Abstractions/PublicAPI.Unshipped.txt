@@ -228,13 +228,15 @@ Guara.Abstractions.ScheduleKind.Immediate = 0 -> Guara.Abstractions.ScheduleKind
 Guara.Abstractions.ScheduleKind.Recurring = 3 -> Guara.Abstractions.ScheduleKind
 Guara.Abstractions.WorkerRequested
 Guara.Abstractions.WorkerRequested.<Clone>$() -> Guara.Abstractions.WorkerRequested!
-Guara.Abstractions.WorkerRequested.Deconstruct(out Guara.Abstractions.JobId Id, out System.DateTimeOffset OccurredAt) -> void
+Guara.Abstractions.WorkerRequested.Deconstruct(out Guara.Abstractions.JobId Id, out System.DateTimeOffset OccurredAt, out System.DateTimeOffset LeaseUntil) -> void
 Guara.Abstractions.WorkerRequested.Equals(Guara.Abstractions.WorkerRequested? other) -> bool
 Guara.Abstractions.WorkerRequested.Id.get -> Guara.Abstractions.JobId
 Guara.Abstractions.WorkerRequested.Id.init -> void
+Guara.Abstractions.WorkerRequested.LeaseUntil.get -> System.DateTimeOffset
+Guara.Abstractions.WorkerRequested.LeaseUntil.init -> void
 Guara.Abstractions.WorkerRequested.OccurredAt.get -> System.DateTimeOffset
 Guara.Abstractions.WorkerRequested.OccurredAt.init -> void
-Guara.Abstractions.WorkerRequested.WorkerRequested(Guara.Abstractions.JobId Id, System.DateTimeOffset OccurredAt) -> void
+Guara.Abstractions.WorkerRequested.WorkerRequested(Guara.Abstractions.JobId Id, System.DateTimeOffset OccurredAt, System.DateTimeOffset LeaseUntil) -> void
 override Guara.Abstractions.ContinuationOptions.Equals(object? obj) -> bool
 override Guara.Abstractions.ContinuationOptions.GetHashCode() -> int
 override Guara.Abstractions.ContinuationOptions.ToString() -> string!

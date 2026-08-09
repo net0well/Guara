@@ -13,7 +13,12 @@ public sealed class DispatcherOptions
     /// <summary>Filas consumidas, em ordem de prioridade.</summary>
     public string[] Queues { get; set; } = ["default"];
 
-    /// <summary>Duração da posse na aquisição (renovada pelo worker durante a execução).</summary>
+    /// <summary>
+    /// Duração da posse na aquisição. O worker a renova durante a execução, então este valor
+    /// cobre apenas a janela entre adquirir o job e a primeira renovação — e por isso precisa
+    /// exceder <c>WorkerOptions.LeaseRenewInterval</c>, o que o servidor verifica ao subir.
+    /// Encurtá-lo acelera a recuperação de um nó morto, mas nunca abaixo desse limite.
+    /// </summary>
     public TimeSpan LeaseDuration { get; set; } = TimeSpan.FromMinutes(5);
 
     /// <summary>Teto do back-off exponencial quando o storage está indisponível.</summary>
