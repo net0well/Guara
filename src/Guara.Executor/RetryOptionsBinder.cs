@@ -5,8 +5,8 @@ namespace Guara.Executor;
 
 /// <summary>
 /// Leitura explícita da seção <c>Guara:Retry</c> (AOT-safe, sem reflection).
-/// Apenas <see cref="RetryOptions.MaxAttempts"/> é configurável por arquivo — o
-/// back-off é uma função e se define por código.
+/// <see cref="RetryOptions.MaxAttempts"/> e <see cref="RetryOptions.InProcessAttempts"/>
+/// são configuráveis por arquivo — o back-off é uma função e se define por código.
 /// </summary>
 internal static class RetryOptionsBinder
 {
@@ -20,6 +20,8 @@ internal static class RetryOptionsBinder
         var section = configuration.Component("Retry");
         options.MaxAttempts =
             GuaraConfigurationValues.ReadInt32(section, nameof(options.MaxAttempts)) ?? options.MaxAttempts;
+        options.InProcessAttempts =
+            GuaraConfigurationValues.ReadInt32(section, nameof(options.InProcessAttempts)) ?? options.InProcessAttempts;
     }
 
     public static void Validate(RetryOptions options)
@@ -28,6 +30,12 @@ internal static class RetryOptionsBinder
         {
             throw new InvalidOperationException(
                 $"RetryOptions.MaxAttempts não pode ser negativo (recebido: {options.MaxAttempts}).");
+        }
+
+        if (options.InProcessAttempts < 0)
+        {
+            throw new InvalidOperationException(
+                $"RetryOptions.InProcessAttempts não pode ser negativo (recebido: {options.InProcessAttempts}).");
         }
 
         if (options.Backoff is null)

@@ -6,6 +6,8 @@ Guara.Core.InProcessQueueSignal.WaitAsync(System.Collections.Generic.IReadOnlyLi
 Guara.Core.RetryOptions
 Guara.Core.RetryOptions.Backoff.get -> System.Func<int, System.TimeSpan>!
 Guara.Core.RetryOptions.Backoff.set -> void
+Guara.Core.RetryOptions.InProcessAttempts.get -> int
+Guara.Core.RetryOptions.InProcessAttempts.set -> void
 Guara.Core.RetryOptions.MaxAttempts.get -> int
 Guara.Core.RetryOptions.MaxAttempts.set -> void
 Guara.Core.RetryOptions.RetryOptions() -> void

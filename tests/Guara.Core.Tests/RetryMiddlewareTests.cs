@@ -6,7 +6,12 @@ namespace Guara.Core.Tests;
 
 public class RetryMiddlewareTests
 {
-    private static readonly RetryOptions NoBackoff3 = new() { MaxAttempts = 3, Backoff = static _ => TimeSpan.Zero };
+    // O middleware conta por InProcessAttempts, e não por MaxAttempts: os dois modos se
+    // compõem, e o que sobrevive a estas repetições vira uma tentativa persistente. Aqui
+    // MaxAttempts é deixado de propósito num valor diferente, para que um retorno ao
+    // acoplamento antigo quebre o teste em vez de passar despercebido.
+    private static readonly RetryOptions NoBackoff3 =
+        new() { InProcessAttempts = 3, MaxAttempts = 7, Backoff = static _ => TimeSpan.Zero };
 
     private static JobContext NewContext()
     {
@@ -30,7 +35,7 @@ public class RetryMiddlewareTests
     private sealed class Counter { public int Calls; }
 
     [Fact]
-    public async Task Succeeds_AfterTransientFailures_WithinMaxAttempts()
+    public async Task Succeeds_AfterTransientFailures_WithinInProcessAttempts()
     {
         var counter = new Counter();
         var mw = new RetryMiddleware(NoBackoff3);
@@ -41,7 +46,7 @@ public class RetryMiddlewareTests
     }
 
     [Fact]
-    public async Task GivesUp_AfterMaxAttempts_AndRethrows()
+    public async Task GivesUp_AfterInProcessAttempts_AndRethrows()
     {
         var counter = new Counter();
         var mw = new RetryMiddleware(NoBackoff3);
@@ -52,11 +57,12 @@ public class RetryMiddlewareTests
         Assert.Equal(4, counter.Calls); // 1ª tentativa + 3 retentativas
     }
 
+    /// <summary>É o default: sem opt-in explícito, nada é repetido em processo.</summary>
     [Fact]
-    public async Task MaxAttemptsZero_DoesNotRetry()
+    public async Task InProcessAttemptsZero_DoesNotRetry()
     {
         var counter = new Counter();
-        var mw = new RetryMiddleware(new RetryOptions { MaxAttempts = 0, Backoff = static _ => TimeSpan.Zero });
+        var mw = new RetryMiddleware(new RetryOptions { Backoff = static _ => TimeSpan.Zero });
 
         await Assert.ThrowsAsync<InvalidOperationException>(
             async () => await mw.InvokeAsync(NewContext(), FailNTimesThenSucceed(int.MaxValue, counter), CancellationToken.None));

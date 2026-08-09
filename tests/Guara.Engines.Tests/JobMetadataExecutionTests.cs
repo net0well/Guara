@@ -28,13 +28,72 @@ public class JobMetadataExecutionTests
         return (Build(registry, storage, TimeProvider.System), storage);
     }
 
-    private static GuaraExecutor Build(JobHandlerRegistry registry, IStorage storage, TimeProvider time)
+    private static GuaraExecutor Build(
+        JobHandlerRegistry registry, IStorage storage, TimeProvider time, RetryOptions? retry = null)
     {
         var services = new ServiceCollection().BuildServiceProvider();
         return new GuaraExecutor(
             storage, new NullPublisher(), new RegistryJobInvoker(registry, services), registry,
-            new RetryOptions { MaxAttempts = 3, Backoff = static _ => TimeSpan.Zero },
+            retry ?? new RetryOptions { MaxAttempts = 3, Backoff = static _ => TimeSpan.Zero },
             time, [], NullLogger<GuaraExecutor>.Instance);
+    }
+
+    /// <summary>
+    /// Os dois modos de retentativa se <b>compõem</b>: as repetições em processo acontecem
+    /// dentro de uma única tentativa persistente, e só o que sobrevive a elas gasta uma
+    /// tentativa no storage. Se o middleware voltasse a contar por <c>MaxAttempts</c>, os
+    /// números se multiplicariam em vez de somar.
+    /// </summary>
+    [Fact]
+    public async Task InProcessRetry_ExhaustsLocally_BeforeSpendingAPersistentAttempt()
+    {
+        var chamadas = 0;
+        var registry = new JobHandlerRegistry().Register(
+            "Teste", "Instavel",
+            (_, _) =>
+            {
+                Interlocked.Increment(ref chamadas);
+                throw new InvalidOperationException("oscilação");
+            });
+
+        var storage = new MemoryStorage();
+        var executor = Build(
+            registry,
+            storage,
+            TimeProvider.System,
+            new RetryOptions { MaxAttempts = 3, InProcessAttempts = 2, Backoff = static _ => TimeSpan.Zero });
+        var id = await CreateJobAsync(storage, "Instavel");
+
+        await executor.ExecuteAsync(id, Ct);
+
+        // Uma execução original + 2 repetições em processo, tudo dentro da mesma tentativa.
+        Assert.Equal(3, chamadas);
+
+        var job = await storage.Jobs.GetAsync(id, Ct);
+        Assert.Equal(JobState.Retrying, job!.State);
+        Assert.Equal(1, job.Attempt); // uma única tentativa persistente foi gasta
+    }
+
+    /// <summary>Desligada por padrão: sem opt-in, a falha vira tentativa persistente direto.</summary>
+    [Fact]
+    public async Task InProcessRetry_OffByDefault_FailsStraightToPersistentAttempt()
+    {
+        var chamadas = 0;
+        var registry = new JobHandlerRegistry().Register(
+            "Teste", "Instavel",
+            (_, _) =>
+            {
+                Interlocked.Increment(ref chamadas);
+                throw new InvalidOperationException("oscilação");
+            });
+
+        var (executor, storage) = Setup(registry);
+        var id = await CreateJobAsync(storage, "Instavel");
+
+        await executor.ExecuteAsync(id, Ct);
+
+        Assert.Equal(1, chamadas);
+        Assert.Equal(JobState.Retrying, (await storage.Jobs.GetAsync(id, Ct))!.State);
     }
 
     /// <summary>

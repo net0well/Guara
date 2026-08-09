@@ -38,7 +38,12 @@ Delayed/recorrentes disparam **na primeira varredura elegível após vencer** �
 - Default: **3 retentativas** com back-off exponencial (`2^tentativa` segundos); por job: `[GuaraRetentativas(n)]`; `0` = nunca retenta.
 - Esgotou → `Failed` com o motivo da **última** falha.
 - **Retentativa persistente** *(implementada 2026-07-18)*: falha grava `Retrying` + reagendamento com back-off e `Attempt` incrementado **no storage** — sobrevive a restart do nó, a reexecução é adquirida como qualquer job vencido e o dashboard mostra a contagem real. O evento `JobRetryScheduled` sinaliza cada reagendamento; `JobFailed` só dispara na falha definitiva.
-- Retentativa **em processo** (sem tocar o storage) não existe como opção pública: o `RetryMiddleware` do `Guara.Core` é `internal` e não é registrado por nenhuma extensão. Quem quiser esse comportamento escreve o próprio `IJobMiddleware` e o registra.
+- Retentativa **em processo** existe como opção, **desligada por padrão**: `RetryOptions.InProcessAttempts` (ou `Guara:Retry:InProcessAttempts`). Repete a chamada do job na hora, sem tocar o storage.
+  - **Os dois modos somam, não multiplicam.** As repetições em processo acontecem dentro de uma tentativa persistente; só o que sobrevive a elas gasta uma tentativa no storage.
+  - Serve para a oscilação de milissegundos — deadlock de banco, socket que cai —, que a retentativa persistente atende caro: falhar e reagendar custa uma escrita, uma reaquisição e uma releitura.
+  - **Custo:** o job segura a vaga do worker durante o back-off. Mantenha baixo (1 ou 2), e lembre que o back-off padrão é exponencial **em segundos** — quem liga isto normalmente encurta o back-off junto.
+  - Não repete em cancelamento: shutdown, tempo limite e perda da chave de exclusão cancelam o token, e insistir ali seria trabalhar sem ter mais direito a isso.
+  - Não substitui a persistente: só ela sobrevive à queda do nó.
 - Cancelamento (shutdown/posse perdida) **não conta como tentativa**.
 
 ## Cancelamento, tempo limite e efeitos colaterais

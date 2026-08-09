@@ -3,12 +3,20 @@ using Guara.Abstractions;
 namespace Guara.Core;
 
 /// <summary>
-/// Middleware <b>opcional</b> de retentativa em processo (slot <see cref="PipelineSlot.Retry"/>):
-/// reexecuta o restante do pipeline em caso de exceção, respeitando
-/// <see cref="RetryOptions.MaxAttempts"/> e o back-off, sem tocar o storage. Útil para
-/// oscilações rápidas (ex.: chamadas HTTP instáveis) dentro de uma mesma tentativa; a
-/// retentativa entre tentativas é a persistente, feita pelo executor. Usa
-/// <see cref="TimeProvider"/> para os atrasos (testável).
+/// Retentativa <b>em processo</b>: reexecuta o restante do pipeline na hora, sem tocar o
+/// storage, até <see cref="RetryOptions.InProcessAttempts"/> vezes. Só é registrado quando
+/// essa opção é maior que zero.
+/// <para>
+/// Conta com <see cref="RetryOptions.InProcessAttempts"/>, e <b>não</b> com
+/// <see cref="RetryOptions.MaxAttempts"/>: os dois modos se compõem — o que sobrevive a
+/// este middleware vira uma tentativa persistente —, então usar o mesmo número nos dois
+/// multiplicaria as execuções em vez de somá-las.
+/// </para>
+/// <para>
+/// Não repete em cancelamento: shutdown, tempo limite estourado e perda da chave de
+/// exclusão mútua cancelam o token, e insistir ali seria seguir trabalhando depois de
+/// deixar de ter direito a isso.
+/// </para>
 /// </summary>
 internal sealed class RetryMiddleware(RetryOptions options, TimeProvider? timeProvider = null) : IJobMiddleware
 {
@@ -24,7 +32,7 @@ internal sealed class RetryMiddleware(RetryOptions options, TimeProvider? timePr
                 await next(context, ct);
                 return;
             }
-            catch (Exception) when (attempt < options.MaxAttempts && !ct.IsCancellationRequested)
+            catch (Exception) when (attempt < options.InProcessAttempts && !ct.IsCancellationRequested)
             {
                 if (context is JobContext jobContext)
                 {

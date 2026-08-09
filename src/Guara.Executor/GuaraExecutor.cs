@@ -82,6 +82,18 @@ internal sealed class GuaraExecutor : IExecutor
             builder.Use(PipelineSlot.Custom, middleware);
         }
 
+        // Retentativa em processo, quando ligada, entra no slot mais interno: colada no
+        // invoker, ela repete só a chamada do job. Posta por fora, cada repetição contaria de
+        // novo em métricas e logs, e um job instável apareceria como vários.
+        //
+        // Fica fora da DI de propósito — registrá-la como IJobMiddleware exigiria um
+        // middleware inerte quando desligada, e o caminho feliz pagaria um salto de delegate
+        // por um recurso que ninguém pediu.
+        if (retryOptions.InProcessAttempts > 0)
+        {
+            builder.Use(PipelineSlot.Retry, new RetryMiddleware(retryOptions, time));
+        }
+
         _pipeline = builder.Build((ctx, ct) => invoker.InvokeAsync(ctx, ct));
     }
 
