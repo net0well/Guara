@@ -212,6 +212,17 @@ internal sealed class GuaraWorker : IWorker, IWorkerCapacity, IEventHandler<Work
         {
             // fim normal da execução
         }
+        catch (Exception ex)
+        {
+            // Renovação falhou por erro, não por perda declarada: sem resposta do storage não
+            // dá para afirmar que a posse ainda é nossa, e ela vence sozinha se ninguém a
+            // renovar. Seguir executando apostaria que nenhum outro nó vai adquirir o job no
+            // meio-tempo. Cede, pelo mesmo motivo da perda declarada — repetir um job é o
+            // preço documentado (at-least-once); executá-lo em dobro ao mesmo tempo não é.
+            _logger.LogWarning(
+                ex, "Falha ao renovar a posse do job {JobId}; abortando a execução local", id.Value);
+            await jobCts.CancelAsync();
+        }
     }
 }
 
