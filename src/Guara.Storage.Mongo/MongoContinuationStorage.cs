@@ -45,14 +45,53 @@ internal sealed class MongoContinuationStorage(MongoCollections collections) : I
         return [.. documentos.Select(MongoDocumentMapper.ReadContinuation)];
     }
 
-    public async ValueTask<IReadOnlyList<ContinuationRecord>> ListPendingAsync(CancellationToken ct)
+    public async ValueTask<IReadOnlyList<ResolvableContinuation>> ListResolvablePendingAsync(
+        int max, CancellationToken ct)
     {
+        ArgumentOutOfRangeException.ThrowIfLessThan(max, 1);
+
         await collections.EnsureAsync(ct);
+
+        // $lookup é o equivalente ao LEFT JOIN dos relacionais, e é o que permite filtrar
+        // pelo desfecho do pai no servidor. Sem ele, limitar por quantidade traria os
+        // pendentes mais antigos — quase todos com pai ainda rodando — e os resolvíveis
+        // poderiam nunca aparecer.
+        var pipeline = new BsonDocument[]
+        {
+            new("$match", new BsonDocument("status", (int)ContinuationStatus.Pending)),
+            new("$sort", new BsonDocument("createdAt", 1)),
+            new("$lookup", new BsonDocument
+            {
+                ["from"] = collections.Jobs.CollectionNamespace.CollectionName,
+                ["localField"] = "parentId",
+                ["foreignField"] = "_id",
+                ["as"] = "pai",
+            }),
+            new("$match", new BsonDocument("$or", new BsonArray
+            {
+                new BsonDocument("pai", new BsonDocument("$size", 0)),
+                new BsonDocument("pai.state", (int)JobState.Succeeded),
+                new BsonDocument("pai.state", (int)JobState.Failed),
+            })),
+            new("$limit", max),
+        };
+
         var documentos = await collections.Continuations
-            .Find(Builders<BsonDocument>.Filter.Eq("status", (int)ContinuationStatus.Pending))
-            .Sort(Builders<BsonDocument>.Sort.Ascending("createdAt"))
+            .Aggregate<BsonDocument>(pipeline, cancellationToken: ct)
             .ToListAsync(ct);
-        return [.. documentos.Select(MongoDocumentMapper.ReadContinuation)];
+
+        var resolviveis = new List<ResolvableContinuation>(documentos.Count);
+        foreach (var documento in documentos)
+        {
+            var pai = documento["pai"].AsBsonArray;
+            resolviveis.Add(new ResolvableContinuation
+            {
+                Continuation = MongoDocumentMapper.ReadContinuation(documento),
+                ParentState = pai.Count == 0 ? null : (JobState)pai[0]["state"].AsInt32,
+            });
+        }
+
+        return resolviveis;
     }
 
     public async ValueTask<bool> TryResolveAsync(

@@ -53,7 +53,20 @@ Guara.Storage.IContinuationStorage
 Guara.Storage.IContinuationStorage.AddAsync(Guara.Storage.ContinuationRecord! record, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
 Guara.Storage.IContinuationStorage.GetByChildAsync(Guara.Abstractions.JobId childId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<Guara.Storage.ContinuationRecord?>
 Guara.Storage.IContinuationStorage.ListByParentAsync(Guara.Abstractions.JobId parentId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Guara.Storage.ContinuationRecord!>!>
-Guara.Storage.IContinuationStorage.ListPendingAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Guara.Storage.ContinuationRecord!>!>
+Guara.Storage.IContinuationStorage.ListResolvablePendingAsync(int max, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Guara.Storage.ResolvableContinuation!>!>
+Guara.Storage.ResolvableContinuation
+Guara.Storage.ResolvableContinuation.<Clone>$() -> Guara.Storage.ResolvableContinuation!
+Guara.Storage.ResolvableContinuation.Continuation.get -> Guara.Storage.ContinuationRecord!
+Guara.Storage.ResolvableContinuation.Continuation.init -> void
+Guara.Storage.ResolvableContinuation.Equals(Guara.Storage.ResolvableContinuation? other) -> bool
+Guara.Storage.ResolvableContinuation.ParentState.get -> Guara.Abstractions.JobState?
+Guara.Storage.ResolvableContinuation.ParentState.init -> void
+Guara.Storage.ResolvableContinuation.ResolvableContinuation() -> void
+override Guara.Storage.ResolvableContinuation.Equals(object? obj) -> bool
+override Guara.Storage.ResolvableContinuation.GetHashCode() -> int
+override Guara.Storage.ResolvableContinuation.ToString() -> string!
+static Guara.Storage.ResolvableContinuation.operator !=(Guara.Storage.ResolvableContinuation? left, Guara.Storage.ResolvableContinuation? right) -> bool
+static Guara.Storage.ResolvableContinuation.operator ==(Guara.Storage.ResolvableContinuation? left, Guara.Storage.ResolvableContinuation? right) -> bool
 Guara.Storage.IContinuationStorage.TryResolveAsync(Guara.Abstractions.JobId childId, Guara.Storage.ContinuationStatus status, string? reason, System.DateTimeOffset resolvedAt, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<bool>
 Guara.Storage.IJobStorage
 Guara.Storage.IJobStorage.AcquireNextDueAsync(string! queue, int max, System.TimeSpan lease, System.DateTimeOffset now, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Guara.Storage.JobRecord!>!>

@@ -53,6 +53,14 @@ internal sealed class ContinuationPromoter(
     }
 
     /// <summary>
+    /// Teto de vínculos por varredura. O que sobrar fica para o ciclo seguinte: o caminho
+    /// normal de uma continuação é o pai promovê-la ao terminar, e esta varredura só existe
+    /// para a queda entre persistir o desfecho e promover — um resíduo, não a via principal.
+    /// Sem teto, um acúmulo isolado prenderia a manutenção inteira num ciclo só.
+    /// </summary>
+    private const int MaxPorVarredura = 500;
+
+    /// <summary>
     /// Varredura de recuperação: resolve vínculos pendentes cujo pai já finalizou
     /// (queda entre persistir o final e promover) ou não existe mais.
     /// </summary>
@@ -60,20 +68,21 @@ internal sealed class ContinuationPromoter(
     /// <returns>Uma <see cref="ValueTask"/> que conclui quando a varredura termina.</returns>
     public async ValueTask SweepAsync(CancellationToken ct)
     {
-        foreach (var pending in await storage.Continuations.ListPendingAsync(ct))
+        // O storage já devolve só o que dá para resolver, com o desfecho do pai junto —
+        // pendente cujo pai ainda roda nem chega aqui, e não custa uma leitura por vínculo.
+        var resolviveis = await storage.Continuations.ListResolvablePendingAsync(MaxPorVarredura, ct);
+        foreach (var pendente in resolviveis)
         {
-            var parent = await storage.Jobs.GetAsync(pending.ParentId, ct);
-            if (parent is null)
+            if (pendente.ParentState is { } estadoFinal)
             {
-                const string reason = "O job pai não existe mais.";
-                if (await DiscardAsync(pending, reason, ct))
-                {
-                    await DiscardPendingAsync(pending.ChildId, reason, ct);
-                }
+                await EvaluateAsync(pendente.Continuation, estadoFinal, ct);
+                continue;
             }
-            else if (parent.State is JobState.Succeeded or JobState.Failed)
+
+            const string reason = "O job pai não existe mais.";
+            if (await DiscardAsync(pendente.Continuation, reason, ct))
             {
-                await EvaluateAsync(pending, parent.State, ct);
+                await DiscardPendingAsync(pendente.Continuation.ChildId, reason, ct);
             }
         }
     }

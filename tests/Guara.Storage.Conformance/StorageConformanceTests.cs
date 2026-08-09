@@ -1055,8 +1055,13 @@ public abstract class StorageConformanceTests : IAsyncDisposable
             new JobId("desconhecido"), ContinuationStatus.Enqueued, null, T0, CancellationToken.None));
     }
 
+    /// <summary>
+    /// A varredura recebe apenas o que consegue resolver: pendente já resolvido fica de fora,
+    /// e pendente cujo pai não existe mais entra com <c>ParentState</c> nulo — é assim que
+    /// ela distingue "disparar o filho" de "descartar a cadeia".
+    /// </summary>
     [Fact]
-    public async Task Continuations_ListPending_ReturnsOnlyPending()
+    public async Task Continuations_ListResolvablePending_ReturnsOnlyPendingWithoutLiveParent()
     {
         var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
         await storage.Continuations.AddAsync(NewContinuation("c1", "p1"), CancellationToken.None);
@@ -1064,8 +1069,50 @@ public abstract class StorageConformanceTests : IAsyncDisposable
         await storage.Continuations.TryResolveAsync(
             new JobId("c2"), ContinuationStatus.Discarded, "motivo", T0, CancellationToken.None);
 
-        var pending = Assert.Single(await storage.Continuations.ListPendingAsync(CancellationToken.None));
-        Assert.Equal(new JobId("c1"), pending.ChildId);
+        var resolvivel = Assert.Single(
+            await storage.Continuations.ListResolvablePendingAsync(500, CancellationToken.None));
+        Assert.Equal(new JobId("c1"), resolvivel.Continuation.ChildId);
+        Assert.Null(resolvivel.ParentState); // o pai "p1" nunca existiu como job
+    }
+
+    /// <summary>
+    /// Pendente cujo pai ainda está rodando não é trabalho da varredura: quem o promove é o
+    /// próprio pai ao terminar. Trazê-lo aqui faria a manutenção reler a fila inteira a cada
+    /// ciclo para descobrir que nada mudou — pendente é o estado normal, não a exceção.
+    /// </summary>
+    [Fact]
+    public async Task Continuations_ListResolvablePending_SkipsWhileParentIsUnfinished()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        await storage.Jobs.CreateAsync(NewJob("pai"), CancellationToken.None); // Enqueued
+        await storage.Continuations.AddAsync(NewContinuation("filho", "pai"), CancellationToken.None);
+
+        Assert.Empty(await storage.Continuations.ListResolvablePendingAsync(500, CancellationToken.None));
+
+        // O pai chega ao desfecho: agora a varredura tem o que resolver, e sabe qual foi.
+        await storage.Jobs.UpdateStateAsync(
+            new JobId("pai"), JobState.Succeeded, null, CancellationToken.None);
+
+        var resolvivel = Assert.Single(
+            await storage.Continuations.ListResolvablePendingAsync(500, CancellationToken.None));
+        Assert.Equal(new JobId("filho"), resolvivel.Continuation.ChildId);
+        Assert.Equal(JobState.Succeeded, resolvivel.ParentState);
+    }
+
+    [Fact]
+    public async Task Continuations_ListResolvablePending_RespectsMax()
+    {
+        var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
+        for (var i = 0; i < 5; i++)
+        {
+            await storage.Continuations.AddAsync(NewContinuation($"c{i}", $"p{i}"), CancellationToken.None);
+        }
+
+        Assert.Equal(
+            2, (await storage.Continuations.ListResolvablePendingAsync(2, CancellationToken.None)).Count);
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+            async () => await storage.Continuations.ListResolvablePendingAsync(0, CancellationToken.None));
     }
 
     // --- Enfileiramento transacional ---

@@ -28,10 +28,22 @@ public interface IContinuationStorage
     /// <returns>Os vínculos registrados para o pai.</returns>
     ValueTask<IReadOnlyList<ContinuationRecord>> ListByParentAsync(JobId parentId, CancellationToken ct);
 
-    /// <summary>Lista os vínculos ainda pendentes (varredura de recuperação).</summary>
+    /// <summary>
+    /// Lista os vínculos pendentes que a varredura de recuperação consegue resolver: os que
+    /// já têm um pai finalizado, e os cujo pai não existe mais.
+    /// <para>
+    /// Traz o desfecho do pai junto de propósito. Listar só os pendentes obrigaria a
+    /// varredura a ler o pai de cada um, e pendente é o estado <b>normal</b> de uma
+    /// continuação enquanto o pai não termina — o custo cresceria com a fila inteira, a cada
+    /// ciclo de manutenção, para descobrir que quase nada mudou.
+    /// </para>
+    /// </summary>
+    /// <param name="max">Teto de vínculos por chamada; o restante fica para o próximo ciclo.</param>
     /// <param name="ct">Token de cancelamento.</param>
-    /// <returns>Os vínculos com <see cref="ContinuationStatus.Pending"/>.</returns>
-    ValueTask<IReadOnlyList<ContinuationRecord>> ListPendingAsync(CancellationToken ct);
+    /// <returns>Os vínculos resolvíveis, com o desfecho do pai.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Quando <paramref name="max"/> não é positivo.</exception>
+    ValueTask<IReadOnlyList<ResolvableContinuation>> ListResolvablePendingAsync(
+        int max, CancellationToken ct);
 
     /// <summary>
     /// Resolve um vínculo pendente (disparo ou descarte), atomicamente e uma única vez.

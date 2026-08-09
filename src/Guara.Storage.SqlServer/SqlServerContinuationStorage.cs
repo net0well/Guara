@@ -61,18 +61,46 @@ internal sealed class SqlServerContinuationStorage(
         return await ReadAllAsync(command, ct);
     }
 
-    public async ValueTask<IReadOnlyList<ContinuationRecord>> ListPendingAsync(CancellationToken ct)
+    public async ValueTask<IReadOnlyList<ResolvableContinuation>> ListResolvablePendingAsync(
+        int max, CancellationToken ct)
     {
+        ArgumentOutOfRangeException.ThrowIfLessThan(max, 1);
+
         await schema.EnsureAsync(ct);
         await using var connection = await connections.OpenAsync(ct);
         await using var command = connection.CreateCommand();
+
+        // O LEFT JOIN traz o desfecho do pai na mesma consulta, e o filtro já descarta o
+        // pendente cujo pai ainda está rodando — que é a maioria. Sem isso a varredura leria
+        // a fila inteira para descobrir que quase nada mudou.
         command.CommandText = $"""
-            SELECT {Columns} FROM {s}.continuations
-            WHERE status = {(int)ContinuationStatus.Pending}
-            ORDER BY created_at
+            SELECT TOP (@max) {Prefixed("c")}, j.state
+            FROM {s}.continuations c
+            LEFT JOIN {s}.jobs j ON j.id = c.parent_id
+            WHERE c.status = {(int)ContinuationStatus.Pending}
+              AND (j.id IS NULL
+                   OR j.state = {(int)JobState.Succeeded}
+                   OR j.state = {(int)JobState.Failed})
+            ORDER BY c.created_at
             """;
-        return await ReadAllAsync(command, ct);
+        command.Parameters.AddWithValue("@max", max);
+
+        var resolviveis = new List<ResolvableContinuation>(max);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            resolviveis.Add(new ResolvableContinuation
+            {
+                Continuation = ReadContinuation(reader),
+                ParentState = await reader.IsDBNullAsync(8, ct) ? null : (JobState)reader.GetInt32(8),
+            });
+        }
+
+        return resolviveis;
     }
+
+    private static string Prefixed(string alias)
+        => string.Join(", ", Columns.Split(", ").Select(c => $"{alias}.{c}"));
 
     public async ValueTask<bool> TryResolveAsync(
         JobId childId, ContinuationStatus status, string? reason, DateTimeOffset resolvedAt, CancellationToken ct)
