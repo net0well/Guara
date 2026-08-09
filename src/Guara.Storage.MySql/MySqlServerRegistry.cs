@@ -28,8 +28,8 @@ internal sealed class MySqlServerRegistry(
             """;
         command.Parameters.AddWithValue("@id", node.Id);
         command.Parameters.AddWithValue("@machineName", node.MachineName);
-        command.Parameters.AddWithValue("@startedAt", MySqlTime.ToDatabase(node.StartedAt));
-        command.Parameters.AddWithValue("@lastHeartbeat", MySqlTime.ToDatabase(node.LastHeartbeat));
+        command.Parameters.AddWithValue("@startedAt", MySqlTimeConverter.ToDatabase(node.StartedAt));
+        command.Parameters.AddWithValue("@lastHeartbeat", MySqlTimeConverter.ToDatabase(node.LastHeartbeat));
         command.Parameters.AddWithValue("@queues", SerializarLista(node.Queues));
         command.Parameters.AddWithValue("@maxConcurrency", node.MaxConcurrency);
         command.Parameters.AddWithValue("@roles", SerializarLista(node.Roles));
@@ -43,7 +43,7 @@ internal sealed class MySqlServerRegistry(
         await using var command = connection.CreateCommand();
         command.CommandText = $"UPDATE {p}servers SET last_heartbeat = @now WHERE id = @id";
         command.Parameters.AddWithValue("@id", serverId);
-        command.Parameters.AddWithValue("@now", MySqlTime.ToDatabase(now));
+        command.Parameters.AddWithValue("@now", MySqlTimeConverter.ToDatabase(now));
         return await command.ExecuteNonQueryAsync(ct) > 0;
     }
 
@@ -75,8 +75,8 @@ internal sealed class MySqlServerRegistry(
             {
                 Id = reader.GetString(0),
                 MachineName = reader.GetString(1),
-                StartedAt = MySqlTime.FromDatabase(reader.GetDateTime(2)),
-                LastHeartbeat = MySqlTime.FromDatabase(reader.GetDateTime(3)),
+                StartedAt = MySqlTimeConverter.FromDatabase(reader.GetDateTime(2)),
+                LastHeartbeat = MySqlTimeConverter.FromDatabase(reader.GetDateTime(3)),
                 Queues = DesserializarLista(reader.GetString(4)),
                 MaxConcurrency = reader.GetInt32(5),
                 Roles = DesserializarLista(reader.GetString(6)),
@@ -92,7 +92,7 @@ internal sealed class MySqlServerRegistry(
         await using var connection = await dataSource.OpenConnectionAsync(ct);
         await using var command = connection.CreateCommand();
         command.CommandText = $"DELETE FROM {p}servers WHERE last_heartbeat < @cutoff";
-        command.Parameters.AddWithValue("@cutoff", MySqlTime.ToDatabase(heartbeatBefore));
+        command.Parameters.AddWithValue("@cutoff", MySqlTimeConverter.ToDatabase(heartbeatBefore));
         return await command.ExecuteNonQueryAsync(ct);
     }
 

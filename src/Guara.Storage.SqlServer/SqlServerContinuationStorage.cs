@@ -9,7 +9,7 @@ namespace Guara.Storage.SqlServer;
 /// condicionado a <c>status = Pending</c>: entre nós concorrentes, exatamente um vence.
 /// </summary>
 internal sealed class SqlServerContinuationStorage(
-    SqlServerConnections connections, SqlServerSchemaInitializer schema, string s) : IContinuationStorage
+    SqlServerConnectionFactory connections, SqlServerSchemaInitializer schema, string s) : IContinuationStorage
 {
     private const string Columns = "child_id, parent_id, fires_on, status, reason, depth, created_at, resolved_at";
 

@@ -17,7 +17,7 @@ internal sealed class MongoContinuationStorage(MongoCollections collections) : I
         await collections.EnsureAsync(ct);
 
         // Inserção idempotente pelo id do filho: registrar duas vezes não duplica o vínculo.
-        var documento = MongoDocuments.FromContinuation(record);
+        var documento = MongoDocumentMapper.FromContinuation(record);
         documento.Remove("_id");
         await collections.Continuations.UpdateOneAsync(
             Builders<BsonDocument>.Filter.Eq("_id", record.ChildId.Value),
@@ -32,7 +32,7 @@ internal sealed class MongoContinuationStorage(MongoCollections collections) : I
         var documento = await collections.Continuations
             .Find(Builders<BsonDocument>.Filter.Eq("_id", childId.Value))
             .FirstOrDefaultAsync(ct);
-        return documento is null ? null : MongoDocuments.ReadContinuation(documento);
+        return documento is null ? null : MongoDocumentMapper.ReadContinuation(documento);
     }
 
     public async ValueTask<IReadOnlyList<ContinuationRecord>> ListByParentAsync(JobId parentId, CancellationToken ct)
@@ -42,7 +42,7 @@ internal sealed class MongoContinuationStorage(MongoCollections collections) : I
             .Find(Builders<BsonDocument>.Filter.Eq("parentId", parentId.Value))
             .Sort(Builders<BsonDocument>.Sort.Ascending("createdAt"))
             .ToListAsync(ct);
-        return [.. documentos.Select(MongoDocuments.ReadContinuation)];
+        return [.. documentos.Select(MongoDocumentMapper.ReadContinuation)];
     }
 
     public async ValueTask<IReadOnlyList<ContinuationRecord>> ListPendingAsync(CancellationToken ct)
@@ -52,7 +52,7 @@ internal sealed class MongoContinuationStorage(MongoCollections collections) : I
             .Find(Builders<BsonDocument>.Filter.Eq("status", (int)ContinuationStatus.Pending))
             .Sort(Builders<BsonDocument>.Sort.Ascending("createdAt"))
             .ToListAsync(ct);
-        return [.. documentos.Select(MongoDocuments.ReadContinuation)];
+        return [.. documentos.Select(MongoDocumentMapper.ReadContinuation)];
     }
 
     public async ValueTask<bool> TryResolveAsync(
@@ -68,7 +68,7 @@ internal sealed class MongoContinuationStorage(MongoCollections collections) : I
             new BsonDocument("$set", new BsonDocument
             {
                 ["status"] = (int)status,
-                ["reason"] = MongoDocuments.Text(reason),
+                ["reason"] = MongoDocumentMapper.Text(reason),
                 ["resolvedAt"] = resolvedAt.UtcTicks,
             }),
             cancellationToken: ct);

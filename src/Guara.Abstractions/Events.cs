@@ -13,8 +13,19 @@ public sealed record JobCreated(JobId Id, DateTimeOffset OccurredAt) : IGuaraEve
 /// <summary>Um job foi agendado (<c>NextRun</c> calculado).</summary>
 public sealed record JobScheduled(JobId Id, DateTimeOffset OccurredAt) : IGuaraEvent;
 
-/// <summary>Um worker foi solicitado para um job elegível.</summary>
-public sealed record WorkerRequested(JobId Id, DateTimeOffset OccurredAt) : IGuaraEvent;
+/// <summary>
+/// Um worker foi solicitado para um job elegível.
+/// </summary>
+/// <param name="Id">Job adquirido.</param>
+/// <param name="OccurredAt">Instante do evento.</param>
+/// <param name="LeaseUntil">
+/// Vencimento da posse criada na aquisição. Viaja junto porque a renovação é um
+/// compare-and-swap sobre esse instante: sem ele, quem renova não teria como provar que a
+/// posse ainda é a mesma que adquiriu, e um nó que voltasse de uma pausa longa renovaria a
+/// posse de quem legitimamente assumiu o job.
+/// </param>
+public sealed record WorkerRequested(JobId Id, DateTimeOffset OccurredAt, DateTimeOffset LeaseUntil)
+    : IGuaraEvent;
 
 /// <summary>A execução de um job foi iniciada.</summary>
 public sealed record ExecutorStarted(JobId Id, DateTimeOffset OccurredAt) : IGuaraEvent;

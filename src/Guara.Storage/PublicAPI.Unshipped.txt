@@ -66,7 +66,7 @@ Guara.Storage.IJobStorage.GetAsync(Guara.Abstractions.JobId id, System.Threading
 Guara.Storage.IJobStorage.GetSeriesAsync(Guara.Storage.JobSeriesQuery! query, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Guara.Storage.JobSeriesPoint!>!>
 Guara.Storage.IJobStorage.ListAsync(Guara.Storage.JobQuery! query, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Guara.Storage.JobRecord!>!>
 Guara.Storage.IJobStorage.PurgeAsync(Guara.Abstractions.JobState state, System.DateTimeOffset finishedBefore, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<int>
-Guara.Storage.IJobStorage.RenewLeaseAsync(Guara.Abstractions.JobId id, System.TimeSpan lease, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<bool>
+Guara.Storage.IJobStorage.RenewLeaseAsync(Guara.Abstractions.JobId id, System.DateTimeOffset expectedLeaseUntil, System.TimeSpan lease, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask<System.DateTimeOffset?>
 Guara.Storage.IJobStorage.RescheduleAsync(Guara.Abstractions.JobId id, System.DateTimeOffset scheduledFor, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
 Guara.Storage.IJobStorage.ScheduleRetryAsync(Guara.Abstractions.JobId id, string! error, System.DateTimeOffset retryAt, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask
 Guara.Storage.IJobStorage.UpdateStateAsync(Guara.Abstractions.JobId id, Guara.Abstractions.JobState state, string? resultOrError, System.Threading.CancellationToken ct) -> System.Threading.Tasks.ValueTask

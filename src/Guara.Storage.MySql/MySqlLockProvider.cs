@@ -31,8 +31,8 @@ internal sealed class MySqlLockProvider(
             """;
         command.Parameters.AddWithValue("@key", key);
         command.Parameters.AddWithValue("@owner", owner);
-        command.Parameters.AddWithValue("@expiresAt", MySqlTime.ToDatabase(now + ttl));
-        command.Parameters.AddWithValue("@now", MySqlTime.ToDatabase(now));
+        command.Parameters.AddWithValue("@expiresAt", MySqlTimeConverter.ToDatabase(now + ttl));
+        command.Parameters.AddWithValue("@now", MySqlTimeConverter.ToDatabase(now));
         await command.ExecuteNonQueryAsync(ct);
 
         // O ON DUPLICATE KEY não distingue "tomei o lock vencido" de "o dono atual seguiu";
@@ -56,7 +56,7 @@ internal sealed class MySqlLockProvider(
             await using var command = connection.CreateCommand();
             command.CommandText =
                 $"UPDATE {p}locks SET expires_at = @expiresAt WHERE `key` = @key AND owner = @owner";
-            command.Parameters.AddWithValue("@expiresAt", MySqlTime.ToDatabase(time.GetUtcNow() + ttl));
+            command.Parameters.AddWithValue("@expiresAt", MySqlTimeConverter.ToDatabase(time.GetUtcNow() + ttl));
             command.Parameters.AddWithValue("@key", key);
             command.Parameters.AddWithValue("@owner", owner);
             return await command.ExecuteNonQueryAsync(ct) > 0;

@@ -46,17 +46,17 @@ internal sealed class MySqlJobStorage(
             VALUES (@id, @descriptor, @state, @attempt, @queue, @createdAt, @scheduledFor, @leaseUntil,
                     @finishedAt, @result, @error, @eligibleAt)
             """;
-        command.Parameters.AddWithValue("@eligibleAt", MySqlTime.ToDatabaseOrNull(JobEligibility.For(record)));
+        command.Parameters.AddWithValue("@eligibleAt", MySqlTimeConverter.ToDatabaseOrNull(JobEligibility.For(record)));
         command.Parameters.AddWithValue("@id", record.Id.Value);
         command.Parameters.AddWithValue(
             "@descriptor", JsonSerializer.Serialize(record.Descriptor, MySqlJsonContext.Default.JobDescriptor));
         command.Parameters.AddWithValue("@state", (int)record.State);
         command.Parameters.AddWithValue("@attempt", record.Attempt);
         command.Parameters.AddWithValue("@queue", record.Queue);
-        command.Parameters.AddWithValue("@createdAt", MySqlTime.ToDatabase(record.CreatedAt));
-        command.Parameters.AddWithValue("@scheduledFor", MySqlTime.ToDatabaseOrNull(record.ScheduledFor));
-        command.Parameters.AddWithValue("@leaseUntil", MySqlTime.ToDatabaseOrNull(record.LeaseUntil));
-        command.Parameters.AddWithValue("@finishedAt", MySqlTime.ToDatabaseOrNull(record.FinishedAt));
+        command.Parameters.AddWithValue("@createdAt", MySqlTimeConverter.ToDatabase(record.CreatedAt));
+        command.Parameters.AddWithValue("@scheduledFor", MySqlTimeConverter.ToDatabaseOrNull(record.ScheduledFor));
+        command.Parameters.AddWithValue("@leaseUntil", MySqlTimeConverter.ToDatabaseOrNull(record.LeaseUntil));
+        command.Parameters.AddWithValue("@finishedAt", MySqlTimeConverter.ToDatabaseOrNull(record.FinishedAt));
         command.Parameters.AddWithValue("@result", (object?)record.Result ?? DBNull.Value);
         command.Parameters.AddWithValue("@error", (object?)record.Error ?? DBNull.Value);
         await command.ExecuteNonQueryAsync(ct);
@@ -93,7 +93,7 @@ internal sealed class MySqlJobStorage(
                 FOR UPDATE SKIP LOCKED
                 """;
             select.Parameters.AddWithValue("@queue", queue);
-            select.Parameters.AddWithValue("@now", MySqlTime.ToDatabase(now));
+            select.Parameters.AddWithValue("@now", MySqlTimeConverter.ToDatabase(now));
             select.Parameters.AddWithValue("@max", max);
 
             candidatos = new List<JobRecord>(max);
@@ -120,7 +120,7 @@ internal sealed class MySqlJobStorage(
                 $"UPDATE {p}jobs SET state = @state, lease_until = @leaseUntil, eligible_at = @leaseUntil " +
                 $"WHERE id IN ({alvos})";
             update.Parameters.AddWithValue("@state", (int)JobState.Processing);
-            update.Parameters.AddWithValue("@leaseUntil", MySqlTime.ToDatabase(leaseUntil));
+            update.Parameters.AddWithValue("@leaseUntil", MySqlTimeConverter.ToDatabase(leaseUntil));
             for (var i = 0; i < candidatos.Count; i++)
             {
                 update.Parameters.AddWithValue($"@id{i}", candidatos[i].Id.Value);
@@ -133,18 +133,24 @@ internal sealed class MySqlJobStorage(
         return [.. candidatos.Select(c => c with { State = JobState.Processing, LeaseUntil = leaseUntil })];
     }
 
-    public async ValueTask<bool> RenewLeaseAsync(JobId id, TimeSpan lease, CancellationToken ct)
+    public async ValueTask<DateTimeOffset?> RenewLeaseAsync(
+        JobId id, DateTimeOffset expectedLeaseUntil, TimeSpan lease, CancellationToken ct)
     {
         await schema.EnsureAsync(ct);
         await using var connection = await dataSource.OpenConnectionAsync(ct);
         await using var command = connection.CreateCommand();
+
+        // A comparação com o vencimento esperado é o que separa a própria posse da de outro
+        // nó: se alguém readquiriu o job, lease_until já é outro e nada é atualizado.
         command.CommandText = $"""
             UPDATE {p}jobs SET lease_until = @leaseUntil, eligible_at = @leaseUntil
-            WHERE id = @id AND state = {(int)JobState.Processing} AND lease_until IS NOT NULL
+            WHERE id = @id AND state = {(int)JobState.Processing} AND lease_until = @expected
             """;
+        var leaseUntil = time.GetUtcNow() + lease;
         command.Parameters.AddWithValue("@id", id.Value);
-        command.Parameters.AddWithValue("@leaseUntil", MySqlTime.ToDatabase(time.GetUtcNow() + lease));
-        return await command.ExecuteNonQueryAsync(ct) > 0;
+        command.Parameters.AddWithValue("@expected", MySqlTimeConverter.ToDatabase(expectedLeaseUntil));
+        command.Parameters.AddWithValue("@leaseUntil", MySqlTimeConverter.ToDatabase(leaseUntil));
+        return await command.ExecuteNonQueryAsync(ct) > 0 ? leaseUntil : null;
     }
 
     public async ValueTask ScheduleRetryAsync(JobId id, string error, DateTimeOffset retryAt, CancellationToken ct)
@@ -160,7 +166,7 @@ internal sealed class MySqlJobStorage(
             """;
         command.Parameters.AddWithValue("@id", id.Value);
         command.Parameters.AddWithValue("@error", error);
-        command.Parameters.AddWithValue("@retryAt", MySqlTime.ToDatabase(retryAt));
+        command.Parameters.AddWithValue("@retryAt", MySqlTimeConverter.ToDatabase(retryAt));
         await command.ExecuteNonQueryAsync(ct);
     }
 
@@ -176,7 +182,7 @@ internal sealed class MySqlJobStorage(
             WHERE id = @id
             """;
         command.Parameters.AddWithValue("@id", id.Value);
-        command.Parameters.AddWithValue("@scheduledFor", MySqlTime.ToDatabase(scheduledFor));
+        command.Parameters.AddWithValue("@scheduledFor", MySqlTimeConverter.ToDatabase(scheduledFor));
         await command.ExecuteNonQueryAsync(ct);
     }
 
@@ -208,7 +214,7 @@ internal sealed class MySqlJobStorage(
         command.Parameters.AddWithValue("@id", id.Value);
         command.Parameters.AddWithValue("@state", (int)state);
         command.Parameters.AddWithValue("@value", (object?)resultOrError ?? DBNull.Value);
-        command.Parameters.AddWithValue("@now", MySqlTime.ToDatabase(time.GetUtcNow()));
+        command.Parameters.AddWithValue("@now", MySqlTimeConverter.ToDatabase(time.GetUtcNow()));
         await command.ExecuteNonQueryAsync(ct);
     }
 
@@ -248,7 +254,7 @@ internal sealed class MySqlJobStorage(
         command.CommandText =
             $"DELETE FROM {p}jobs WHERE state = @state AND finished_at IS NOT NULL AND finished_at < @cutoff";
         command.Parameters.AddWithValue("@state", (int)state);
-        command.Parameters.AddWithValue("@cutoff", MySqlTime.ToDatabase(finishedBefore));
+        command.Parameters.AddWithValue("@cutoff", MySqlTimeConverter.ToDatabase(finishedBefore));
         return await command.ExecuteNonQueryAsync(ct);
     }
 
@@ -359,8 +365,8 @@ internal sealed class MySqlJobStorage(
             FROM ranqueados
             GROUP BY balde
             """;
-        command.Parameters.AddWithValue("@from", MySqlTime.ToDatabase(query.From));
-        command.Parameters.AddWithValue("@to", MySqlTime.ToDatabase(query.To));
+        command.Parameters.AddWithValue("@from", MySqlTimeConverter.ToDatabase(query.From));
+        command.Parameters.AddWithValue("@to", MySqlTimeConverter.ToDatabase(query.To));
         command.Parameters.AddWithValue("@bucket", query.Bucket.Ticks / TimeSpan.TicksPerMicrosecond);
         if (query.Queue is { } queue)
         {
@@ -421,13 +427,13 @@ internal sealed class MySqlJobStorage(
         if (query.From is { } from)
         {
             filters.Add("created_at >= @from");
-            command.Parameters.AddWithValue("@from", MySqlTime.ToDatabase(from));
+            command.Parameters.AddWithValue("@from", MySqlTimeConverter.ToDatabase(from));
         }
 
         if (query.To is { } to)
         {
             filters.Add("created_at < @to");
-            command.Parameters.AddWithValue("@to", MySqlTime.ToDatabase(to));
+            command.Parameters.AddWithValue("@to", MySqlTimeConverter.ToDatabase(to));
         }
 
         if (query.Text is { Length: > 0 } text)
@@ -471,10 +477,10 @@ internal sealed class MySqlJobStorage(
         State = (JobState)reader.GetInt32(2),
         Attempt = reader.GetInt32(3),
         Queue = reader.GetString(4),
-        CreatedAt = MySqlTime.FromDatabase(reader.GetDateTime(5)),
-        ScheduledFor = reader.IsDBNull(6) ? null : MySqlTime.FromDatabase(reader.GetDateTime(6)),
-        LeaseUntil = reader.IsDBNull(7) ? null : MySqlTime.FromDatabase(reader.GetDateTime(7)),
-        FinishedAt = reader.IsDBNull(8) ? null : MySqlTime.FromDatabase(reader.GetDateTime(8)),
+        CreatedAt = MySqlTimeConverter.FromDatabase(reader.GetDateTime(5)),
+        ScheduledFor = reader.IsDBNull(6) ? null : MySqlTimeConverter.FromDatabase(reader.GetDateTime(6)),
+        LeaseUntil = reader.IsDBNull(7) ? null : MySqlTimeConverter.FromDatabase(reader.GetDateTime(7)),
+        FinishedAt = reader.IsDBNull(8) ? null : MySqlTimeConverter.FromDatabase(reader.GetDateTime(8)),
         Result = reader.IsDBNull(9) ? null : reader.GetString(9),
         Error = reader.IsDBNull(10) ? null : reader.GetString(10),
     };

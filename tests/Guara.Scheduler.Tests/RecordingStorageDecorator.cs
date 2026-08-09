@@ -9,11 +9,11 @@ namespace Guara.Scheduler.Tests;
 /// Existe porque o provider in-memory recusa transações por natureza, e o que está sob
 /// teste aqui é o cliente: se ele repassa o handle e o que deixa de emitir por causa dele.
 /// </summary>
-internal sealed class RecordingTransactionalStorage(TimeProvider time) : IStorage
+internal sealed class RecordingStorageDecorator(TimeProvider time) : IStorage
 {
     private readonly MemoryStorage _inner = new(time);
 
-    public RecordingJobStorage RecordingJobs => field ??= new RecordingJobStorage(_inner.Jobs);
+    public RecordingJobStorageDecorator RecordingJobs => field ??= new RecordingJobStorageDecorator(_inner.Jobs);
 
     public StorageCapabilities Capabilities => _inner.Capabilities with { SupportsTransactions = true };
 
@@ -31,7 +31,7 @@ internal sealed class RecordingTransactionalStorage(TimeProvider time) : IStorag
 }
 
 /// <summary>Delega tudo ao storage real; só a criação passa pelo registro.</summary>
-internal sealed class RecordingJobStorage(IJobStorage inner) : IJobStorage
+internal sealed class RecordingJobStorageDecorator(IJobStorage inner) : IJobStorage
 {
     /// <summary>Handles recebidos na criação transacional, na ordem.</summary>
     public List<IGuaraTransaction> TransacoesRecebidas { get; } = [];
@@ -49,8 +49,9 @@ internal sealed class RecordingJobStorage(IJobStorage inner) : IJobStorage
         string queue, int max, TimeSpan lease, DateTimeOffset now, CancellationToken ct)
         => inner.AcquireNextDueAsync(queue, max, lease, now, ct);
 
-    public ValueTask<bool> RenewLeaseAsync(JobId id, TimeSpan lease, CancellationToken ct)
-        => inner.RenewLeaseAsync(id, lease, ct);
+    public ValueTask<DateTimeOffset?> RenewLeaseAsync(
+        JobId id, DateTimeOffset expectedLeaseUntil, TimeSpan lease, CancellationToken ct)
+        => inner.RenewLeaseAsync(id, expectedLeaseUntil, lease, ct);
 
     public ValueTask ScheduleRetryAsync(JobId id, string error, DateTimeOffset retryAt, CancellationToken ct)
         => inner.ScheduleRetryAsync(id, error, retryAt, ct);

@@ -15,6 +15,12 @@ O Guará garante **pelo menos uma execução** por job (*at-least-once*). Um job
 
 **Exatamente-uma-vez não existe em sistemas distribuídos** — o Guará não finge oferecer; oferece as ferramentas acima.
 
+**Como a posse é provada.** Não há coluna de dono: a posse *é* o instante de vencimento gravado no job, que a aquisição define e cada renovação avança. Renovar é um **compare-and-swap** — só tem efeito se o valor apresentado for o que está gravado.
+
+É isso que distingue a própria posse da de outro nó. Sem a comparação, um nó que travasse além do vencimento, e cujo job tivesse sido legitimamente readquirido, renovaria a posse alheia e seguiria executando em paralelo com o dono atual. Quem apresenta um vencimento velho recebe `null` e **aborta a execução local** — repetir um job é o preço do at-least-once; executá-lo em dobro ao mesmo tempo não é.
+
+Vale também quando a renovação **falha por erro** (storage fora, timeout): sem resposta não dá para afirmar que a posse é nossa, e ela vence sozinha se ninguém a renovar. O nó cede, pelo mesmo motivo.
+
 **A posse tem duas configurações que precisam ser coerentes.** Ela nasce na aquisição, com `DispatcherOptions.LeaseDuration`, e só depois passa a ser renovada pelo worker a cada `WorkerOptions.LeaseRenewInterval`. Se a primeira for menor que a segunda, a posse vence antes da primeira renovação: outro nó adquire o job e os dois executam em paralelo, sem que a renovação tenha chance de perceber a tempo. O servidor recusa subir nessa combinação, com mensagem dizendo qual valor mexer.
 
 ## Deduplicação de enfileiramento

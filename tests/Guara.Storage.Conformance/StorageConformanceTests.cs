@@ -273,7 +273,8 @@ public abstract class StorageConformanceTests : IAsyncDisposable
 
         // renova aos 4 min → posse até T0+9min
         time.Advance(TimeSpan.FromMinutes(4));
-        Assert.True(await storage.Jobs.RenewLeaseAsync(acquired.Id, TimeSpan.FromMinutes(5), CancellationToken.None));
+        Assert.NotNull(await storage.Jobs.RenewLeaseAsync(
+            acquired.Id, acquired.LeaseUntil!.Value, TimeSpan.FromMinutes(5), CancellationToken.None));
 
         // aos 6 min o lease original teria expirado, mas a renovação mantém a posse
         Assert.Null(await storage.Jobs.AcquireNextDueAsync(
@@ -285,13 +286,59 @@ public abstract class StorageConformanceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task RenewLease_UnknownOrNotProcessing_ReturnsFalse()
+    public async Task RenewLease_UnknownOrNotProcessing_ReturnsNull()
     {
         var storage = await CreateStorageAsync(new ManualTimeProvider(T0));
         await storage.Jobs.CreateAsync(NewJob("j1"), CancellationToken.None); // Enqueued, sem posse
 
-        Assert.False(await storage.Jobs.RenewLeaseAsync(new JobId("nao-existe"), TimeSpan.FromMinutes(5), CancellationToken.None));
-        Assert.False(await storage.Jobs.RenewLeaseAsync(new JobId("j1"), TimeSpan.FromMinutes(5), CancellationToken.None));
+        Assert.Null(await storage.Jobs.RenewLeaseAsync(
+            new JobId("nao-existe"), T0, TimeSpan.FromMinutes(5), CancellationToken.None));
+        Assert.Null(await storage.Jobs.RenewLeaseAsync(
+            new JobId("j1"), T0, TimeSpan.FromMinutes(5), CancellationToken.None));
+    }
+
+    /// <summary>
+    /// A renovação é um compare-and-swap: apresentar um vencimento que não é mais o gravado
+    /// não renova nada.
+    /// <para>
+    /// É o caso que separa a própria posse da de outro nó. Um nó que trave além do
+    /// vencimento, e cujo job seja legitimamente readquirido por outro, volta apresentando o
+    /// vencimento antigo. Sem a comparação ele renovaria a posse alheia, receberia
+    /// confirmação e seguiria executando em paralelo com o dono atual — o mecanismo inteiro
+    /// de "aborta ao perder a posse" nunca dispararia.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public async Task RenewLease_WithStaleExpectedLease_ReturnsNullAndDoesNotStealOwnership()
+    {
+        var time = new ManualTimeProvider(T0);
+        var storage = await CreateStorageAsync(time);
+        await storage.Jobs.CreateAsync(NewJob("j1"), CancellationToken.None);
+
+        var primeiro = await storage.Jobs.AcquireNextDueAsync(
+            "default", TimeSpan.FromMinutes(5), T0, CancellationToken.None);
+        Assert.NotNull(primeiro);
+        var posseAntiga = primeiro.LeaseUntil!.Value;
+
+        // O primeiro nó trava; a posse vence e outro nó adquire o mesmo job — legítimo.
+        var segundo = await storage.Jobs.AcquireNextDueAsync(
+            "default", TimeSpan.FromMinutes(5), T0 + TimeSpan.FromMinutes(6), CancellationToken.None);
+        Assert.NotNull(segundo);
+        Assert.Equal(primeiro.Id, segundo.Id);
+        var posseAtual = segundo.LeaseUntil!.Value;
+
+        // O primeiro volta e tenta renovar com o vencimento que acredita deter.
+        time.Advance(TimeSpan.FromMinutes(7));
+        Assert.Null(await storage.Jobs.RenewLeaseAsync(
+            primeiro.Id, posseAntiga, TimeSpan.FromMinutes(5), CancellationToken.None));
+
+        // E não mexeu na posse de quem é dono agora.
+        var job = await storage.Jobs.GetAsync(primeiro.Id, CancellationToken.None);
+        Assert.Equal(posseAtual, job!.LeaseUntil);
+
+        // O dono atual continua conseguindo renovar.
+        Assert.NotNull(await storage.Jobs.RenewLeaseAsync(
+            segundo.Id, posseAtual, TimeSpan.FromMinutes(5), CancellationToken.None));
     }
 
     // --- Transições de estado ---

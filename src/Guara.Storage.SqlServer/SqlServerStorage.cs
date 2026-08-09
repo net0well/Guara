@@ -20,7 +20,7 @@ internal sealed class SqlServerStorage : IStorage
         options.Validate();
 
         var time = timeProvider ?? TimeProvider.System;
-        var connections = new SqlServerConnections(options.ConnectionString);
+        var connections = new SqlServerConnectionFactory(options.ConnectionString);
         var schema = new SqlServerSchemaInitializer(options.ConnectionString, options);
 
         Jobs = new SqlServerJobStorage(connections, schema, options.Schema, time);

@@ -14,7 +14,7 @@ namespace Guara.Storage.Mongo;
 /// igual.
 /// </para>
 /// </summary>
-internal static class MongoDocuments
+internal static class MongoDocumentMapper
 {
     public static BsonValue Instant(DateTimeOffset value) => value.UtcTicks;
 

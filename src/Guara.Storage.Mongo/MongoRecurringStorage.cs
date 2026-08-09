@@ -15,7 +15,7 @@ internal sealed class MongoRecurringStorage(MongoCollections collections) : IRec
         ArgumentNullException.ThrowIfNull(record);
         await collections.EnsureAsync(ct);
 
-        var documento = MongoDocuments.FromRecurring(record);
+        var documento = MongoDocumentMapper.FromRecurring(record);
         documento.Remove("_id");
         await collections.Recurring.UpdateOneAsync(
             Builders<BsonDocument>.Filter.Eq("_id", record.Id),
@@ -30,7 +30,7 @@ internal sealed class MongoRecurringStorage(MongoCollections collections) : IRec
         var documento = await collections.Recurring
             .Find(Builders<BsonDocument>.Filter.Eq("_id", id))
             .FirstOrDefaultAsync(ct);
-        return documento is null ? null : MongoDocuments.ReadRecurring(documento);
+        return documento is null ? null : MongoDocumentMapper.ReadRecurring(documento);
     }
 
     public async ValueTask<bool> DeleteAsync(string id, CancellationToken ct)
@@ -48,7 +48,7 @@ internal sealed class MongoRecurringStorage(MongoCollections collections) : IRec
             .Find(new BsonDocument())
             .Sort(Builders<BsonDocument>.Sort.Ascending("_id"))
             .ToListAsync(ct);
-        return [.. documentos.Select(MongoDocuments.ReadRecurring)];
+        return [.. documentos.Select(MongoDocumentMapper.ReadRecurring)];
     }
 
     public async ValueTask<IReadOnlyList<RecurringJobRecord>> ListDueAsync(
@@ -65,7 +65,7 @@ internal sealed class MongoRecurringStorage(MongoCollections collections) : IRec
             })
             .Sort(Builders<BsonDocument>.Sort.Ascending("nextRunAt"))
             .ToListAsync(ct);
-        return [.. documentos.Select(MongoDocuments.ReadRecurring)];
+        return [.. documentos.Select(MongoDocumentMapper.ReadRecurring)];
     }
 
     public async ValueTask UpsertCalendarAsync(CalendarRecord calendar, CancellationToken ct)
@@ -73,7 +73,7 @@ internal sealed class MongoRecurringStorage(MongoCollections collections) : IRec
         ArgumentNullException.ThrowIfNull(calendar);
         await collections.EnsureAsync(ct);
 
-        var documento = MongoDocuments.FromCalendar(calendar);
+        var documento = MongoDocumentMapper.FromCalendar(calendar);
         documento.Remove("_id");
         await collections.Calendars.UpdateOneAsync(
             Builders<BsonDocument>.Filter.Eq("_id", calendar.Name),
@@ -88,7 +88,7 @@ internal sealed class MongoRecurringStorage(MongoCollections collections) : IRec
         var documento = await collections.Calendars
             .Find(Builders<BsonDocument>.Filter.Eq("_id", name))
             .FirstOrDefaultAsync(ct);
-        return documento is null ? null : MongoDocuments.ReadCalendar(documento);
+        return documento is null ? null : MongoDocumentMapper.ReadCalendar(documento);
     }
 
     public async ValueTask<bool> DeleteCalendarAsync(string name, CancellationToken ct)
@@ -106,6 +106,6 @@ internal sealed class MongoRecurringStorage(MongoCollections collections) : IRec
             .Find(new BsonDocument())
             .Sort(Builders<BsonDocument>.Sort.Ascending("_id"))
             .ToListAsync(ct);
-        return [.. documentos.Select(MongoDocuments.ReadCalendar)];
+        return [.. documentos.Select(MongoDocumentMapper.ReadCalendar)];
     }
 }

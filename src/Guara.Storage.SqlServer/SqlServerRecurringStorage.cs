@@ -11,7 +11,7 @@ namespace Guara.Storage.SqlServer;
 /// o descriptor e o calendário inteiro vão como texto JSON.
 /// </summary>
 internal sealed class SqlServerRecurringStorage(
-    SqlServerConnections connections, SqlServerSchemaInitializer schema, string s) : IRecurringStorage
+    SqlServerConnectionFactory connections, SqlServerSchemaInitializer schema, string s) : IRecurringStorage
 {
     private const string Columns =
         "id, descriptor, cron, interval_ticks, window_start_ticks, window_end_ticks, time_zone, " +

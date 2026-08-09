@@ -112,7 +112,7 @@ public class JobMetadataExecutionTests
     }
 
     /// <summary>Storage real com os locks trocados, para simular a perda da chave.</summary>
-    private sealed class StorageComLocks(IStorage inner, ILockProvider locks) : IStorage
+    private sealed class LockOverrideStorageDecorator(IStorage inner, ILockProvider locks) : IStorage
     {
         public StorageCapabilities Capabilities => inner.Capabilities;
 
@@ -175,7 +175,9 @@ public class JobMetadataExecutionTests
 
         var storage = new MemoryStorage();
         var executor = Build(
-            registry, new StorageComLocks(storage, new LockQueRecusaRenovar()), new TempoAcelerado());
+            registry,
+            new LockOverrideStorageDecorator(storage, new LockQueRecusaRenovar()),
+            new TempoAcelerado());
         var id = await CreateJobAsync(storage, "Longo");
 
         await executor.ExecuteAsync(id, Ct);

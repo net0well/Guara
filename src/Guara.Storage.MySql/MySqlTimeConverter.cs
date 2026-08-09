@@ -5,7 +5,7 @@ namespace Guara.Storage.MySql;
 /// ainda estoura em 2038 e <c>DATETIME</c> não carrega offset — então tudo é gravado em UTC
 /// e volta como UTC. A precisão é de microssegundo, a mesma do PostgreSQL.
 /// </summary>
-internal static class MySqlTime
+internal static class MySqlTimeConverter
 {
     /// <summary>Converte para o valor gravado na coluna <c>DATETIME(6)</c>.</summary>
     public static DateTime ToDatabase(DateTimeOffset value) => value.UtcDateTime;

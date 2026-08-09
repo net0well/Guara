@@ -28,7 +28,7 @@ internal sealed class MongoJobStorage(MongoCollections collections, TimeProvider
 
         // Idempotente pelo id: recriar o mesmo job não duplica nem sobrescreve. O upsert
         // com $setOnInsert só grava quando o documento ainda não existe.
-        var documento = MongoDocuments.FromJob(record);
+        var documento = MongoDocumentMapper.FromJob(record);
         documento.Remove("_id");
         await collections.Jobs.UpdateOneAsync(
             Builders<BsonDocument>.Filter.Eq("_id", record.Id.Value),
@@ -83,31 +83,36 @@ internal sealed class MongoJobStorage(MongoCollections collections, TimeProvider
                 break;
             }
 
-            adquiridos.Add(MongoDocuments.ReadJob(documento));
+            adquiridos.Add(MongoDocumentMapper.ReadJob(documento));
         }
 
         return adquiridos;
     }
 
-    public async ValueTask<bool> RenewLeaseAsync(JobId id, TimeSpan lease, CancellationToken ct)
+    public async ValueTask<DateTimeOffset?> RenewLeaseAsync(
+        JobId id, DateTimeOffset expectedLeaseUntil, TimeSpan lease, CancellationToken ct)
     {
         await collections.EnsureAsync(ct);
+        var leaseUntil = time.GetUtcNow() + lease;
         var resultado = await collections.Jobs.UpdateOneAsync(
             new BsonDocument
             {
                 ["_id"] = id.Value,
                 ["state"] = (int)JobState.Processing,
-                ["leaseUntil"] = new BsonDocument("$ne", BsonNull.Value),
+
+                // Comparar o vencimento, e não apenas exigir que exista, é o que separa a
+                // própria posse da de outro nó: se alguém readquiriu o job, o valor mudou.
+                ["leaseUntil"] = expectedLeaseUntil.UtcTicks,
             },
             new BsonDocument("$set", new BsonDocument
             {
                 // A elegibilidade acompanha a posse: renovar sem movê-la deixaria o job
                 // visível para outro nó no instante da posse antiga.
-                ["leaseUntil"] = (time.GetUtcNow() + lease).UtcTicks,
-                ["eligibleAt"] = (time.GetUtcNow() + lease).UtcTicks,
+                ["leaseUntil"] = leaseUntil.UtcTicks,
+                ["eligibleAt"] = leaseUntil.UtcTicks,
             }),
             cancellationToken: ct);
-        return resultado.MatchedCount > 0;
+        return resultado.MatchedCount > 0 ? leaseUntil : null;
     }
 
     public async ValueTask ScheduleRetryAsync(JobId id, string error, DateTimeOffset retryAt, CancellationToken ct)
@@ -155,12 +160,12 @@ internal sealed class MongoJobStorage(MongoCollections collections, TimeProvider
         {
             // $literal protege o valor do usuário: num pipeline de update, um texto que
             // começa com '$' seria interpretado como caminho de campo.
-            set["result"] = new BsonDocument("$literal", MongoDocuments.Text(resultOrError));
+            set["result"] = new BsonDocument("$literal", MongoDocumentMapper.Text(resultOrError));
         }
 
         if (state is JobState.Failed or JobState.Retrying)
         {
-            set["error"] = new BsonDocument("$literal", MongoDocuments.Text(resultOrError));
+            set["error"] = new BsonDocument("$literal", MongoDocumentMapper.Text(resultOrError));
         }
 
         if (state is not JobState.Processing)
@@ -200,7 +205,7 @@ internal sealed class MongoJobStorage(MongoCollections collections, TimeProvider
         var documento = await collections.Jobs
             .Find(Builders<BsonDocument>.Filter.Eq("_id", id.Value))
             .FirstOrDefaultAsync(ct);
-        return documento is null ? null : MongoDocuments.ReadJob(documento);
+        return documento is null ? null : MongoDocumentMapper.ReadJob(documento);
     }
 
     public async ValueTask<bool> DeleteAsync(JobId id, CancellationToken ct)
@@ -277,7 +282,7 @@ internal sealed class MongoJobStorage(MongoCollections collections, TimeProvider
             .Limit(pageSize)
             .ToListAsync(ct);
 
-        return [.. documentos.Select(MongoDocuments.ReadJob)];
+        return [.. documentos.Select(MongoDocumentMapper.ReadJob)];
     }
 
     public async ValueTask<long> CountAsync(JobQuery query, CancellationToken ct)

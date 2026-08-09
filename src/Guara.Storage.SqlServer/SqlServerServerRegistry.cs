@@ -5,7 +5,7 @@ namespace Guara.Storage.SqlServer;
 
 /// <summary>Registro de nós servidores na tabela <c>servers</c> (upsert por id).</summary>
 internal sealed class SqlServerServerRegistry(
-    SqlServerConnections connections, SqlServerSchemaInitializer schema, string s) : IServerRegistry
+    SqlServerConnectionFactory connections, SqlServerSchemaInitializer schema, string s) : IServerRegistry
 {
     public async ValueTask AnnounceAsync(ServerNode node, CancellationToken ct)
     {

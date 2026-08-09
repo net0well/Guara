@@ -34,11 +34,11 @@ public class TransactionalEnqueueTests
 
     private static JobDescriptor Descriptor(string queue = "default") => new("Tipo", "Metodo", default, queue);
 
-    private static (GuaraClient Client, RecordingTransactionalStorage Storage,
+    private static (GuaraClient Client, RecordingStorageDecorator Storage,
         RecordingQueueSignal Signal, RecordingPublisher Events) NewClient()
     {
         var time = new FixedTimeProvider(T0);
-        var storage = new RecordingTransactionalStorage(time);
+        var storage = new RecordingStorageDecorator(time);
         var signal = new RecordingQueueSignal();
         var events = new RecordingPublisher();
         var client = new GuaraClient(

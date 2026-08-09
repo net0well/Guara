@@ -20,7 +20,16 @@ internal sealed class GuaraWorker : IWorker, IWorkerCapacity, IEventHandler<Work
     private readonly WorkerOptions _options;
     private readonly TimeProvider _time;
     private readonly ILogger<GuaraWorker> _logger;
-    private readonly Channel<JobId> _channel;
+    /// <summary>
+    /// Um job aceito para execução, com a posse que a aquisição criou. A posse acompanha o
+    /// id porque a renovação precisa provar que ainda detém a mesma — não basta saber qual
+    /// job é.
+    /// </summary>
+    /// <param name="Id">Job a executar.</param>
+    /// <param name="LeaseUntil">Vencimento da posse no momento da aquisição.</param>
+    private readonly record struct Aceito(JobId Id, DateTimeOffset LeaseUntil);
+
+    private readonly Channel<Aceito> _channel;
 
     // O canal não expõe a própria capacidade, e ela é o teto do que o dispatcher pode
     // pedir sem encher a fila interna.
@@ -59,7 +68,7 @@ internal sealed class GuaraWorker : IWorker, IWorkerCapacity, IEventHandler<Work
         _logger = logger;
 
         _capacidade = options.MaxConcurrency * 2;
-        _channel = Channel.CreateBounded<JobId>(new BoundedChannelOptions(_capacidade)
+        _channel = Channel.CreateBounded<Aceito>(new BoundedChannelOptions(_capacidade)
         {
             FullMode = BoundedChannelFullMode.Wait, // cheio → o publisher (Dispatcher) aguarda
             SingleReader = false,
@@ -77,7 +86,8 @@ internal sealed class GuaraWorker : IWorker, IWorkerCapacity, IEventHandler<Work
 
     /// <inheritdoc />
     public async ValueTask HandleAsync(WorkerRequested @event, CancellationToken ct)
-        => await _channel.Writer.WriteAsync(@event.Id, ct); // backpressure natural
+        => await _channel.Writer.WriteAsync(
+            new Aceito(@event.Id, @event.LeaseUntil), ct); // backpressure natural
 
     /// <inheritdoc />
     public ValueTask StartAsync(CancellationToken ct)
@@ -146,9 +156,9 @@ internal sealed class GuaraWorker : IWorker, IWorkerCapacity, IEventHandler<Work
         {
             while (await _channel.Reader.WaitToReadAsync(acceptCt))
             {
-                while (_channel.Reader.TryRead(out var id))
+                while (_channel.Reader.TryRead(out var aceito))
                 {
-                    await ProcessAsync(id, executionCt);
+                    await ProcessAsync(aceito, executionCt);
                     if (acceptCt.IsCancellationRequested)
                     {
                         return; // drain: termina o job atual e não pega mais nenhum
@@ -162,12 +172,14 @@ internal sealed class GuaraWorker : IWorker, IWorkerCapacity, IEventHandler<Work
         }
     }
 
-    private async Task ProcessAsync(JobId id, CancellationToken executionCt)
+    private async Task ProcessAsync(Aceito aceito, CancellationToken executionCt)
     {
+        var id = aceito.Id;
+
         // jobCts: cancela a execução se a posse for perdida ou no timeout do drain.
         using var jobCts = CancellationTokenSource.CreateLinkedTokenSource(executionCt);
         using var renewalCts = new CancellationTokenSource();
-        var renewal = RenewLeaseLoopAsync(id, jobCts, renewalCts.Token);
+        var renewal = RenewLeaseLoopAsync(aceito, jobCts, renewalCts.Token);
 
         try
         {
@@ -190,14 +202,24 @@ internal sealed class GuaraWorker : IWorker, IWorkerCapacity, IEventHandler<Work
         }
     }
 
-    private async Task RenewLeaseLoopAsync(JobId id, CancellationTokenSource jobCts, CancellationToken ct)
+    private async Task RenewLeaseLoopAsync(
+        Aceito aceito, CancellationTokenSource jobCts, CancellationToken ct)
     {
+        var id = aceito.Id;
+
+        // A posse em mãos avança a cada renovação: é ela que a próxima apresenta como prova
+        // de que o job continua sendo nosso. Renovar sem apresentá-la aceitaria a posse de
+        // outro nó como se fosse a nossa.
+        var posse = aceito.LeaseUntil;
+
         try
         {
             while (!ct.IsCancellationRequested)
             {
                 await Task.Delay(_options.LeaseRenewInterval, _time, ct);
-                if (!await _storage.Jobs.RenewLeaseAsync(id, _options.LeaseDuration, ct))
+                var renovada = await _storage.Jobs.RenewLeaseAsync(
+                    id, posse, _options.LeaseDuration, ct);
+                if (renovada is null)
                 {
                     // Posse perdida (outro nó pode assumir): aborta a execução local
                     // para nunca processar o job em dobro.
@@ -206,6 +228,8 @@ internal sealed class GuaraWorker : IWorker, IWorkerCapacity, IEventHandler<Work
                     await jobCts.CancelAsync();
                     return;
                 }
+
+                posse = renovada.Value;
             }
         }
         catch (OperationCanceledException)

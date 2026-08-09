@@ -62,15 +62,34 @@ public interface IJobStorage
         string queue, int max, TimeSpan lease, DateTimeOffset now, CancellationToken ct);
 
     /// <summary>
-    /// Renova a posse de um job em execução. Retorna <c>false</c> quando a posse foi
-    /// perdida (lease expirou e outro nó assumiu, ou o job não existe) — o worker deve
-    /// abortar a execução local para evitar processamento duplo.
+    /// Renova a posse de um job em execução, <b>desde que ela ainda seja a mesma</b>.
+    /// <para>
+    /// A renovação é um compare-and-swap sobre o instante de vencimento: só tem efeito se o
+    /// valor gravado for exatamente <paramref name="expectedLeaseUntil"/>. Sem essa
+    /// comparação não haveria como distinguir a própria posse da de outro nó — um nó que
+    /// travasse além do vencimento, e cuja posse tivesse sido legitimamente adquirida por
+    /// outro, renovaria a posse alheia e seguiria executando em paralelo.
+    /// </para>
+    /// <para>
+    /// A tabela não tem coluna de dono, e não precisa: o instante de vencimento já é único
+    /// por aquisição, e quem renovou por último é o dono. É o mesmo papel de um fencing
+    /// token, sobre uma coluna que já existe.
+    /// </para>
     /// </summary>
     /// <param name="id">Id do job.</param>
+    /// <param name="expectedLeaseUntil">
+    /// Vencimento que o chamador acredita deter — o devolvido pela aquisição, ou pela
+    /// renovação anterior.
+    /// </param>
     /// <param name="lease">Nova duração da posse a partir de agora.</param>
     /// <param name="ct">Token de cancelamento.</param>
-    /// <returns><c>true</c> se a posse foi renovada.</returns>
-    ValueTask<bool> RenewLeaseAsync(JobId id, TimeSpan lease, CancellationToken ct);
+    /// <returns>
+    /// O novo vencimento, que o chamador deve passar na renovação seguinte; ou <c>null</c>
+    /// quando a posse foi perdida (venceu e outro nó assumiu, o job terminou ou não existe)
+    /// — nesse caso o worker deve abortar a execução local, para não processar em dobro.
+    /// </returns>
+    ValueTask<DateTimeOffset?> RenewLeaseAsync(
+        JobId id, DateTimeOffset expectedLeaseUntil, TimeSpan lease, CancellationToken ct);
 
     /// <summary>
     /// Agenda uma retentativa <b>persistente</b> após uma falha, em uma única operação:

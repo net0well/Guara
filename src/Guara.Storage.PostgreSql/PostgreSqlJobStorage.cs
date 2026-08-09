@@ -113,16 +113,22 @@ internal sealed class PostgreSqlJobStorage(
         return adquiridos;
     }
 
-    public async ValueTask<bool> RenewLeaseAsync(JobId id, TimeSpan lease, CancellationToken ct)
+    public async ValueTask<DateTimeOffset?> RenewLeaseAsync(
+        JobId id, DateTimeOffset expectedLeaseUntil, TimeSpan lease, CancellationToken ct)
     {
         await schema.EnsureAsync(ct);
+
+        // A comparação com o vencimento esperado é o que separa a própria posse da de outro
+        // nó: se alguém readquiriu o job, lease_until já é outro e nada é atualizado.
         await using var command = dataSource.CreateCommand($"""
             UPDATE {s}.jobs SET lease_until = @leaseUntil, eligible_at = @leaseUntil
-            WHERE id = @id AND state = {(int)JobState.Processing} AND lease_until IS NOT NULL
+            WHERE id = @id AND state = {(int)JobState.Processing} AND lease_until = @expected
             """);
+        var leaseUntil = time.GetUtcNow() + lease;
         command.Parameters.AddWithValue("id", id.Value);
-        command.Parameters.AddWithValue("leaseUntil", time.GetUtcNow() + lease);
-        return await command.ExecuteNonQueryAsync(ct) > 0;
+        command.Parameters.AddWithValue("expected", expectedLeaseUntil);
+        command.Parameters.AddWithValue("leaseUntil", leaseUntil);
+        return await command.ExecuteNonQueryAsync(ct) > 0 ? leaseUntil : null;
     }
 
     public async ValueTask ScheduleRetryAsync(JobId id, string error, DateTimeOffset retryAt, CancellationToken ct)

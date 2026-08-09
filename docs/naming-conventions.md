@@ -27,6 +27,11 @@ Os **métodos que o usuário chama** para operar jobs são em **português**; to
 | Evento | `{Substantivo}{ParticípioPassado}` | `JobCreated`, `JobScheduled`, `JobCompleted`, `WorkerRequested` |
 | Estado de Job | `{Nome}State` ou enum `JobState` | `JobState.Enqueued`, `JobState.Processing` |
 | Builder fluente | `{Componente}Builder` | `GuaraBuilder`, `StorageBuilder` |
+| **Tipo cujo papel é um design pattern** | `{Qualificador}{Contrato}{Pattern}` — sufixo **explícito** | `RecordingStorageDecorator`, `JobPipelineBuilder`, `ConnectionFactory` |
+
+**Padrão no nome, quando o padrão é o papel.** Um tipo que existe *para aplicar* um pattern — Decorator, Factory, Builder, Adapter, Strategy — carrega o sufixo. Sem ele, quem lê precisa abrir o arquivo para descobrir se `RecordingStorage` grava, filtra ou delega.
+
+A exceção é quando outra linha desta tabela já descreve o papel melhor: um **provider** é `{Tecnologia}{Contrato}` mesmo que internamente componha outro tipo — `RedisQueueSignal` é o provider Redis de `IQueueSignal`, não um decorator do sinal em processo, ainda que o use por dentro. O sufixo vale para o tipo cuja razão de existir *é* a composição; não para o que apenas a utiliza.
 
 ## Pacotes e Namespaces
 

@@ -31,8 +31,8 @@ internal sealed class MySqlContinuationStorage(
         command.Parameters.AddWithValue("@status", (int)record.Status);
         command.Parameters.AddWithValue("@reason", (object?)record.Reason ?? DBNull.Value);
         command.Parameters.AddWithValue("@depth", record.Depth);
-        command.Parameters.AddWithValue("@createdAt", MySqlTime.ToDatabase(record.CreatedAt));
-        command.Parameters.AddWithValue("@resolvedAt", MySqlTime.ToDatabaseOrNull(record.ResolvedAt));
+        command.Parameters.AddWithValue("@createdAt", MySqlTimeConverter.ToDatabase(record.CreatedAt));
+        command.Parameters.AddWithValue("@resolvedAt", MySqlTimeConverter.ToDatabaseOrNull(record.ResolvedAt));
         await command.ExecuteNonQueryAsync(ct);
     }
 
@@ -86,7 +86,7 @@ internal sealed class MySqlContinuationStorage(
         command.Parameters.AddWithValue("@childId", childId.Value);
         command.Parameters.AddWithValue("@status", (int)status);
         command.Parameters.AddWithValue("@reason", (object?)reason ?? DBNull.Value);
-        command.Parameters.AddWithValue("@resolvedAt", MySqlTime.ToDatabase(resolvedAt));
+        command.Parameters.AddWithValue("@resolvedAt", MySqlTimeConverter.ToDatabase(resolvedAt));
         return await command.ExecuteNonQueryAsync(ct) > 0;
     }
 
@@ -111,7 +111,7 @@ internal sealed class MySqlContinuationStorage(
         Status = (ContinuationStatus)reader.GetInt32(3),
         Reason = reader.IsDBNull(4) ? null : reader.GetString(4),
         Depth = reader.GetInt32(5),
-        CreatedAt = MySqlTime.FromDatabase(reader.GetDateTime(6)),
-        ResolvedAt = reader.IsDBNull(7) ? null : MySqlTime.FromDatabase(reader.GetDateTime(7)),
+        CreatedAt = MySqlTimeConverter.FromDatabase(reader.GetDateTime(6)),
+        ResolvedAt = reader.IsDBNull(7) ? null : MySqlTimeConverter.FromDatabase(reader.GetDateTime(7)),
     };
 }

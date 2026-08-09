@@ -65,17 +65,23 @@ internal sealed class MemoryJobStorage(TimeProvider time) : IJobStorage
         }
     }
 
-    public ValueTask<bool> RenewLeaseAsync(JobId id, TimeSpan lease, CancellationToken ct)
+    public ValueTask<DateTimeOffset?> RenewLeaseAsync(
+        JobId id, DateTimeOffset expectedLeaseUntil, TimeSpan lease, CancellationToken ct)
     {
         lock (_sync)
         {
-            if (!_jobs.TryGetValue(id, out var job) || job.State != JobState.Processing || job.LeaseUntil is null)
+            // Comparar o vencimento, e não apenas exigir que exista, é o que separa a própria
+            // posse da de outro nó: se alguém readquiriu o job, o valor mudou.
+            if (!_jobs.TryGetValue(id, out var job)
+                || job.State != JobState.Processing
+                || job.LeaseUntil != expectedLeaseUntil)
             {
-                return ValueTask.FromResult(false); // posse perdida — o worker deve abortar
+                return ValueTask.FromResult<DateTimeOffset?>(null); // posse perdida — o worker deve abortar
             }
 
-            _jobs[id] = job with { LeaseUntil = time.GetUtcNow() + lease };
-            return ValueTask.FromResult(true);
+            var leaseUntil = time.GetUtcNow() + lease;
+            _jobs[id] = job with { LeaseUntil = leaseUntil };
+            return ValueTask.FromResult<DateTimeOffset?>(leaseUntil);
         }
     }
 
